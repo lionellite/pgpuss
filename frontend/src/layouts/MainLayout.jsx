@@ -37,50 +37,50 @@ export default function MainLayout() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      {/* Top Banner (Bénin Flag Colors) */}
+      <div style={{ height: 4, display: 'flex' }}>
+        <div style={{ flex: 1, background: '#008751' }} />
+        <div style={{ flex: 1, background: '#fcd116' }} />
+        <div style={{ flex: 1, background: '#e8112d' }} />
+      </div>
+
       {/* Navbar */}
       <nav style={{
-        background: 'rgba(8,18,32,0.9)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(0,119,182,0.15)',
+        background: '#ffffff',
+        borderBottom: '1px solid #eee',
         position: 'sticky', top: 0, zIndex: 100,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
       }}>
         <div className="page-container" style={{
           display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', height: 64,
+          justifyContent: 'space-between', height: 72,
         }}>
-          {/* Logo */}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '10px',
-              background: 'linear-gradient(135deg, #0077B6, #00B4D8)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.1rem', fontWeight: 800, color: 'white',
-            }}>P</div>
-            <div>
-              <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1rem', color: '#F0F4FF', lineHeight: 1 }}>PGP-USS</div>
-              <div style={{ fontSize: '0.65rem', color: '#8FA3BF', lineHeight: 1 }}>Santé Bénin</div>
+          {/* Logo and Branding */}
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <img src="https://gouv.bj/assets/img/logo-benin.png" alt="République du Bénin" style={{ height: 44 }}
+                 onError={(e) => { e.target.style.display = 'none' }} />
+            <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111', letterSpacing: '-0.02em' }}>PGP-USS</div>
+              <div style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', fontWeight: 600 }}>Santé Bénin</div>
             </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          {/* Desktop Nav - Max 7 items */}
+          <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {navLinks.map(link => (
               <Link key={link.to} to={link.to} style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.5rem 0.875rem', borderRadius: '8px', fontSize: '0.875rem',
-                fontWeight: 500, color: location.pathname === link.to ? '#00B4D8' : '#8FA3BF',
-                background: location.pathname === link.to ? 'rgba(0,180,216,0.1)' : 'transparent',
-                transition: 'all 0.2s', textDecoration: 'none',
-              }}>{link.icon}{link.label}</Link>
+                padding: '0.5rem 1rem', fontSize: '0.9rem',
+                fontWeight: 600, color: location.pathname === link.to ? 'var(--color-primary)' : '#444',
+                borderBottom: location.pathname === link.to ? '2px solid var(--color-primary)' : '2px solid transparent',
+                textDecoration: 'none',
+              }}>{link.label}</Link>
             ))}
             {isAgent && (
               <Link to="/dashboard" style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.5rem 0.875rem', borderRadius: '8px', fontSize: '0.875rem',
-                fontWeight: 500, color: '#8FA3BF', textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}><FiFileText /> Dashboard</Link>
+                padding: '0.5rem 1rem', fontSize: '0.9rem',
+                fontWeight: 600, color: '#444', textDecoration: 'none',
+              }}>Dashboard</Link>
             )}
           </div>
 
@@ -173,12 +173,32 @@ export default function MainLayout() {
 
       {/* Footer */}
       <footer style={{
-        background: '#081220', borderTop: '1px solid rgba(0,119,182,0.1)',
-        padding: '2rem 0', marginTop: 'auto',
+        background: '#f8f9fa', borderTop: '1px solid #eee',
+        padding: '3rem 0', marginTop: 'auto',
       }}>
-        <div className="page-container" style={{ textAlign: 'center', color: '#4A6080', fontSize: '0.8rem' }}>
-          <p>© 2025 PGP-USS — Plateforme de Gestion des Plaintes des Usagers des Services de Santé au Bénin</p>
-          <p style={{ marginTop: '0.3rem' }}>Ministère de la Santé du Bénin — Projet de Licence en Informatique 2025–2026</p>
+        <div className="page-container">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+            <div>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>À propos</h4>
+              <p style={{ fontSize: '0.8rem', color: '#666' }}>Plateforme officielle de gestion des plaintes des services de santé au Bénin.</p>
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Liens utiles</h4>
+              <ul style={{ listStyle: 'none', fontSize: '0.8rem', color: '#666' }}>
+                <li><Link to="/deposer">Déposer une plainte</Link></li>
+                <li><Link to="/suivi">Suivre une plainte</Link></li>
+                <li><a href="https://sante.gouv.bj" target="_blank" rel="noreferrer">Ministère de la Santé</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Contact</h4>
+              <p style={{ fontSize: '0.8rem', color: '#666' }}>Numéro vert : 136</p>
+              <p style={{ fontSize: '0.8rem', color: '#666' }}>Email : contact@sante.gouv.bj</p>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid #ddd', paddingTop: '1.5rem', textAlign: 'center', color: '#777', fontSize: '0.75rem' }}>
+            <p>© 2025 République du Bénin — Ministère de la Santé. Tous droits réservés.</p>
+          </div>
         </div>
       </footer>
     </div>

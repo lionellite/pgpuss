@@ -5,15 +5,15 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 
-const COLORS = ['#0077B6', '#06D6A0', '#FF6B35', '#EF476F', '#F59E0B', '#A78BFA', '#3B82F6', '#10B981']
+const COLORS = ['#008751', '#fcd116', '#e8112d', '#0077b6', '#6b5b95', '#d97706', '#2563eb', '#616161']
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#0F1E35', border: '1px solid rgba(0,119,182,0.3)', borderRadius: '10px', padding: '0.75rem 1rem' }}>
-      {label && <p style={{ color: '#8FA3BF', fontSize: '0.75rem', marginBottom: '0.3rem' }}>{label}</p>}
+    <div style={{ background: '#fff', border: '1px solid #ddd', padding: '0.75rem 1rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+      {label && <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '0.3rem', fontWeight: 700 }}>{label}</p>}
       {payload.map((p, i) => (
-        <p key={i} style={{ color: p.color || '#F0F4FF', fontSize: '0.875rem', fontWeight: 600 }}>
+        <p key={i} style={{ color: '#111', fontSize: '0.875rem', fontWeight: 600 }}>
           {p.name}: {p.value}
         </p>
       ))}
@@ -67,63 +67,63 @@ export default function AnalyticsPage() {
   }))
 
   return (
-    <div>
-      <div style={{ marginBottom: '2rem' }}>
+    <div style={{ padding: '1rem 0' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
         <h1 className="page-title">Analytique</h1>
-        <p className="page-subtitle">Tendances et statistiques des plaintes</p>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>Indicateurs et tendances de la plateforme.</p>
       </div>
 
       {/* Summary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
         {[
-          { label: 'Total', value: stats.total_complaints, color: '#0077B6' },
-          { label: 'En cours', value: stats.open_complaints, color: '#F59E0B' },
-          { label: 'Résolues', value: stats.resolved_complaints, color: '#06D6A0' },
-          { label: 'En retard', value: stats.overdue_complaints, color: '#EF476F' },
-          { label: 'Délai moy.', value: stats.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', color: '#A78BFA' },
-          { label: 'Satisfaction', value: stats.satisfaction_avg ? `${stats.satisfaction_avg}/5 ⭐` : '—', color: '#F59E0B' },
+          { label: 'Total', value: stats.total_complaints, color: 'var(--color-primary)' },
+          { label: 'En cours', value: stats.open_complaints, color: '#d97706' },
+          { label: 'Résolues', value: stats.resolved_complaints, color: 'var(--color-primary)' },
+          { label: 'En retard', value: stats.overdue_complaints, color: '#dc2626' },
+          { label: 'Délai moy.', value: stats.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', color: '#4f46e5' },
+          { label: 'Satisfaction', value: stats.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', color: '#d97706' },
         ].map((k, i) => (
-          <div key={i} className="stat-card">
-            <div className="stat-value" style={{ fontSize: '1.75rem', color: k.color }}>{k.value}</div>
-            <div className="stat-label">{k.label}</div>
+          <div key={i} className="stat-card" style={{ borderLeftColor: k.color }}>
+             <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{k.label}</div>
+            <div className="stat-value" style={{ fontSize: '1.75rem', color: '#111' }}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* Monthly trend */}
       {monthlyData.length > 0 && (
-        <div className="glass-card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Évolution mensuelle des plaintes
+        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+            Évolution mensuelle des dossiers
           </h3>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,119,182,0.1)" />
-              <XAxis dataKey="mois" tick={{ fill: '#8FA3BF', fontSize: 11 }} axisLine={{ stroke: 'rgba(0,119,182,0.2)' }} />
-              <YAxis tick={{ fill: '#8FA3BF', fontSize: 11 }} axisLine={{ stroke: 'rgba(0,119,182,0.2)' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="mois" tick={{ fill: '#666', fontSize: 11 }} axisLine={{ stroke: '#ddd' }} />
+              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={{ stroke: '#ddd' }} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="plaintes" name="Plaintes" stroke="#0077B6" strokeWidth={2.5}
-                dot={{ fill: '#00B4D8', r: 4 }} activeDot={{ r: 6, fill: '#06D6A0' }} />
+              <Line type="monotone" dataKey="plaintes" name="Plaintes" stroke="var(--color-primary)" strokeWidth={3}
+                dot={{ fill: 'var(--color-primary)', r: 4 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         {/* Priority distribution */}
-        <div className="glass-card" style={{ padding: '1.75rem' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
             Répartition par priorité
           </h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={priorityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,119,182,0.1)" />
-              <XAxis dataKey="name" tick={{ fill: '#8FA3BF', fontSize: 11 }} axisLine={false} />
-              <YAxis tick={{ fill: '#8FA3BF', fontSize: 11 }} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="name" tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
+              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Plaintes" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" name="Plaintes" radius={[2, 2, 0, 0]}>
                 {priorityData.map((_, i) => (
-                  <Cell key={i} fill={['#EF476F','#FF6B35','#F59E0B','#3B82F6','#8FA3BF'][i]} />
+                  <Cell key={i} fill={['#dc2626','#ea580c','#d97706','#2563eb','#717171'][i]} />
                 ))}
               </Bar>
             </BarChart>
@@ -132,38 +132,38 @@ export default function AnalyticsPage() {
 
         {/* Status pie */}
         {statusData.length > 0 && (
-          <div className="glass-card" style={{ padding: '1.75rem' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+            <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
               Répartition par statut
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
-                  dataKey="value" nameKey="name" paddingAngle={2}>
+                <Pie data={statusData} cx="50%" cy="50%" innerRadius={60} outerRadius={80}
+                  dataKey="value" nameKey="name">
                   {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend formatter={(v) => <span style={{ color: '#8FA3BF', fontSize: '0.75rem' }}>{v}</span>} />
+                <Legend formatter={(v) => <span style={{ color: '#444', fontSize: '0.75rem', fontWeight: 600 }}>{v}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
         {/* Top categories */}
         {categoryData.length > 0 && (
-          <div className="glass-card" style={{ padding: '1.75rem' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+            <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
               Top catégories
             </h3>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={categoryData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,119,182,0.1)" />
-                <XAxis type="number" tick={{ fill: '#8FA3BF', fontSize: 10 }} axisLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#8FA3BF', fontSize: 10 }} width={130} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eee" />
+                <XAxis type="number" tick={{ fill: '#666', fontSize: 10 }} axisLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#666', fontSize: 10 }} width={130} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Plaintes" fill="#0077B6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="count" name="Plaintes" fill="var(--color-primary)" radius={[0, 2, 2, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -171,17 +171,17 @@ export default function AnalyticsPage() {
 
         {/* By channel */}
         {channelData.length > 0 && (
-          <div className="glass-card" style={{ padding: '1.75rem' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+            <h3 style={{ fontSize: '0.9rem', marginBottom: '1.5rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
               Répartition par canal
             </h3>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie data={channelData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name">
                   {channelData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend formatter={(v) => <span style={{ color: '#8FA3BF', fontSize: '0.75rem' }}>{v}</span>} />
+                <Legend formatter={(v) => <span style={{ color: '#444', fontSize: '0.75rem', fontWeight: 600 }}>{v}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -190,17 +190,17 @@ export default function AnalyticsPage() {
 
       {/* By establishment */}
       {establishmentData.length > 0 && (
-        <div className="glass-card" style={{ padding: '1.75rem', marginTop: '1.5rem' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.5rem', color: '#8FA3BF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Top établissements
+        <div className="glass-card" style={{ padding: '2rem', marginTop: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+            Établissements les plus concernés
           </h3>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={establishmentData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,119,182,0.1)" />
-              <XAxis dataKey="name" tick={{ fill: '#8FA3BF', fontSize: 10 }} angle={-20} textAnchor="end" height={50} />
-              <YAxis tick={{ fill: '#8FA3BF', fontSize: 11 }} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="name" tick={{ fill: '#666', fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
+              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Plaintes" fill="#06D6A0" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" name="Plaintes" fill="#0077b6" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

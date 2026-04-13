@@ -47,29 +47,29 @@ export default function PlainteDetailPage() {
   const canEscalate = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL'].includes(user?.role)
 
   return (
-    <div>
-      <button onClick={() => navigate('/dashboard/plaintes')} className="btn btn-ghost btn-sm" style={{ marginBottom: '1.5rem' }}>
-        <FiArrowLeft /> Retour
+    <div style={{ padding: '1rem 0' }}>
+      <button onClick={() => navigate('/dashboard/plaintes')} className="btn btn-secondary btn-sm" style={{ marginBottom: '2rem' }}>
+        <FiArrowLeft /> RETOUR À LA LISTE
       </button>
 
       {/* Header */}
-      <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+      <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#8FA3BF', marginBottom: '0.25rem' }}>N° ticket</div>
-            <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.3rem', color: '#00B4D8', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dossier N°</div>
+            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
               {complaint.ticket_number}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <StatusBadge status={complaint.status} />
             <PriorityBadge priority={complaint.priority} />
-            {complaint.is_overdue && <span className="badge badge-escaladee"><FiAlertTriangle /> En retard</span>}
+            {complaint.is_overdue && <span className="badge badge-escaladee">RETARD</span>}
           </div>
         </div>
-        <h1 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.3rem', marginBottom: '1rem' }}>{complaint.title}</h1>
+        <h1 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', color: '#111' }}>{complaint.title}</h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           {[
             { label: 'Établissement', value: complaint.establishment_name },
             { label: 'Service', value: complaint.service_name || '—' },
@@ -78,17 +78,16 @@ export default function PlainteDetailPage() {
             { label: 'Plaignant', value: complaint.complainant_display },
             { label: 'Assigné à', value: complaint.assigned_to_name || 'Non assigné' },
             { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
-            { label: 'Mise à jour', value: new Date(complaint.updated_at).toLocaleDateString('fr-FR') },
           ].map((item, i) => (
-            <div key={i} style={{ padding: '0.75rem', background: 'rgba(0,119,182,0.04)', borderRadius: '10px', border: '1px solid rgba(0,119,182,0.08)' }}>
-              <div style={{ fontSize: '0.68rem', color: '#8FA3BF', marginBottom: '0.2rem' }}>{item.label}</div>
-              <div style={{ fontSize: '0.82rem', color: '#F0F4FF', fontWeight: 500 }}>{item.value || '—'}</div>
+            <div key={i} style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
+              <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
+              <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{item.value || '—'}</div>
             </div>
           ))}
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid rgba(0,119,182,0.1)', paddingTop: '1.25rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
           {canAssign && (
             <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
               <FiUser /> Affecter

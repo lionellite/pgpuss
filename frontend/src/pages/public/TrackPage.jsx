@@ -31,32 +31,31 @@ export default function TrackPage() {
   }
 
   return (
-    <div style={{ padding: '4rem 0', minHeight: '80vh' }}>
+    <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
       <div className="page-container">
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-            <h1 className="page-title" style={{ fontSize: '2rem' }}>Suivre ma plainte</h1>
-            <p style={{ color: '#8FA3BF', marginTop: '0.5rem' }}>
-              Entrez le numéro de ticket reçu lors du dépôt de votre plainte
+          <div style={{ textAlign: 'left', marginBottom: '3rem' }}>
+            <h1 className="page-title">Suivre ma plainte</h1>
+            <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+              Entrez le numéro de ticket unique qui vous a été attribué lors de la soumission de votre plainte.
             </p>
           </div>
 
           {/* Search form */}
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
             <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem' }}>
               <div style={{ flex: 1, position: 'relative' }}>
-                <FiSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+                <FiSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
                 <input
                   className="form-input"
                   style={{ paddingLeft: '2.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                   value={ticket}
                   onChange={e => setTicket(e.target.value)}
-                  placeholder="PGP-2025-AB1234"
+                  placeholder="PGP-2026-AB1234"
                 />
               </div>
               <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? '...' : 'Rechercher'}
+                {loading ? '...' : 'RECHERCHER'}
               </button>
             </form>
           </div>
@@ -71,11 +70,11 @@ export default function TrackPage() {
 
           {/* Result */}
           {result && (
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#8FA3BF', marginBottom: '0.25rem' }}>N° de ticket</div>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.3rem', color: '#00B4D8', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>N° de ticket</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
                     {result.ticket_number}
                   </div>
                 </div>
@@ -85,16 +84,16 @@ export default function TrackPage() {
                 </div>
               </div>
 
-              <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>{result.title}</h3>
+              <h3 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.5rem', color: '#111' }}>{result.title}</h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ padding: '0.875rem', background: 'rgba(0,119,182,0.05)', borderRadius: '10px', border: '1px solid rgba(0,119,182,0.1)' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#8FA3BF', marginBottom: '0.2rem' }}>Établissement</div>
-                  <div style={{ fontSize: '0.875rem', color: '#F0F4FF' }}>{result.establishment_name || 'Non spécifié'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Établissement</div>
+                  <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{result.establishment_name || 'Non spécifié'}</div>
                 </div>
-                <div style={{ padding: '0.875rem', background: 'rgba(0,119,182,0.05)', borderRadius: '10px', border: '1px solid rgba(0,119,182,0.1)' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#8FA3BF', marginBottom: '0.2rem' }}>Déposée le</div>
-                  <div style={{ fontSize: '0.875rem', color: '#F0F4FF' }}>{new Date(result.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                <div style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Date de dépôt</div>
+                  <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{new Date(result.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                 </div>
               </div>
 

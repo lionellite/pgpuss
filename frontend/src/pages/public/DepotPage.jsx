@@ -130,16 +130,18 @@ export default function DepotPage() {
   }
 
   return (
-    <div style={{ padding: '3rem 0', minHeight: '80vh' }}>
+    <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
       <div className="page-container">
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
-            <h1 className="page-title" style={{ fontSize: '2rem' }}>Déposer une plainte</h1>
-            <p style={{ color: '#8FA3BF', marginTop: '0.5rem' }}>Remplissez le formulaire ci-dessous</p>
+          <div style={{ marginBottom: '3rem', textAlign: 'left' }}>
+            <h1 className="page-title">Déposer une plainte</h1>
+            <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+              Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.
+            </p>
           </div>
 
           {/* Step indicator */}
-          <div className="steps" style={{ marginBottom: '2.5rem' }}>
+          <div className="steps" style={{ marginBottom: '3rem' }}>
             {STEPS.map((s, i) => (
               <React.Fragment key={i}>
                 <div className="step">
@@ -152,14 +154,14 @@ export default function DepotPage() {
             ))}
           </div>
 
-          <div className="glass-card" style={{ padding: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
             <form onSubmit={handleSubmit(onSubmit)}>
 
               {/* Step 0 — Établissement */}
               {step === 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.25rem' }}>
-                    Établissement concerné
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#111' }}>
+                    1. Établissement concerné
                   </h2>
                   <div className="form-group">
                     <label className="form-label">Région</label>
@@ -198,21 +200,21 @@ export default function DepotPage() {
               {/* Step 1 — Catégorie */}
               {step === 1 && (
                 <div>
-                  <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem', marginBottom: '1.25rem' }}>
-                    Type de plainte
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>
+                    2. Type de plainte
                   </h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     {categories.map(cat => (
                       <label key={cat.id} style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                        padding: '1.25rem', borderRadius: '12px', cursor: 'pointer',
-                        background: String(catId) === String(cat.id) ? 'rgba(0,119,182,0.15)' : 'rgba(15,30,53,0.5)',
-                        border: String(catId) === String(cat.id) ? '2px solid rgba(0,119,182,0.5)' : '1px solid rgba(0,119,182,0.1)',
-                        transition: 'all 0.2s', textAlign: 'center',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
+                        padding: '1.5rem', borderRadius: '4px', cursor: 'pointer',
+                        background: String(catId) === String(cat.id) ? '#f0f9f5' : '#fff',
+                        border: String(catId) === String(cat.id) ? '2px solid var(--color-primary)' : '1px solid #ddd',
+                        textAlign: 'center',
                       }}>
                         <input type="radio" value={cat.id} {...register('category', { required: 'Requis' })} style={{ display: 'none' }} />
-                        <span style={{ fontSize: '1.75rem' }}>{cat.icon}</span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#F0F4FF', lineHeight: 1.3 }}>{cat.name}</span>
+                        <span style={{ fontSize: '2rem' }}>{cat.icon}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cat.name}</span>
                       </label>
                     ))}
                   </div>
@@ -234,8 +236,8 @@ export default function DepotPage() {
 
               {/* Step 2 — Description */}
               {step === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem' }}>Description de la plainte</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description de la plainte</h2>
                   <div className="form-group">
                     <label className="form-label">Titre de la plainte *</label>
                     <input className="form-input" placeholder="Résumez votre plainte en une phrase"
@@ -285,19 +287,19 @@ export default function DepotPage() {
 
               {/* Step 3 — Identité */}
               {step === 3 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem' }}>Vos coordonnées</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>4. Vos coordonnées</h2>
                   <label style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
-                    padding: '1rem 1.25rem', borderRadius: '12px',
-                    background: isAnonymous ? 'rgba(6,214,160,0.05)' : 'rgba(15,30,53,0.5)',
-                    border: isAnonymous ? '1px solid rgba(6,214,160,0.3)' : '1px solid rgba(0,119,182,0.1)',
-                    cursor: 'pointer', transition: 'all 0.2s',
+                    padding: '1.25rem', borderRadius: '4px',
+                    background: isAnonymous ? '#f8f9fa' : '#fff',
+                    border: isAnonymous ? '1px solid var(--color-primary)' : '1px solid #ddd',
+                    cursor: 'pointer',
                   }}>
-                    <input type="checkbox" {...register('is_anonymous')} style={{ width: 18, height: 18, accentColor: '#06D6A0' }} />
+                    <input type="checkbox" {...register('is_anonymous')} style={{ width: 20, height: 20 }} />
                     <div>
-                      <div style={{ fontWeight: 600, color: '#F0F4FF', fontSize: '0.9rem' }}>Déposer de façon anonyme</div>
-                      <div style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>Votre identité ne sera pas communiquée aux établissements</div>
+                      <div style={{ fontWeight: 700, color: '#111', fontSize: '0.9rem' }}>Déposer de façon anonyme</div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>Votre identité ne sera pas communiquée à l'établissement concerné.</div>
                     </div>
                   </label>
 
@@ -331,24 +333,24 @@ export default function DepotPage() {
               {/* Step 4 — Confirmation */}
               {step === 4 && (
                 <div>
-                  <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem', marginBottom: '1.5rem' }}>
-                    Confirmation
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>
+                    5. Récapitulatif et confirmation
                   </h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
                     {[
                       { label: 'Établissement', value: establishments.find(e => String(e.id) === String(watch('establishment')))?.name },
                       { label: 'Catégorie', value: selectedCategory?.name },
                       { label: 'Titre', value: watch('title') },
-                      { label: 'Anonyme', value: isAnonymous ? 'Oui' : 'Non' },
+                      { label: 'Anonymat', value: isAnonymous ? 'OUI' : 'NON' },
                       { label: 'Pièces jointes', value: files.length > 0 ? `${files.length} fichier(s)` : 'Aucune' },
                     ].map((row, i) => (
                       <div key={i} style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                        padding: '0.875rem', background: 'rgba(0,119,182,0.05)', borderRadius: '10px',
-                        border: '1px solid rgba(0,119,182,0.1)',
+                        padding: '1rem', background: '#f8f9fa', borderRadius: '4px',
+                        border: '1px solid #eee',
                       }}>
-                        <span style={{ fontSize: '0.8rem', color: '#8FA3BF', fontWeight: 500 }}>{row.label}</span>
-                        <span style={{ fontSize: '0.875rem', color: '#F0F4FF', textAlign: 'right', maxWidth: '60%' }}>{row.value || '—'}</span>
+                        <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 700, textTransform: 'uppercase' }}>{row.label}</span>
+                        <span style={{ fontSize: '0.9rem', color: '#111', textAlign: 'right', maxWidth: '60%', fontWeight: 500 }}>{row.value || '—'}</span>
                       </div>
                     ))}
                   </div>
