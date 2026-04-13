@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 import uuid
 import random
 import string
@@ -143,6 +145,60 @@ class Complaint(models.Model):
     def priority_hours(self):
         mapping = {'P1': 4, 'P2': 24, 'P3': 72, 'P4': 168, 'P5': 360}
         return mapping.get(self.priority, 168)
+
+    def perform_nlp_analysis(self):
+        """
+        Simulate NLP analysis to categorize and prioritize the complaint.
+        """
+        text = (self.title + " " + self.description).lower()
+
+        # 1. Category Detection (Simulated)
+        categories = Category.objects.filter(parent=None)
+        keywords = {
+            'soin': 'Qualité des soins',
+            'erreur': 'Qualité des soins',
+            'médicament': 'Disponibilité des médicaments',
+            'pharmacie': 'Disponibilité des médicaments',
+            'argent': 'Facturation et coûts',
+            'payé': 'Facturation et coûts',
+            'facture': 'Facturation et coûts',
+            'attente': 'Attente et délais',
+            'retard': 'Attente et délais',
+            'accueil': "Conditions d'accueil",
+            'propre': "Conditions d'accueil",
+            'insulte': 'Comportement du personnel',
+            'respect': 'Comportement du personnel',
+            'secret': 'Confidentialité',
+            'dossier': 'Confidentialité',
+            'refus': 'Accès aux soins',
+        }
+
+        found_category = None
+        for key, cat_name in keywords.items():
+            if key in text:
+                found_category = categories.filter(name__icontains=cat_name).first()
+                if found_category:
+                    break
+
+        if found_category:
+            self.category = found_category
+
+        # 2. Priority Detection (Simulated)
+        critical_keywords = ['mort', 'décès', 'urgence', 'sang', 'grave', 'critique', 'vie']
+        urgent_keywords = ['douleur', 'immédiat', 'rapidement', 'urgent']
+
+        if any(word in text for word in critical_keywords):
+            self.priority = ComplaintPriority.P1_CRITIQUE
+        elif any(word in text for word in urgent_keywords):
+            self.priority = ComplaintPriority.P2_URGENT
+
+        # 3. Set Deadline
+        self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
+
+        # 4. Update status if it was just DEPOSEE
+        if self.status == ComplaintStatus.DEPOSEE:
+            self.status = ComplaintStatus.CLASSIFIEE
+            self.classified_at = timezone.now()
 
 
 class Attachment(models.Model):

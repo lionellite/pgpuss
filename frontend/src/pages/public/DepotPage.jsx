@@ -16,6 +16,7 @@ export default function DepotPage() {
   const [establishments, setEstablishments] = useState([])
   const [regions, setRegions] = useState([])
   const [services, setServices] = useState([])
+  const [selectedRegion, setSelectedRegion] = useState('')
   const [selectedEst, setSelectedEst] = useState(null)
   const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
@@ -162,7 +163,8 @@ export default function DepotPage() {
                   </h2>
                   <div className="form-group">
                     <label className="form-label">Région</label>
-                    <select className="form-select" onChange={e => {
+                    <select className="form-select" value={selectedRegion} onChange={e => {
+                      setSelectedRegion(e.target.value)
                       setValue('establishment', '')
                       setValue('service', '')
                     }}>
@@ -174,7 +176,10 @@ export default function DepotPage() {
                     <label className="form-label">Établissement *</label>
                     <select className="form-select" {...register('establishment', { required: 'Requis' })}>
                       <option value="">Sélectionnez un établissement</option>
-                      {establishments.map(e => <option key={e.id} value={e.id}>{e.name} ({e.type_display})</option>)}
+                      {establishments
+                        .filter(e => !selectedRegion || e.region === selectedRegion)
+                        .map(e => <option key={e.id} value={e.id}>{e.name} ({e.type_display})</option>)
+                      }
                     </select>
                     {errors.establishment && <span className="form-error">{errors.establishment.message}</span>}
                   </div>
