@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { notificationsAPI } from '../../api'
-import { FiBell, FiCheckDouble, FiFileText } from 'react-icons/fi'
+import { FiBell, FiCheck, FiFileText } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -36,7 +36,7 @@ export default function NotificationsPage() {
           </div>
           {notifications.some(n => !n.is_read) && (
             <button className="btn btn-ghost btn-sm" onClick={markAllRead}>
-              <FiCheckDouble /> Tout marquer comme lu
+              <FiCheck /> Tout marquer comme lu
             </button>
           )}
         </div>

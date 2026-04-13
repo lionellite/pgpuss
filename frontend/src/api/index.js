@@ -56,6 +56,7 @@ export const complaintsAPI = {
   detail: (id) => api.get(`/complaints/${id}/`),
   track: (ticket) => api.get(`/complaints/track/${ticket}/`),
   assign: (id, data) => api.post(`/complaints/${id}/assign/`, data),
+  start: (id) => api.post(`/complaints/${id}/start/`),
   resolve: (id, data) => api.post(`/complaints/${id}/resolve/`, data),
   close: (id, data) => api.post(`/complaints/${id}/close/`, data),
   contest: (id, data) => api.post(`/complaints/${id}/contest/`, data),

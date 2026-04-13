@@ -12,6 +12,7 @@ urlpatterns = [
     path('track/<str:ticket_number>/', views.ComplaintTrackView.as_view(), name='complaint_track'),
     # Actions
     path('<uuid:pk>/assign/', views.ComplaintAssignView.as_view(), name='complaint_assign'),
+    path('<uuid:pk>/start/', views.ComplaintStartView.as_view(), name='complaint_start'),
     path('<uuid:pk>/resolve/', views.ComplaintResolveView.as_view(), name='complaint_resolve'),
     path('<uuid:pk>/close/', views.ComplaintCloseView.as_view(), name='complaint_close'),
     path('<uuid:pk>/contest/', views.ComplaintContestView.as_view(), name='complaint_contest'),

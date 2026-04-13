@@ -28,6 +28,7 @@ export default function PlainteDetailPage() {
   const doAction = async (action, payload) => {
     try {
       if (action === 'assign') await complaintsAPI.assign(id, payload)
+      else if (action === 'start') await complaintsAPI.start(id)
       else if (action === 'resolve') await complaintsAPI.resolve(id, payload)
       else if (action === 'close') await complaintsAPI.close(id, payload)
       else if (action === 'escalate') await complaintsAPI.escalate(id, payload)
@@ -91,6 +92,11 @@ export default function PlainteDetailPage() {
           {canAssign && (
             <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
               <FiUser /> Affecter
+            </button>
+          )}
+          {canResolve && (complaint.status === 'AFFECTEE' || complaint.status === 'CLASSIFIEE') && (
+            <button className="btn btn-primary btn-sm" onClick={() => doAction('start')}>
+              🚀 Démarrer l'instruction
             </button>
           )}
           {canResolve && complaint.status === 'EN_INSTRUCTION' && (

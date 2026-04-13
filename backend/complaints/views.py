@@ -144,6 +144,35 @@ class ComplaintAssignView(APIView):
         return Response({'message': 'Plainte affectée avec succès.'})
 
 
+class ComplaintStartView(APIView):
+    """Passer la plainte en cours d'instruction"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Vérification des permissions
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à démarrer l'instruction de cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
+        old_status = complaint.status
+        complaint.status = ComplaintStatus.EN_INSTRUCTION
+        complaint.save()
+
+        ComplaintHistory.objects.create(
+            complaint=complaint,
+            action='Début de l\'instruction',
+            old_status=old_status,
+            new_status=ComplaintStatus.EN_INSTRUCTION,
+            actor=request.user,
+        )
+        return Response({'message': 'Plainte en cours d\'instruction.'})
+
+
 class ComplaintResolveView(APIView):
     """Résoudre une plainte"""
     permission_classes = [permissions.IsAuthenticated]
