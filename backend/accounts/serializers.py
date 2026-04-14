@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             'establishment', 'establishment_name',
             'is_active', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'role', 'is_active', 'establishment']
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):

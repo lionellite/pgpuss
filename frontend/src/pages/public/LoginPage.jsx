@@ -34,10 +34,11 @@ export default function LoginPage() {
       <div className="glass-card" style={{ padding: '2rem' }}>
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="form-group">
-            <label className="form-label">Adresse email</label>
+            <label className="form-label" htmlFor="email">Adresse email</label>
             <div style={{ position: 'relative' }}>
-              <FiMail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <FiMail aria-hidden="true" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input
+                id="email"
                 className="form-input"
                 style={{ paddingLeft: '2.5rem' }}
                 type="email"
@@ -49,20 +50,26 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mot de passe</label>
+            <label className="form-label" htmlFor="password">Mot de passe</label>
             <div style={{ position: 'relative' }}>
-              <FiLock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <FiLock aria-hidden="true" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input
+                id="password"
                 className="form-input"
                 style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
                 type={showPwd ? 'text' : 'password'}
                 placeholder="Votre mot de passe"
                 {...register('password', { required: 'Mot de passe requis' })}
               />
-              <button type="button" onClick={() => setShowPwd(!showPwd)} style={{
-                position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', color: '#8FA3BF', cursor: 'pointer',
-              }}>
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                style={{
+                  position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: '#8FA3BF', cursor: 'pointer',
+                }}
+              >
                 {showPwd ? <FiEyeOff /> : <FiEye />}
               </button>
             </div>

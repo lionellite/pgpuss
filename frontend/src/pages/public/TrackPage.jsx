@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
-import { FiSearch, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
+import { FiSearch, FiClock, FiCheckCircle, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
+import toast from 'react-hot-toast'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
 
@@ -11,6 +12,7 @@ export default function TrackPage() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (searchParams.get('ticket')) handleSearch()
@@ -28,6 +30,13 @@ export default function TrackPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    toast.success('Numéro de ticket copié !')
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -74,8 +83,24 @@ export default function TrackPage() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>N° de ticket</div>
-                  <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
-                    {result.ticket_number}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
+                      {result.ticket_number}
+                    </div>
+                    <button
+                      onClick={() => handleCopy(result.ticket_number)}
+                      aria-label="Copier le numéro de ticket"
+                      style={{
+                        background: '#f1f1f1', border: '1px solid #ccc',
+                        color: '#333', borderRadius: '4px', padding: '0.35rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = '#eee'}
+                      onMouseOut={e => e.currentTarget.style.background = '#f1f1f1'}
+                    >
+                      {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                    </button>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

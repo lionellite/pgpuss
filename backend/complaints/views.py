@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from django.utils import timezone
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .models import (
@@ -68,7 +69,13 @@ class ComplaintListView(generics.ListAPIView):
         elif user.role == 'MEDIATEUR':
             qs = qs.filter(status=ComplaintStatus.CONTESTEE)
 
-        return qs.select_related('category', 'establishment', 'assigned_to')
+        # Optimization: Use select_related for foreign keys and annotate with attachment count
+        # to avoid N+1 queries when rendering the list.
+        return qs.select_related(
+            'category', 'establishment', 'assigned_to'
+        ).annotate(
+            attachments_count_annotated=Count('attachments')
+        )
 
 
 class ComplaintDetailView(generics.RetrieveUpdateAPIView):
