@@ -4,11 +4,21 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft } from 'react-icons/fi'
+import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
 
+const VOCAL_GUIDES = [
+  "Étape 1 : Choisissez l'établissement de santé concerné par votre plainte. Vous pouvez filtrer par région.",
+  "Étape 2 : Sélectionnez la catégorie qui correspond le mieux à votre problème. Cliquez sur une image.",
+  "Étape 3 : Donnez un titre et expliquez ce qui s'est passé en détail. Vous pouvez aussi ajouter des photos.",
+  "Étape 4 : Souhaitez-vous rester anonyme ou donner votre nom ? Vos coordonnées nous permettent de vous répondre.",
+  "Étape 5 : Vérifiez vos informations une dernière fois avant de valider l'envoi."
+]
+
 export default function DepotPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
@@ -21,6 +31,7 @@ export default function DepotPage() {
   const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
+  const [vocalEnabled, setVocalEnabled] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
@@ -54,6 +65,25 @@ export default function DepotPage() {
 
   const estId = watch('establishment')
   useEffect(() => { if (estId) setSelectedEst(estId) }, [estId])
+
+  // Accessibility: Vocal Guide
+  useEffect(() => {
+    if (vocalEnabled && !submitted) {
+      const msg = new SpeechSynthesisUtterance(VOCAL_GUIDES[step])
+      msg.lang = 'fr-FR'
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(msg)
+    }
+  }, [step, vocalEnabled, submitted])
+
+  const toggleVocal = () => {
+    if (!vocalEnabled) {
+      setVocalEnabled(true)
+    } else {
+      window.speechSynthesis.cancel()
+      setVocalEnabled(false)
+    }
+  }
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files)
@@ -133,11 +163,22 @@ export default function DepotPage() {
     <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
       <div className="page-container">
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ marginBottom: '3rem', textAlign: 'left' }}>
-            <h1 className="page-title">Déposer une plainte</h1>
-            <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-              Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.
-            </p>
+          <div style={{ marginBottom: '3rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 className="page-title">Déposer une plainte</h1>
+              <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.
+              </p>
+            </div>
+            <button
+              onClick={toggleVocal}
+              className={`btn ${vocalEnabled ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ borderRadius: '50px', padding: '0.5rem 1rem' }}
+              title={vocalEnabled ? "Désactiver l'aide vocale" : "Activer l'aide vocale"}
+            >
+              {vocalEnabled ? <FiVolume2 /> : <FiVolumeX />}
+              <span style={{ fontSize: '0.7rem', marginLeft: '0.3rem' }}>{t('vocal_help')}</span>
+            </button>
           </div>
 
           {/* Step indicator */}

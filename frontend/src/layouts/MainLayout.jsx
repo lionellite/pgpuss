@@ -3,12 +3,14 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   FiMenu, FiX, FiBell, FiUser, FiLogOut, FiLogIn,
-  FiHome, FiFileText, FiSearch, FiPlusCircle, FiChevronDown
+  FiHome, FiFileText, FiSearch, FiPlusCircle, FiChevronDown, FiGlobe
 } from 'react-icons/fi'
 import { notificationsAPI } from '../api'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function MainLayout() {
+  const { t, i18n } = useTranslation()
   const { user, logout, isAgent } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
@@ -31,10 +33,14 @@ export default function MainLayout() {
   }
 
   const navLinks = [
-    { to: '/', label: 'Accueil', icon: <FiHome /> },
-    { to: '/deposer', label: 'Déposer une plainte', icon: <FiPlusCircle /> },
-    { to: '/suivi', label: 'Suivi', icon: <FiSearch /> },
+    { to: '/', label: t('home'), icon: <FiHome /> },
+    { to: '/deposer', label: t('submit_complaint'), icon: <FiPlusCircle /> },
+    { to: '/suivi', label: t('track_complaint'), icon: <FiSearch /> },
   ]
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng)
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
@@ -86,6 +92,23 @@ export default function MainLayout() {
 
           {/* Right side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Language Selector */}
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', marginRight: '0.5rem' }}>
+              <FiGlobe style={{ color: '#666', fontSize: '0.9rem' }} />
+              <select
+                value={i18n.language}
+                onChange={(e) => changeLanguage(e.target.value)}
+                style={{
+                  border: 'none', background: 'none', fontSize: '0.75rem',
+                  fontWeight: 600, color: '#333', cursor: 'pointer', outline: 'none'
+                }}
+              >
+                <option value="fr">FR</option>
+                <option value="fon">FON</option>
+                <option value="yo">YOR</option>
+              </select>
+            </div>
+
             {user ? (
               <>
                 {/* Notifications bell */}

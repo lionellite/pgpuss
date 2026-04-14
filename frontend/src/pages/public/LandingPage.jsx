@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsAPI } from '../../api'
+import { useTranslation } from 'react-i18next'
 import { FiSearch, FiPlusCircle, FiShield, FiClock, FiBarChart2, FiCheckCircle, FiArrowRight, FiMap } from 'react-icons/fi'
 
 export default function LandingPage() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState(null)
   const [ticketInput, setTicketInput] = useState('')
 
@@ -40,24 +42,24 @@ export default function LandingPage() {
               lineHeight: 1.2, color: '#111', marginBottom: '1.5rem',
               fontWeight: 800
             }}>
-              Améliorons ensemble la qualité des services de santé au Bénin
+              {t('welcome')}
             </h1>
 
             <p style={{ fontSize: '1.1rem', color: '#555', maxWidth: 640, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-              Un mécanisme transparent pour exprimer vos préoccupations, suivre leur résolution et contribuer à l'amélioration du système sanitaire national.
+              {t('slogan')}
             </p>
 
             {/* Main Action Shortcuts */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
               <Link to="/deposer" className="glass-card" style={{ padding: '2rem', textAlign: 'left', textDecoration: 'none' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📝</div>
-                <h3 style={{ marginBottom: '0.5rem' }}>Déposer une plainte</h3>
+                <h3 style={{ marginBottom: '0.5rem' }}>{t('submit_complaint')}</h3>
                 <p style={{ fontSize: '0.875rem', color: '#666' }}>Signalez un dysfonctionnement ou une insatisfaction de manière identifiée ou anonyme.</p>
                 <div style={{ marginTop: '1.5rem', color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.8rem' }}>COMMENCER →</div>
               </Link>
               <Link to="/suivi" className="glass-card" style={{ padding: '2rem', textAlign: 'left', textDecoration: 'none' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
-                <h3 style={{ marginBottom: '0.5rem' }}>Suivre mon ticket</h3>
+                <h3 style={{ marginBottom: '0.5rem' }}>{t('track_complaint')}</h3>
                 <p style={{ fontSize: '0.875rem', color: '#666' }}>Consultez l'état d'avancement du traitement de votre dossier à l'aide de votre numéro unique.</p>
                 <div style={{ marginTop: '1.5rem', color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.8rem' }}>VÉRIFIER →</div>
               </Link>

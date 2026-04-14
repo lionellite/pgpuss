@@ -9,6 +9,7 @@ from .models import (
     Category, Complaint, Attachment, ComplaintHistory,
     Escalation, ComplaintStatus
 )
+from notifications.utils import notify_user
 from .serializers import (
     CategorySerializer, ComplaintCreateSerializer,
     ComplaintListSerializer, ComplaintDetailSerializer,
@@ -141,6 +142,13 @@ class ComplaintAssignView(APIView):
                 notes=notes
             )
 
+            notify_user(
+                agent,
+                "Nouvelle plainte affectée",
+                f"La plainte {complaint.ticket_number} vous a été affectée.",
+                complaint
+            )
+
         return Response({'message': 'Plainte affectée avec succès.'})
 
 
@@ -197,6 +205,14 @@ class ComplaintResolveView(APIView):
             actor=request.user,
             notes=complaint.resolution_notes
         )
+
+        if complaint.complainant:
+            notify_user(
+                complaint.complainant,
+                "Plainte résolue",
+                f"Votre plainte {complaint.ticket_number} a été marquée comme résolue.",
+                complaint
+            )
 
         return Response({'message': 'Plainte résolue avec succès.'})
 
