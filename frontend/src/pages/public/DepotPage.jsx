@@ -4,8 +4,12 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+<<<<<<< HEAD
 import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX, FiCopy, FiCheck } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
+=======
+import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiCopy, FiCheck } from 'react-icons/fi'
+>>>>>>> main
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
 
@@ -31,7 +35,10 @@ export default function DepotPage() {
   const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
+<<<<<<< HEAD
   const [vocalEnabled, setVocalEnabled] = useState(false)
+=======
+>>>>>>> main
   const [copied, setCopied] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
@@ -145,11 +152,19 @@ export default function DepotPage() {
             <div style={{
               padding: '1.5rem', background: 'rgba(6,214,160,0.05)',
               border: '2px solid rgba(6,214,160,0.3)', borderRadius: '16px', marginBottom: '2rem',
+<<<<<<< HEAD
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
             }}>
               <div style={{ fontSize: '0.85rem', color: '#8FA3BF' }}>Votre numéro de ticket</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2.5rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
+=======
+              position: 'relative',
+            }}>
+              <div style={{ fontSize: '0.8rem', color: '#8FA3BF', marginBottom: '0.25rem' }}>Votre numéro de ticket</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
+>>>>>>> main
                   {submitted.ticket_number}
                 </div>
                 <button
@@ -164,7 +179,11 @@ export default function DepotPage() {
                   onMouseOver={e => e.currentTarget.style.background = 'rgba(6,214,160,0.2)'}
                   onMouseOut={e => e.currentTarget.style.background = 'rgba(6,214,160,0.1)'}
                 >
+<<<<<<< HEAD
                   {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
+=======
+                  {copied ? <FiCheck /> : <FiCopy />}
+>>>>>>> main
                 </button>
               </div>
             </div>

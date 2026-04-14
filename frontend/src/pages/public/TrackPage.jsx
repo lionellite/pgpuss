@@ -149,7 +149,7 @@ export default function TrackPage() {
             <div className="alert alert-info">
               <FiClock style={{ flexShrink: 0 }} />
               <div>
-                <strong>Vous n'avez pas de numéro de ticket ?</strong> Si vous avez déposé une plainte avec un compte, 
+                <strong>Vous n'avez pas de numéro de ticket ?</strong> Si vous avez déposé une plainte avec un compte,
                 <a href="/connexion" style={{ color: '#00B4D8', marginLeft: '0.25rem' }}>connectez-vous</a> pour accéder directement à vos plaintes.
               </div>
             </div>

@@ -30,3 +30,5 @@ frontend/.eslintcache
 
 # AI/Assistant
 .gemini/
+__pycache__/
+*.pyc
