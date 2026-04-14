@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft } from 'react-icons/fi'
+import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiCopy, FiCheck } from 'react-icons/fi'
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
 
@@ -21,6 +21,7 @@ export default function DepotPage() {
   const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
+  const [copied, setCopied] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
@@ -58,6 +59,13 @@ export default function DepotPage() {
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files)
     setFiles(prev => [...prev, ...newFiles].slice(0, 5))
+  }
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    toast.success('Numéro de ticket copié !')
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const onSubmit = async (data) => {
@@ -107,10 +115,27 @@ export default function DepotPage() {
             <div style={{
               padding: '1.5rem', background: 'rgba(6,214,160,0.05)',
               border: '2px solid rgba(6,214,160,0.3)', borderRadius: '16px', marginBottom: '2rem',
+              position: 'relative',
             }}>
               <div style={{ fontSize: '0.8rem', color: '#8FA3BF', marginBottom: '0.25rem' }}>Votre numéro de ticket</div>
-              <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
-                {submitted.ticket_number}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
+                  {submitted.ticket_number}
+                </div>
+                <button
+                  onClick={() => handleCopy(submitted.ticket_number)}
+                  aria-label="Copier le numéro de ticket"
+                  style={{
+                    background: 'rgba(6,214,160,0.1)', border: '1px solid rgba(6,214,160,0.3)',
+                    color: '#06D6A0', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(6,214,160,0.2)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'rgba(6,214,160,0.1)'}
+                >
+                  {copied ? <FiCheck /> : <FiCopy />}
+                </button>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
