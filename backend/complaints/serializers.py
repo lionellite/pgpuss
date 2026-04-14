@@ -92,7 +92,8 @@ class ComplaintListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
-    attachment_count = serializers.IntegerField(source='attachments.count', read_only=True)
+    # Optimization: Use the annotated count if available, otherwise fallback to the subquery
+    attachment_count = serializers.IntegerField(source='attachments_count_annotated', read_only=True, default=0)
 
     class Meta:
         model = Complaint
