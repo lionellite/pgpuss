@@ -34,24 +34,24 @@ export default function PlaintesListPage() {
   const setFilter = (key, val) => { setFilters(f => ({ ...f, [key]: val })); setPage(1) }
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+    <div style={{ padding: '1rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
           <h1 className="page-title">Gestion des plaintes</h1>
-          <p className="page-subtitle">{count} plainte(s) trouvée(s)</p>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>{count} dossier(s) répertorié(s)</p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={load}>
-          <FiRefreshCw /> Actualiser
+        <button className="btn btn-secondary btn-sm" onClick={load}>
+          <FiRefreshCw /> ACTUALISER
         </button>
       </div>
 
       {/* Filters */}
-      <div className="glass-card" style={{ padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
             <input className="form-input" style={{ paddingLeft: '2.5rem' }}
-              placeholder="Ticket, titre..." value={filters.search}
+              placeholder="N° de ticket, titre..." value={filters.search}
               onChange={e => setFilter('search', e.target.value)} />
           </div>
           <select className="form-select" style={{ width: 'auto', minWidth: 160 }}
@@ -94,22 +94,22 @@ export default function PlaintesListPage() {
               </thead>
               <tbody>
                 {complaints.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#4A6080' }}>
-                    Aucune plainte trouvée
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                    Aucun dossier trouvé.
                   </td></tr>
                 ) : complaints.map(c => (
                   <tr key={c.id}>
-                    <td>
-                      <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '0.8rem', color: '#00B4D8', letterSpacing: '0.03em' }}>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#111' }}>
                         {c.ticket_number}
                       </span>
-                      {c.is_overdue && <span className="badge badge-escaladee" style={{ marginLeft: '0.3rem', fontSize: '0.65rem' }}>Retard</span>}
+                      {c.is_overdue && <span className="badge badge-escaladee" style={{ marginLeft: '0.5rem' }}>RETARD</span>}
                     </td>
                     <td style={{ maxWidth: 250 }}>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>{c.title}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#4A6080' }}>{c.category_name}</div>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: 600, color: '#111' }}>{c.title}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#666' }}>{c.category_name}</div>
                     </td>
-                    <td style={{ fontSize: '0.8rem', color: '#8FA3BF', maxWidth: 150 }}>
+                    <td style={{ fontSize: '0.8rem', color: '#444', maxWidth: 150 }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.establishment_name || '—'}
                       </div>

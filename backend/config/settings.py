@@ -5,6 +5,9 @@ Django settings for PGP-USS project.
 from pathlib import Path
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -68,21 +71,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database - SQLite (dev) / PostgreSQL (prod)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql' if os.environ.get('DB_NAME') else 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', ''),
     }
 }
-# Pour passer en PostgreSQL en production, décommentez ci-dessous:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.environ.get('DB_NAME', 'pgpuss_db'),
-#         'USER': os.environ.get('DB_USER', 'postgres'),
-#         'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
-#         'HOST': os.environ.get('DB_HOST', 'localhost'),
-#         'PORT': os.environ.get('DB_PORT', '5432'),
-#     }
-# }
 
 AUTH_USER_MODEL = 'accounts.User'
 
