@@ -75,4 +75,11 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
     """Détail d'un utilisateur (admin)"""
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['ADMIN_NATIONAL', 'AUDITEUR']:
+            return User.objects.all()
+        elif user.role in ['DIRECTEUR', 'GESTIONNAIRE_SERVICE']:
+            return User.objects.filter(establishment=user.establishment)
+        return User.objects.filter(id=user.id)
