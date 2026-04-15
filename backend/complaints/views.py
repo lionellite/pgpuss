@@ -58,11 +58,7 @@ class ComplaintListView(generics.ListAPIView):
 
         if user.role == 'USAGER':
             qs = qs.filter(complainant=user)
-        elif user.role == 'AGENT_RECEPTION':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'GESTIONNAIRE_SERVICE':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'DIRECTEUR':
+        elif user.role in ['AGENT_RECEPTION', 'GESTIONNAIRE_SERVICE', 'DIRECTEUR']:
             qs = qs.filter(establishment=user.establishment)
         elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
             pass  # All complaints
@@ -84,7 +80,19 @@ class ComplaintDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Complaint.objects.select_related(
+        user = self.request.user
+        qs = Complaint.objects.all()
+
+        if user.role == 'USAGER':
+            qs = qs.filter(complainant=user)
+        elif user.role in ['AGENT_RECEPTION', 'GESTIONNAIRE_SERVICE', 'DIRECTEUR']:
+            qs = qs.filter(establishment=user.establishment)
+        elif user.role == 'MEDIATEUR':
+            qs = qs.filter(status=ComplaintStatus.CONTESTEE)
+        elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
+            pass
+
+        return qs.select_related(
             'category', 'subcategory', 'establishment', 'service',
             'assigned_to', 'complainant'
         ).prefetch_related('attachments', 'history', 'escalations')
@@ -126,6 +134,21 @@ class ComplaintAssignView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check: Only admin or establishment managers can assign
+        if not (request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+            return Response(
+                {'error': "Vous n'êtes pas autorisé à affecter cette plainte."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # For non-national admin, check if complaint belongs to their establishment
+        if request.user.role != 'ADMIN_NATIONAL' and complaint.establishment != request.user.establishment:
+            return Response(
+                {'error': "Vous n'êtes pas autorisé à affecter une plainte d'un autre établissement."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -194,6 +217,15 @@ class ComplaintResolveView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à résoudre cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -230,6 +262,15 @@ class ComplaintCloseView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à clôturer cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
         notes = request.data.get('notes', '')
         old_status = complaint.status
 
@@ -255,6 +296,14 @@ class ComplaintContestView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check: Only the complainant can contest
+        if complaint.complainant != request.user:
+            return Response(
+                {'error': "Seul l'auteur de la plainte peut contester sa clôture."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         reason = request.data.get('reason', '')
 
         if complaint.status != ComplaintStatus.CLOTURE_PROVISOIRE:
@@ -285,6 +334,15 @@ class ComplaintEscalateView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à escalader cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
         reason = request.data.get('reason', '')
         to_user_id = request.data.get('to_user')
 
