@@ -28,7 +28,6 @@ export default function DepotPage() {
   const [services, setServices] = useState([])
   const [selectedRegion, setSelectedRegion] = useState('')
   const [selectedEst, setSelectedEst] = useState(null)
-  const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
   const [vocalEnabled, setVocalEnabled] = useState(false)
@@ -340,6 +339,7 @@ export default function DepotPage() {
                           }}>
                             <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>📎 {f.name}</span>
                             <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                              aria-label="Supprimer le fichier"
                               style={{ background: 'none', border: 'none', color: '#EF476F', cursor: 'pointer' }}>
                               <FiX />
                             </button>
