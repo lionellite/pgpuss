@@ -33,31 +33,27 @@ class DashboardView(APIView):
             ComplaintStatus.CONTESTEE
         ]
 
-        # Optimization: Combine multiple count queries and average calculation into a single aggregate call.
-        # This reduces database hits from 5+ queries to just 1 for these KPIs.
-        kpis = qs.aggregate(
+        # Optimization: Use conditional aggregation to fetch multiple counts in a single query
+        counts = qs.aggregate(
             total=Count('id'),
             open_count=Count('id', filter=Q(status__in=open_statuses)),
             resolved=Count('id', filter=Q(status=ComplaintStatus.RESOLUE)),
-            overdue=Count('id', filter=Q(is_overdue=True)),
-            avg_res_time=Avg(
-                ExpressionWrapper(
-                    F('resolved_at') - F('created_at'),
-                    output_field=fields.DurationField()
-                ),
-                filter=Q(resolved_at__isnull=False)
-            )
+            overdue=Count('id', filter=Q(is_overdue=True))
         )
+        total = counts['total']
+        open_count = counts['open_count']
+        resolved = counts['resolved']
+        overdue = counts['overdue']
 
-        total = kpis['total']
-        open_count = kpis['open_count']
-        resolved = kpis['resolved']
-        overdue = kpis['overdue']
-
-        # Average resolution time (in hours)
-        avg_resolution = 0
-        if kpis['avg_res_time']:
-            avg_resolution = round(kpis['avg_res_time'].total_seconds() / 3600, 1)
+        # Optimization: Calculate average resolution time in the database
+        avg_resolution_data = qs.filter(resolved_at__isnull=False).aggregate(
+            avg_time=Avg(F('resolved_at') - F('created_at'))
+        )
+        avg_resolution_td = avg_resolution_data['avg_time']
+        if avg_resolution_td:
+            avg_resolution = round(avg_resolution_td.total_seconds() / 3600, 1)
+        else:
+            avg_resolution = 0
 
         # Satisfaction average
         satisfaction_avg = SatisfactionSurvey.objects.aggregate(avg=Avg('rating'))['avg'] or 0
@@ -98,12 +94,9 @@ class DashboardView(APIView):
             .order_by('-count')[:10]
         )
 
-        # Recent complaints
-        # Optimization: Use select_related to avoid N+1 queries when serializing the recent complaints list.
-        recent = ComplaintListSerializer(
-            qs.select_related('category', 'establishment', 'assigned_to')[:5],
-            many=True
-        ).data
+        # Optimization: Use select_related to avoid N+1 queries in Recent complaints
+        recent_qs = qs.select_related('category', 'establishment', 'assigned_to')[:5]
+        recent = ComplaintListSerializer(recent_qs, many=True).data
 
         return Response({
             'total_complaints': total,
