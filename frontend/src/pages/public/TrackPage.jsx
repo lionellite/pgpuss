@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
-import { FiSearch, FiClock, FiCheckCircle, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
+import { FiSearch, FiClock, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
@@ -50,12 +50,13 @@ export default function TrackPage() {
             </p>
           </div>
 
-          {/* Search form */}
           <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
             <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem' }}>
               <div style={{ flex: 1, position: 'relative' }}>
-                <FiSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                <label htmlFor="ticket-input" className="sr-only">Numéro de ticket</label>
+                <FiSearch aria-hidden="true" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
                 <input
+                  id="ticket-input"
                   className="form-input"
                   style={{ paddingLeft: '2.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                   value={ticket}
@@ -69,15 +70,13 @@ export default function TrackPage() {
             </form>
           </div>
 
-          {/* Error */}
           {error && (
-            <div className="alert alert-danger" style={{ marginBottom: '1.5rem' }}>
-              <FiAlertCircle style={{ flexShrink: 0 }} />
+            <div className="alert alert-danger" role="alert" style={{ marginBottom: '1.5rem' }}>
+              <FiAlertCircle style={{ flexShrink: 0 }} aria-hidden="true" />
               {error}
             </div>
           )}
 
-          {/* Result */}
           {result && (
             <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -96,10 +95,8 @@ export default function TrackPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.2s',
                       }}
-                      onMouseOver={e => e.currentTarget.style.background = '#eee'}
-                      onMouseOut={e => e.currentTarget.style.background = '#f1f1f1'}
                     >
-                      {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                      {copied ? <FiCheck size={14} aria-hidden="true" /> : <FiCopy size={14} aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
@@ -122,10 +119,9 @@ export default function TrackPage() {
                 </div>
               </div>
 
-              {/* Timeline */}
               {result.timeline?.length > 0 && (
                 <div>
-                  <h4 style={{ fontWeight: 600, fontSize: '0.875rem', color: '#8FA3BF', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <h4 style={{ fontWeight: 600, fontSize: '0.875rem', color: '#666', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Historique du traitement
                   </h4>
                   <div className="timeline">
@@ -144,13 +140,12 @@ export default function TrackPage() {
             </div>
           )}
 
-          {/* Info box */}
           {!result && !error && (
             <div className="alert alert-info">
-              <FiClock style={{ flexShrink: 0 }} />
+              <FiClock style={{ flexShrink: 0 }} aria-hidden="true" />
               <div>
                 <strong>Vous n'avez pas de numéro de ticket ?</strong> Si vous avez déposé une plainte avec un compte,
-                <a href="/connexion" style={{ color: '#00B4D8', marginLeft: '0.25rem' }}>connectez-vous</a> pour accéder directement à vos plaintes.
+                <a href="/connexion" style={{ color: 'var(--color-primary)', marginLeft: '0.25rem' }}>connectez-vous</a> pour accéder directement à vos plaintes.
               </div>
             </div>
           )}
