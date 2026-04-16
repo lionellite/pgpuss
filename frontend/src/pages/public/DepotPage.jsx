@@ -4,12 +4,8 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-<<<<<<< HEAD
 import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX, FiCopy, FiCheck } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
-=======
-import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiCopy, FiCheck } from 'react-icons/fi'
->>>>>>> main
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
 
@@ -35,10 +31,7 @@ export default function DepotPage() {
   const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
-<<<<<<< HEAD
   const [vocalEnabled, setVocalEnabled] = useState(false)
-=======
->>>>>>> main
   const [copied, setCopied] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
@@ -152,19 +145,11 @@ export default function DepotPage() {
             <div style={{
               padding: '1.5rem', background: 'rgba(6,214,160,0.05)',
               border: '2px solid rgba(6,214,160,0.3)', borderRadius: '16px', marginBottom: '2rem',
-<<<<<<< HEAD
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
             }}>
               <div style={{ fontSize: '0.85rem', color: '#8FA3BF' }}>Votre numéro de ticket</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2.5rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
-=======
-              position: 'relative',
-            }}>
-              <div style={{ fontSize: '0.8rem', color: '#8FA3BF', marginBottom: '0.25rem' }}>Votre numéro de ticket</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
->>>>>>> main
                   {submitted.ticket_number}
                 </div>
                 <button
@@ -179,11 +164,7 @@ export default function DepotPage() {
                   onMouseOver={e => e.currentTarget.style.background = 'rgba(6,214,160,0.2)'}
                   onMouseOut={e => e.currentTarget.style.background = 'rgba(6,214,160,0.1)'}
                 >
-<<<<<<< HEAD
                   {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
-=======
-                  {copied ? <FiCheck /> : <FiCopy />}
->>>>>>> main
                 </button>
               </div>
             </div>
@@ -226,7 +207,7 @@ export default function DepotPage() {
           </div>
 
           {/* Step indicator */}
-          <div className="steps" style={{ marginBottom: '3rem' }}>
+          <nav aria-label="Étapes de la plainte" className="steps" style={{ marginBottom: '3rem' }}>
             {STEPS.map((s, i) => (
               <React.Fragment key={i}>
                 <div className="step">
@@ -237,7 +218,7 @@ export default function DepotPage() {
                 {i < STEPS.length - 1 && <div className={`step-line ${i < step ? 'done' : ''}`} />}
               </React.Fragment>
             ))}
-          </div>
+          </nav>
 
           <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -249,8 +230,8 @@ export default function DepotPage() {
                     1. Établissement concerné
                   </h2>
                   <div className="form-group">
-                    <label className="form-label">Région</label>
-                    <select className="form-select" value={selectedRegion} onChange={e => {
+                    <label className="form-label" htmlFor="region-select">Région</label>
+                    <select id="region-select" className="form-select" value={selectedRegion} onChange={e => {
                       setSelectedRegion(e.target.value)
                       setValue('establishment', '')
                       setValue('service', '')
@@ -260,8 +241,8 @@ export default function DepotPage() {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Établissement *</label>
-                    <select className="form-select" {...register('establishment', { required: 'Requis' })}>
+                    <label className="form-label" htmlFor="est-select">Établissement *</label>
+                    <select id="est-select" className="form-select" {...register('establishment', { required: 'Requis' })}>
                       <option value="">Sélectionnez un établissement</option>
                       {establishments
                         .filter(e => !selectedRegion || e.region === selectedRegion)
@@ -324,7 +305,7 @@ export default function DepotPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description de la plainte</h2>
                   <div className="form-group">
-                    <label className="form-label">Titre de la plainte *</label>
+                    <label className="form-label" htmlFor="title-input">Titre de la plainte *</label>
                     <input className="form-input" placeholder="Résumez votre plainte en une phrase"
                       {...register('title', { required: 'Titre requis', minLength: { value: 10, message: 'Min. 10 caractères' } })} />
                     {errors.title && <span className="form-error">{errors.title.message}</span>}
@@ -344,7 +325,7 @@ export default function DepotPage() {
                       cursor: 'pointer', background: 'rgba(0,119,182,0.03)',
                       transition: 'all 0.2s',
                     }}>
-                      <FiUpload style={{ fontSize: '1.5rem', color: '#8FA3BF' }} />
+                      <FiUpload style={{ fontSize: '1.5rem', color: '#8FA3BF' }} aria-hidden="true" />
                       <span style={{ fontSize: '0.875rem', color: '#8FA3BF' }}>Cliquez pour ajouter des fichiers</span>
                       <span style={{ fontSize: '0.75rem', color: '#4A6080' }}>PDF, images — Max 10 MB par fichier</span>
                       <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />

@@ -225,3 +225,17 @@ button, input, select, textarea {
 @media (max-width: 768px) {
   .page-title { font-size: 1.25rem; }
 }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
+.steps { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.step { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+.step-circle {
+  width: 32px; height: 32px; border-radius: 50%; background: #eee; border: 2px solid #ddd;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #999;
+}
+.step-circle.active { background: var(--color-secondary); border-color: var(--color-secondary); color: #111; }
+.step-circle.done { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.step-line { flex: 1; height: 2px; background: #ddd; margin: 0 10px; }
+.step-line.done { background: var(--color-primary); }
