@@ -28,7 +28,6 @@ export default function DepotPage() {
   const [services, setServices] = useState([])
   const [selectedRegion, setSelectedRegion] = useState('')
   const [selectedEst, setSelectedEst] = useState(null)
-  const [selectedCat, setSelectedCat] = useState(null)
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
   const [vocalEnabled, setVocalEnabled] = useState(false)
@@ -207,18 +206,23 @@ export default function DepotPage() {
           </div>
 
           {/* Step indicator */}
-          <div className="steps" style={{ marginBottom: '3rem' }}>
-            {STEPS.map((s, i) => (
-              <React.Fragment key={i}>
-                <div className="step">
-                  <div className={`step-circle ${i < step ? 'done' : i === step ? 'active' : ''}`}>
-                    {i < step ? '✓' : i + 1}
+          <nav aria-label="Progression du formulaire" style={{ marginBottom: '3rem' }}>
+            <div className="steps">
+              {STEPS.map((s, i) => (
+                <React.Fragment key={i}>
+                  <div className="step" aria-current={i === step ? 'step' : undefined}>
+                    <div
+                      className={`step-circle ${i < step ? 'done' : i === step ? 'active' : ''}`}
+                      aria-label={`${t('step')} ${i + 1}: ${s}${i < step ? ' (terminée)' : i === step ? ' (en cours)' : ''}`}
+                    >
+                      {i < step ? '✓' : i + 1}
+                    </div>
                   </div>
-                </div>
-                {i < STEPS.length - 1 && <div className={`step-line ${i < step ? 'done' : ''}`} />}
-              </React.Fragment>
-            ))}
-          </div>
+                  {i < STEPS.length - 1 && <div className={`step-line ${i < step ? 'done' : ''}`} aria-hidden="true" />}
+                </React.Fragment>
+              ))}
+            </div>
+          </nav>
 
           <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -340,6 +344,7 @@ export default function DepotPage() {
                           }}>
                             <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>📎 {f.name}</span>
                             <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                              aria-label="Supprimer le fichier"
                               style={{ background: 'none', border: 'none', color: '#EF476F', cursor: 'pointer' }}>
                               <FiX />
                             </button>

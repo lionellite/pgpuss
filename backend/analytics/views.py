@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, Avg, Q, F
+from django.db.models import Count, Avg, Q, F, ExpressionWrapper, fields
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import timedelta
@@ -31,9 +31,6 @@ class DashboardView(APIView):
             ComplaintStatus.CLASSIFIEE, ComplaintStatus.AFFECTEE,
             ComplaintStatus.EN_INSTRUCTION, ComplaintStatus.ESCALADEE,
             ComplaintStatus.CONTESTEE
-        ]
-        closed_statuses = [
-            ComplaintStatus.CLOTURE_PROVISOIRE, ComplaintStatus.CLOTURE_DEFINITIVE
         ]
 
         # Optimization: Use conditional aggregation to fetch multiple counts in a single query
