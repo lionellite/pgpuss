@@ -21,6 +21,19 @@ from .serializers import (
 User = get_user_model()
 
 
+def get_complaint_queryset(user):
+    """Filtre les plaintes selon le rôle de l'utilisateur (Sécurité)"""
+    if user.role == 'USAGER':
+        return Complaint.objects.filter(complainant=user)
+    if user.role in ['AGENT_RECEPTION', 'GESTIONNAIRE_SERVICE', 'DIRECTEUR']:
+        return Complaint.objects.filter(establishment=user.establishment)
+    if user.role == 'MEDIATEUR':
+        return Complaint.objects.filter(status=ComplaintStatus.CONTESTEE)
+    if user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
+        return Complaint.objects.all()
+    return Complaint.objects.none()
+
+
 class CategoryListView(generics.ListAPIView):
     """Liste des catégories de plaintes"""
     queryset = Category.objects.filter(parent=None)
@@ -53,24 +66,8 @@ class ComplaintListView(generics.ListAPIView):
     ordering_fields = ['created_at', 'updated_at', 'priority', 'status']
 
     def get_queryset(self):
-        user = self.request.user
-        qs = Complaint.objects.all()
-
-        if user.role == 'USAGER':
-            qs = qs.filter(complainant=user)
-        elif user.role == 'AGENT_RECEPTION':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'GESTIONNAIRE_SERVICE':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'DIRECTEUR':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
-            pass  # All complaints
-        elif user.role == 'MEDIATEUR':
-            qs = qs.filter(status=ComplaintStatus.CONTESTEE)
-
+        qs = get_complaint_queryset(self.request.user)
         # Optimization: Use select_related for foreign keys and annotate with attachment count
-        # to avoid N+1 queries when rendering the list.
         return qs.select_related(
             'category', 'establishment', 'assigned_to'
         ).annotate(
@@ -79,12 +76,12 @@ class ComplaintListView(generics.ListAPIView):
 
 
 class ComplaintDetailView(generics.RetrieveUpdateAPIView):
-    """Détail d'une plainte"""
+    """Détail d'une plainte (IDOR protégé)"""
     serializer_class = ComplaintDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Complaint.objects.select_related(
+        return get_complaint_queryset(self.request.user).select_related(
             'category', 'subcategory', 'establishment', 'service',
             'assigned_to', 'complainant'
         ).prefetch_related('attachments', 'history', 'escalations')
@@ -121,11 +118,11 @@ class ComplaintTrackView(APIView):
 
 
 class ComplaintAssignView(APIView):
-    """Affecter une plainte à un agent"""
+    """Affecter une plainte à un agent (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -160,11 +157,11 @@ class ComplaintAssignView(APIView):
 
 
 class ComplaintStartView(APIView):
-    """Passer la plainte en cours d'instruction"""
+    """Passer la plainte en cours d'instruction (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
 
         # Vérification des permissions
         if not (request.user == complaint.assigned_to or
@@ -189,11 +186,11 @@ class ComplaintStartView(APIView):
 
 
 class ComplaintResolveView(APIView):
-    """Résoudre une plainte"""
+    """Résoudre une plainte (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -225,11 +222,11 @@ class ComplaintResolveView(APIView):
 
 
 class ComplaintCloseView(APIView):
-    """Clôturer une plainte"""
+    """Clôturer une plainte (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
         notes = request.data.get('notes', '')
         old_status = complaint.status
 
@@ -250,11 +247,11 @@ class ComplaintCloseView(APIView):
 
 
 class ComplaintContestView(APIView):
-    """Contester la clôture d'une plainte"""
+    """Contester la clôture d'une plainte (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
         reason = request.data.get('reason', '')
 
         if complaint.status != ComplaintStatus.CLOTURE_PROVISOIRE:
@@ -280,11 +277,11 @@ class ComplaintContestView(APIView):
 
 
 class ComplaintEscalateView(APIView):
-    """Escalader une plainte"""
+    """Escalader une plainte (IDOR protégé)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
+        complaint = get_object_or_404(get_complaint_queryset(request.user), pk=pk)
         reason = request.data.get('reason', '')
         to_user_id = request.data.get('to_user')
 
@@ -313,22 +310,24 @@ class ComplaintEscalateView(APIView):
 
 
 class ComplaintAttachmentView(generics.ListCreateAPIView):
-    """Pièces jointes d'une plainte"""
+    """Pièces jointes d'une plainte (IDOR protégé)"""
     serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Attachment.objects.filter(complaint_id=self.kwargs['pk'])
+        complaint = get_object_or_404(get_complaint_queryset(self.request.user), pk=self.kwargs['pk'])
+        return Attachment.objects.filter(complaint=complaint)
 
     def perform_create(self, serializer):
-        complaint = get_object_or_404(Complaint, pk=self.kwargs['pk'])
+        complaint = get_object_or_404(get_complaint_queryset(self.request.user), pk=self.kwargs['pk'])
         serializer.save(complaint=complaint)
 
 
 class ComplaintHistoryView(generics.ListAPIView):
-    """Historique d'une plainte"""
+    """Historique d'une plainte (IDOR protégé)"""
     serializer_class = ComplaintHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return ComplaintHistory.objects.filter(complaint_id=self.kwargs['pk'])
+        complaint = get_object_or_404(get_complaint_queryset(self.request.user), pk=self.kwargs['pk'])
+        return ComplaintHistory.objects.filter(complaint=complaint)
