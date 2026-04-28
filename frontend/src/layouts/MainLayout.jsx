@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -6,7 +6,6 @@ import {
   FiHome, FiFileText, FiSearch, FiPlusCircle, FiChevronDown, FiGlobe
 } from 'react-icons/fi'
 import { notificationsAPI } from '../api'
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export default function MainLayout() {
@@ -33,9 +32,9 @@ export default function MainLayout() {
   }
 
   const navLinks = [
-    { to: '/', label: t('home'), icon: <FiHome /> },
-    { to: '/deposer', label: t('submit_complaint'), icon: <FiPlusCircle /> },
-    { to: '/suivi', label: t('track_complaint'), icon: <FiSearch /> },
+    { to: '/', label: t('home') },
+    { to: '/deposer', label: t('submit_complaint') },
+    { to: '/suivi', label: t('track_complaint') },
   ]
 
   const changeLanguage = (lng) => {
@@ -43,20 +42,19 @@ export default function MainLayout() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
       {/* Top Banner (Bénin Flag Colors) */}
       <div style={{ height: 4, display: 'flex' }}>
-        <div style={{ flex: 1, background: '#008751' }} />
-        <div style={{ flex: 1, background: '#fcd116' }} />
-        <div style={{ flex: 1, background: '#e8112d' }} />
+        <div style={{ flex: 1, background: 'var(--color-primary-bj)' }} />
+        <div style={{ flex: 1, background: 'var(--color-secondary-bj)' }} />
+        <div style={{ flex: 1, background: 'var(--color-accent-bj)' }} />
       </div>
 
       {/* Navbar */}
       <nav style={{
         background: '#ffffff',
-        borderBottom: '1px solid #eee',
+        borderBottom: '1px solid var(--surface-container)',
         position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
       }}>
         <div className="page-container" style={{
           display: 'flex', alignItems: 'center',
@@ -66,41 +64,44 @@ export default function MainLayout() {
           <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <img src="https://gouv.bj/assets/img/logo-benin.png" alt="République du Bénin" style={{ height: 44 }}
                  onError={(e) => { e.target.style.display = 'none' }} />
-            <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111', letterSpacing: '-0.02em' }}>PGP-USS</div>
-              <div style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', fontWeight: 600 }}>Santé Bénin</div>
+            <div style={{ borderLeft: '1px solid var(--surface-container)', paddingLeft: '1rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)', letterSpacing: '-0.02em', fontFamily: 'Public Sans' }}>PGP-USS</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--outline)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Santé Bénin</div>
             </div>
           </Link>
 
-          {/* Desktop Nav - Max 7 items */}
+          {/* Desktop Nav - Max 7 items as per standards */}
           <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {navLinks.map(link => (
               <Link key={link.to} to={link.to} style={{
-                padding: '0.5rem 1rem', fontSize: '0.9rem',
-                fontWeight: 600, color: location.pathname === link.to ? 'var(--color-primary)' : '#444',
-                borderBottom: location.pathname === link.to ? '2px solid var(--color-primary)' : '2px solid transparent',
+                padding: '0.5rem 1rem', fontSize: '0.875rem',
+                fontWeight: 700, color: location.pathname === link.to ? 'var(--primary)' : 'var(--on-surface-variant)',
+                borderBottom: location.pathname === link.to ? '3px solid var(--primary)' : '3px solid transparent',
                 textDecoration: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '0.025em'
               }}>{link.label}</Link>
             ))}
             {isAgent && (
               <Link to="/dashboard" style={{
-                padding: '0.5rem 1rem', fontSize: '0.9rem',
-                fontWeight: 600, color: '#444', textDecoration: 'none',
+                padding: '0.5rem 1rem', fontSize: '0.875rem',
+                fontWeight: 700, color: 'var(--on-surface-variant)', textDecoration: 'none',
+                textTransform: 'uppercase', letterSpacing: '0.025em'
               }}>Dashboard</Link>
             )}
           </div>
 
           {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {/* Language Selector */}
-            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', marginRight: '0.5rem' }}>
-              <FiGlobe style={{ color: '#666', fontSize: '0.9rem' }} />
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', background: 'var(--surface-container-low)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
+              <FiGlobe style={{ color: 'var(--outline)', fontSize: '0.9rem' }} />
               <select
                 value={i18n.language}
                 onChange={(e) => changeLanguage(e.target.value)}
                 style={{
-                  border: 'none', background: 'none', fontSize: '0.75rem',
-                  fontWeight: 600, color: '#333', cursor: 'pointer', outline: 'none'
+                  border: 'none', background: 'none', fontSize: '0.7rem',
+                  fontWeight: 800, color: 'var(--on-surface)', cursor: 'pointer', outline: 'none'
                 }}
               >
                 <option value="fr">FR</option>
@@ -110,38 +111,33 @@ export default function MainLayout() {
             </div>
 
             {user ? (
-              <>
-                {/* Notifications bell */}
-                <Link to="/espace/notifications" style={{ position: 'relative', color: '#8FA3BF', fontSize: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Link to="/espace/notifications" style={{ position: 'relative', color: 'var(--outline)', fontSize: '1.25rem', display: 'flex' }}>
                   <FiBell />
                   {unread > 0 && (
                     <span style={{
-                      position: 'absolute', top: -6, right: -6,
-                      background: '#EF476F', color: 'white',
-                      borderRadius: '50%', width: 18, height: 18,
-                      fontSize: '0.65rem', fontWeight: 700,
+                      position: 'absolute', top: -4, right: -4,
+                      background: 'var(--error)', color: 'white',
+                      borderRadius: '50%', width: 16, height: 16,
+                      fontSize: '0.6rem', fontWeight: 800,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>{unread > 9 ? '9+' : unread}</span>
                   )}
                 </Link>
-                {/* User dropdown */}
                 <div style={{ position: 'relative' }}>
-                  <button onClick={() => setDropOpen(!dropOpen)} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-                    borderRadius: '10px', padding: '0.4rem 0.75rem',
-                    color: '#F0F4FF', cursor: 'pointer', fontSize: '0.875rem',
+                  <button onClick={() => setDropOpen(!dropOpen)} className="btn btn-ghost" style={{
+                    padding: '0.4rem 0.8rem', textTransform: 'none', fontSize: '0.8rem', borderRadius: '50px'
                   }}>
-                    <FiUser style={{ color: '#00B4D8' }} />
+                    <FiUser style={{ color: 'var(--primary)' }} />
                     <span className="hide-mobile">{user.first_name}</span>
-                    <FiChevronDown style={{ fontSize: '0.75rem', color: '#8FA3BF' }} />
+                    <FiChevronDown />
                   </button>
                   {dropOpen && (
                     <div style={{
-                      position: 'absolute', right: 0, top: '110%',
-                      background: '#0F1E35', border: '1px solid rgba(0,119,182,0.2)',
-                      borderRadius: '12px', padding: '0.5rem', minWidth: 180,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200,
+                      position: 'absolute', right: 0, top: '120%',
+                      background: '#ffffff', border: '1px solid var(--outline-variant)',
+                      borderRadius: '8px', padding: '0.5rem', minWidth: 200,
+                      boxShadow: 'var(--shadow-lg)', zIndex: 200,
                     }}>
                       <Link to="/espace/plaintes" onClick={() => setDropOpen(false)} style={dropItemStyle}>
                         <FiFileText /> Mes plaintes
@@ -149,27 +145,21 @@ export default function MainLayout() {
                       <Link to="/espace/profil" onClick={() => setDropOpen(false)} style={dropItemStyle}>
                         <FiUser /> Mon profil
                       </Link>
-                      {isAgent && (
-                        <Link to="/dashboard" onClick={() => setDropOpen(false)} style={dropItemStyle}>
-                          <FiHome /> Dashboard
-                        </Link>
-                      )}
-                      <hr style={{ border: 'none', borderTop: '1px solid rgba(0,119,182,0.1)', margin: '0.25rem 0' }} />
-                      <button onClick={handleLogout} style={{ ...dropItemStyle, width: '100%', background: 'none', cursor: 'pointer', color: '#EF476F', border: 'none', textAlign: 'left' }}>
+                      <hr style={{ border: 'none', borderTop: '1px solid var(--surface-container)', margin: '0.5rem 0' }} />
+                      <button onClick={handleLogout} style={{ ...dropItemStyle, width: '100%', background: 'none', cursor: 'pointer', color: 'var(--error)', border: 'none', textAlign: 'left' }}>
                         <FiLogOut /> Déconnexion
                       </button>
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <Link to="/connexion" className="btn btn-ghost btn-sm"><FiLogIn /> Connexion</Link>
-                <Link to="/inscription" className="btn btn-primary btn-sm">S'inscrire</Link>
-              </>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Link to="/connexion" className="btn btn-ghost" style={{ fontSize: '0.75rem' }}>Connexion</Link>
+                <Link to="/inscription" className="btn btn-primary" style={{ fontSize: '0.75rem' }}>S'inscrire</Link>
+              </div>
             )}
-            {/* Mobile menu */}
-            <button className="hide-desktop" style={{ background: 'none', border: 'none', color: '#8FA3BF', fontSize: '1.5rem', cursor: 'pointer' }}
+            <button className="hide-desktop" style={{ background: 'none', border: 'none', color: 'var(--outline)', fontSize: '1.5rem', cursor: 'pointer' }}
               onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <FiX /> : <FiMenu />}
             </button>
@@ -178,11 +168,11 @@ export default function MainLayout() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div style={{ background: '#081220', borderTop: '1px solid rgba(0,119,182,0.1)', padding: '1rem' }}>
+          <div style={{ background: '#fff', borderTop: '1px solid var(--surface-container)', padding: '1rem' }}>
             {navLinks.map(link => (
               <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', color: '#F0F4FF', borderRadius: '8px', marginBottom: '0.25rem', textDecoration: 'none' }}>
-                {link.icon}{link.label}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem', color: 'var(--on-surface)', borderRadius: '8px', marginBottom: '0.25rem', textDecoration: 'none', fontWeight: 700 }}>
+                {link.label}
               </Link>
             ))}
           </div>
@@ -194,33 +184,44 @@ export default function MainLayout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
+      {/* Footer - Sobere as per standards */}
       <footer style={{
-        background: '#f8f9fa', borderTop: '1px solid #eee',
-        padding: '3rem 0', marginTop: 'auto',
+        background: '#ffffff', borderTop: '1px solid var(--surface-container)',
+        padding: '4rem 0', marginTop: 'auto',
       }}>
         <div className="page-container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>À propos</h4>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Plateforme officielle de gestion des plaintes des services de santé au Bénin.</p>
+               <h4 style={{ fontSize: '0.9rem', fontWeight: 900, marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PGP-USS Bénin</h4>
+               <p style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)', lineHeight: 1.6 }}>
+                 Service officiel de recueil et de traitement des plaintes pour l'amélioration continue des services de santé en République du Bénin.
+               </p>
             </div>
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Liens utiles</h4>
-              <ul style={{ listStyle: 'none', fontSize: '0.8rem', color: '#666' }}>
-                <li><Link to="/deposer">Déposer une plainte</Link></li>
-                <li><Link to="/suivi">Suivre une plainte</Link></li>
-                <li><a href="https://sante.gouv.bj" target="_blank" rel="noreferrer">Ministère de la Santé</a></li>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 900, marginBottom: '1.25rem', color: 'var(--outline)', textTransform: 'uppercase' }}>Navigation</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <li><Link to="/deposer" style={footerLinkStyle}>Déposer une plainte</Link></li>
+                <li><Link to="/suivi" style={footerLinkStyle}>Suivre mon dossier</Link></li>
+                <li><Link to="/connexion" style={footerLinkStyle}>Espace citoyen</Link></li>
               </ul>
             </div>
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Contact</h4>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Numéro vert : 136</p>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Email : contact@sante.gouv.bj</p>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 900, marginBottom: '1.25rem', color: 'var(--outline)', textTransform: 'uppercase' }}>Contact & Support</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <li style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>Numéro vert : <strong>136</strong></li>
+                <li style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>Email : contact@sante.gouv.bj</li>
+                <li><a href="https://sante.gouv.bj" target="_blank" rel="noreferrer" style={footerLinkStyle}>Ministère de la Santé</a></li>
+              </ul>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid #ddd', paddingTop: '1.5rem', textAlign: 'center', color: '#777', fontSize: '0.75rem' }}>
-            <p>© 2025 République du Bénin — Ministère de la Santé. Tous droits réservés.</p>
+          <div style={{ borderTop: '1px solid var(--surface-container)', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--outline)', textTransform: 'uppercase' }}>
+              © 2024 République du Bénin — Ministère de la Santé
+            </p>
+            <div style={{ display: 'flex', gap: '1.5rem' }}>
+               <Link to="#" style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--outline)', textTransform: 'uppercase' }}>Mentions Légales</Link>
+               <Link to="#" style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--outline)', textTransform: 'uppercase' }}>Confidentialité</Link>
+            </div>
           </div>
         </div>
       </footer>
@@ -229,8 +230,15 @@ export default function MainLayout() {
 }
 
 const dropItemStyle = {
-  display: 'flex', alignItems: 'center', gap: '0.5rem',
-  padding: '0.5rem 0.75rem', borderRadius: '8px',
-  fontSize: '0.875rem', color: '#F0F4FF', textDecoration: 'none',
-  transition: 'background 0.15s', marginBottom: '0.1rem',
+  display: 'flex', alignItems: 'center', gap: '0.75rem',
+  padding: '0.75rem 1rem', borderRadius: '4px',
+  fontSize: '0.875rem', color: 'var(--on-surface-variant)', textDecoration: 'none',
+  transition: 'background 0.2s', fontWeight: 600
+}
+
+const footerLinkStyle = {
+  fontSize: '0.875rem',
+  color: 'var(--on-surface)',
+  fontWeight: 600,
+  textDecoration: 'none'
 }

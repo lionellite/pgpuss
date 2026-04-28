@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
-import { FiSearch, FiClock, FiCheckCircle, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
@@ -15,7 +14,9 @@ export default function TrackPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('ticket')) handleSearch()
+    if (searchParams.get('ticket')) {
+      handleSearch()
+    }
   }, [])
 
   const handleSearch = async (e) => {
@@ -40,121 +41,153 @@ export default function TrackPage() {
   }
 
   return (
-    <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
-      <div className="page-container">
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
-          <div style={{ textAlign: 'left', marginBottom: '3rem' }}>
-            <h1 className="page-title">Suivre ma plainte</h1>
-            <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-              Entrez le numéro de ticket unique qui vous a été attribué lors de la soumission de votre plainte.
-            </p>
-          </div>
+    <div className="py-20 min-h-[80vh] bg-surface">
+      <div className="max-w-3xl mx-auto px-6">
+        <header className="text-center mb-12">
+          <h1 className="text-3xl font-black text-on-surface mb-3 tracking-tight">Suivre l'avancement</h1>
+          <p className="text-on-surface-variant max-w-lg mx-auto">
+            Consultez en temps réel le statut de traitement de votre dossier grâce à votre numéro de ticket.
+          </p>
+        </header>
 
-          {/* Search form */}
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem' }}>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <FiSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-                <input
-                  className="form-input"
-                  style={{ paddingLeft: '2.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                  value={ticket}
-                  onChange={e => setTicket(e.target.value)}
-                  placeholder="PGP-2026-AB1234"
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? '...' : 'RECHERCHER'}
-              </button>
-            </form>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="alert alert-danger" style={{ marginBottom: '1.5rem' }}>
-              <FiAlertCircle style={{ flexShrink: 0 }} />
-              {error}
+        {/* Search form */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-10">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+              <input
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-xl text-lg font-mono font-bold tracking-widest focus:ring-2 focus:ring-primary transition-all placeholder:text-slate-300 placeholder:font-sans placeholder:tracking-normal placeholder:font-normal"
+                value={ticket}
+                onChange={e => setTicket(e.target.value)}
+                placeholder="EX: PGP-2024-XXXX"
+              />
             </div>
-          )}
+            <button
+              type="submit"
+              className="btn btn-primary px-8 py-4 text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+              ) : (
+                'Rechercher'
+              )}
+            </button>
+          </form>
+        </div>
 
-          {/* Result */}
-          {result && (
-            <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        {/* Error */}
+        {error && (
+          <div className="bg-error/5 p-4 rounded-xl border border-error/10 flex items-center space-x-3 mb-8 animate-in fade-in slide-in-from-top-2">
+            <span className="material-symbols-outlined text-error">error</span>
+            <p className="text-xs font-bold text-error uppercase tracking-widest">{error}</p>
+          </div>
+        )}
+
+        {/* Result */}
+        {result && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-8 md:p-12">
+              <div className="flex flex-wrap items-center justify-between gap-6 mb-10">
                 <div>
-                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>N° de ticket</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
-                      {result.ticket_number}
-                    </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dossier identifié</p>
+                  <div className="flex items-center space-x-3">
+                    <h2 className="text-3xl font-black text-primary tracking-tighter">{result.ticket_number}</h2>
                     <button
                       onClick={() => handleCopy(result.ticket_number)}
-                      aria-label="Copier le numéro de ticket"
-                      style={{
-                        background: '#f1f1f1', border: '1px solid #ccc',
-                        color: '#333', borderRadius: '4px', padding: '0.35rem', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = '#eee'}
-                      onMouseOut={e => e.currentTarget.style.background = '#f1f1f1'}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-slate-50 rounded-lg"
+                      title="Copier"
                     >
-                      {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                      <span className="material-symbols-outlined text-lg">{copied ? 'check' : 'content_copy'}</span>
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div className="flex flex-wrap gap-2">
                   <StatusBadge status={result.status} label={result.status_display} />
                   <PriorityBadge priority={result.priority} label={result.priority_display} />
                 </div>
               </div>
 
-              <h3 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.5rem', color: '#111' }}>{result.title}</h3>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Établissement</div>
-                  <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{result.establishment_name || 'Non spécifié'}</div>
-                </div>
-                <div style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Date de dépôt</div>
-                  <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{new Date(result.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <div className="mb-10">
+                <h3 className="text-xl font-bold text-on-surface mb-2">{result.title}</h3>
+                <div className="flex flex-wrap gap-x-8 gap-y-2">
+                  <p className="text-xs font-medium text-slate-500 flex items-center">
+                    <span className="material-symbols-outlined text-sm mr-2">hospital</span>
+                    {result.establishment_name || 'Non spécifié'}
+                  </p>
+                  <p className="text-xs font-medium text-slate-500 flex items-center">
+                    <span className="material-symbols-outlined text-sm mr-2">calendar_month</span>
+                    Déposé le {new Date(result.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
                 </div>
               </div>
 
+              {/* Resolution Notes if available */}
+              {result.resolution_notes && (
+                <div className="bg-secondary/5 p-6 rounded-2xl border border-secondary/10 mb-10">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <span className="material-symbols-outlined text-secondary text-sm">task_alt</span>
+                    <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest">Résolution apportée</h4>
+                  </div>
+                  <p className="text-sm font-medium text-on-surface leading-relaxed italic">
+                    "{result.resolution_notes}"
+                  </p>
+                </div>
+              )}
+
               {/* Timeline */}
               {result.timeline?.length > 0 && (
-                <div>
-                  <h4 style={{ fontWeight: 600, fontSize: '0.875rem', color: '#8FA3BF', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Historique du traitement
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center">
+                    <span className="material-symbols-outlined text-sm mr-3">history</span>
+                    Journal de traitement
                   </h4>
-                  <div className="timeline">
+                  <div className="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
                     {result.timeline.map((item, i) => (
-                      <div key={i} className="timeline-item">
-                        <div className="timeline-date">
-                          {new Date(item.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      <div key={i} className="relative pl-10">
+                        <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center z-10 shadow-sm ${
+                          i === 0 ? 'bg-primary text-white animate-pulse' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          <span className="material-symbols-outlined text-[8px]">
+                            {i === 0 ? 'radio_button_checked' : 'check'}
+                          </span>
                         </div>
-                        <div className="timeline-title">{item.action}</div>
-                        {item.notes && <div className="timeline-note">{item.notes}</div>}
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter tabular-nums mb-1">
+                          {new Date(item.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className={`text-xs font-bold ${i === 0 ? 'text-on-surface' : 'text-slate-500'}`}>{item.action}</p>
+                        {item.notes && (
+                          <p className="mt-2 text-[11px] text-slate-400 leading-relaxed max-w-lg">
+                            {item.notes}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-          )}
 
-          {/* Info box */}
-          {!result && !error && (
-            <div className="alert alert-info">
-              <FiClock style={{ flexShrink: 0 }} />
-              <div>
-                <strong>Vous n'avez pas de numéro de ticket ?</strong> Si vous avez déposé une plainte avec un compte,
-                <a href="/connexion" style={{ color: '#00B4D8', marginLeft: '0.25rem' }}>connectez-vous</a> pour accéder directement à vos plaintes.
-              </div>
+            <footer className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Plateforme officielle de suivi — Ministère de la Santé
+              </p>
+            </footer>
+          </div>
+        )}
+
+        {/* Info box */}
+        {!result && !error && (
+          <div className="mt-8 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 text-center md:text-left">
+            <div className="flex items-center space-x-3">
+              <span className="material-symbols-outlined text-primary">info</span>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Besoin d'aide ?</p>
             </div>
-          )}
-        </div>
+            <p className="text-xs text-slate-400">
+              Si vous avez un compte, <a href="/connexion" className="text-primary font-bold underline decoration-primary/30 underline-offset-4">connectez-vous</a> pour gérer toutes vos plaintes.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
