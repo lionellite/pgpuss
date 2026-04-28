@@ -5,17 +5,20 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 
-const COLORS = ['#008751', '#fcd116', '#e8112d', '#0077b6', '#6b5b95', '#d97706', '#2563eb', '#616161']
+const COLORS = ['#004e9f', '#006e25', '#005966', '#d97706', '#ba1a1a', '#6b5b95', '#008751', '#fcd116']
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', border: '1px solid #ddd', padding: '0.75rem 1rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-      {label && <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '0.3rem', fontWeight: 700 }}>{label}</p>}
+    <div className="bg-white p-3 rounded-lg shadow-xl border border-slate-100">
+      {label && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{label}</p>}
       {payload.map((p, i) => (
-        <p key={i} style={{ color: '#111', fontSize: '0.875rem', fontWeight: 600 }}>
-          {p.name}: {p.value}
-        </p>
+        <div key={i} className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
+          <p className="text-xs font-bold text-on-surface">
+            {p.name}: <span className="text-primary tabular-nums">{p.value}</span>
+          </p>
+        </div>
       ))}
     </div>
   )
@@ -32,8 +35,12 @@ export default function AnalyticsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="loading-center"><div className="spinner" /></div>
-  if (!stats) return <div className="loading-center" style={{ color: '#8FA3BF' }}>Données indisponibles</div>
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+  )
+  if (!stats) return <div className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest">Données indisponibles</div>
 
   // Prepare data
   const monthlyData = (stats.complaints_by_month || []).map(m => ({
@@ -67,144 +74,138 @@ export default function AnalyticsPage() {
   }))
 
   return (
-    <div style={{ padding: '1rem 0' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h1 className="page-title">Analytique</h1>
-        <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>Indicateurs et tendances de la plateforme.</p>
-      </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <header>
+        <h1 className="text-2xl font-black text-on-surface tracking-tight">Analyse & Performance</h1>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Données consolidées de la plateforme</p>
+      </header>
 
       {/* Summary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+      <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Total', value: stats.total_complaints, color: 'var(--color-primary)' },
-          { label: 'En cours', value: stats.open_complaints, color: '#d97706' },
-          { label: 'Résolues', value: stats.resolved_complaints, color: 'var(--color-primary)' },
-          { label: 'En retard', value: stats.overdue_complaints, color: '#dc2626' },
-          { label: 'Délai moy.', value: stats.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', color: '#4f46e5' },
-          { label: 'Satisfaction', value: stats.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', color: '#d97706' },
+          { label: 'Total', value: stats.total_complaints, icon: 'analytics', color: 'primary' },
+          { label: 'En cours', value: stats.open_complaints, icon: 'pending_actions', color: 'secondary' },
+          { label: 'Résolues', value: stats.resolved_complaints, icon: 'check_circle', color: 'secondary' },
+          { label: 'En retard', value: stats.overdue_complaints, icon: 'priority_high', color: 'error' },
+          { label: 'Délai moy.', value: stats.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', icon: 'schedule', color: 'tertiary' },
+          { label: 'Satisfaction', value: stats.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', icon: 'star', color: 'tertiary' },
         ].map((k, i) => (
-          <div key={i} className="stat-card" style={{ borderLeftColor: k.color }}>
-             <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{k.label}</div>
-            <div className="stat-value" style={{ fontSize: '1.75rem', color: '#111' }}>{k.value}</div>
+          <div key={i} className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-start mb-3">
+              <span className={`material-symbols-outlined text-lg p-2 rounded-lg bg-${k.color}/10 text-${k.color}`}>{k.icon}</span>
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
+            <h3 className="text-2xl font-black text-on-surface tabular-nums">{k.value}</h3>
           </div>
         ))}
-      </div>
+      </section>
 
-      {/* Monthly trend */}
-      {monthlyData.length > 0 && (
-        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-            Évolution mensuelle des dossiers
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-              <XAxis dataKey="mois" tick={{ fill: '#666', fontSize: 11 }} axisLine={{ stroke: '#ddd' }} />
-              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={{ stroke: '#ddd' }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="plaintes" name="Plaintes" stroke="var(--color-primary)" strokeWidth={3}
-                dot={{ fill: 'var(--color-primary)', r: 4 }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Monthly trend */}
+        <section className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Évolution des dépôts</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="mois" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} dx={-10} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="plaintes"
+                  stroke="#004e9f"
+                  strokeWidth={4}
+                  dot={{ fill: '#004e9f', strokeWidth: 2, r: 4, stroke: '#fff' }}
+                  activeDot={{ r: 6, strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        {/* Priority distribution */}
-        <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-            Répartition par priorité
-          </h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={priorityData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-              <XAxis dataKey="name" tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
-              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Plaintes" radius={[2, 2, 0, 0]}>
-                {priorityData.map((_, i) => (
-                  <Cell key={i} fill={['#dc2626','#ea580c','#d97706','#2563eb','#717171'][i]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Status pie */}
-        {statusData.length > 0 && (
-          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-            <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-              Répartition par statut
-            </h3>
-            <ResponsiveContainer width="100%" height={240}>
+        {/* Status distribution */}
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Statuts des dossiers</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" innerRadius={60} outerRadius={80}
-                  dataKey="value" nameKey="name">
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
                   {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend formatter={(v) => <span style={{ color: '#444', fontSize: '0.75rem', fontWeight: 600 }}>{v}</span>} />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  formatter={(v) => <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter ml-1">{v}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-        )}
-      </div>
+        </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
-        {/* Top categories */}
-        {categoryData.length > 0 && (
-          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-            <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-              Top catégories
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={categoryData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eee" />
-                <XAxis type="number" tick={{ fill: '#666', fontSize: 10 }} axisLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#666', fontSize: 10 }} width={130} axisLine={false} />
+        {/* Priority distribution */}
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Niveaux d'urgence</h3>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priorityData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Plaintes" fill="var(--color-primary)" radius={[0, 2, 2, 0]} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {priorityData.map((_, i) => (
+                    <Cell key={i} fill={['#ba1a1a','#ea580c','#d97706','#004e9f','#94a3b8'][i]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        )}
+        </section>
 
-        {/* By channel */}
-        {channelData.length > 0 && (
-          <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-            <h3 style={{ fontSize: '0.9rem', marginBottom: '1.5rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-              Répartition par canal
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={channelData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name">
-                  {channelData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
+        {/* Top categories */}
+        <section className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Catégories dominantes</h3>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} width={120} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend formatter={(v) => <span style={{ color: '#444', fontSize: '0.75rem', fontWeight: 600 }}>{v}</span>} />
-              </PieChart>
+                <Bar dataKey="count" fill="#004e9f" radius={[0, 4, 4, 0]} barSize={20} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-        )}
-      </div>
+        </section>
 
-      {/* By establishment */}
-      {establishmentData.length > 0 && (
-        <div className="glass-card" style={{ padding: '2rem', marginTop: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '2rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
-            Établissements les plus concernés
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={establishmentData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-              <XAxis dataKey="name" tick={{ fill: '#666', fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
-              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Plaintes" fill="#0077b6" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        {/* By establishment */}
+        <section className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Établissements avec le plus de signalements</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={establishmentData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} interval={0} height={60} textAnchor="end" angle={-25} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill="#005966" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

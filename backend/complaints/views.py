@@ -58,15 +58,12 @@ class ComplaintListView(generics.ListAPIView):
 
         if user.role == 'USAGER':
             qs = qs.filter(complainant=user)
-        elif user.role in ['PFE', 'DIRECTEUR_EST']:
+        elif user.role in ['AGENT_RECEPTION', 'GESTIONNAIRE_SERVICE', 'DIRECTEUR']:
             qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'AGENT_INTERNE':
-            qs = qs.filter(assigned_to=user)
-        elif user.role == 'DDS':
-            # Superviser les établissements de sa zone (département)
-            qs = qs.filter(establishment__region__name=user.departement)
-        elif user.role in ['ADMIN_PLATEFORME', 'DQSS', 'CABINET']:
-            pass  # Accès global
+        elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
+            pass  # All complaints
+        elif user.role == 'MEDIATEUR':
+            qs = qs.filter(status=ComplaintStatus.CONTESTEE)
 
         # Optimization: Use select_related for foreign keys and annotate with attachment count
         # to avoid N+1 queries when rendering the list.
@@ -83,7 +80,19 @@ class ComplaintDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Complaint.objects.select_related(
+        user = self.request.user
+        qs = Complaint.objects.all()
+
+        if user.role == 'USAGER':
+            qs = qs.filter(complainant=user)
+        elif user.role in ['AGENT_RECEPTION', 'GESTIONNAIRE_SERVICE', 'DIRECTEUR']:
+            qs = qs.filter(establishment=user.establishment)
+        elif user.role == 'MEDIATEUR':
+            qs = qs.filter(status=ComplaintStatus.CONTESTEE)
+        elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
+            pass
+
+        return qs.select_related(
             'category', 'subcategory', 'establishment', 'service',
             'assigned_to', 'complainant'
         ).prefetch_related('attachments', 'history', 'escalations')
@@ -173,8 +182,20 @@ class ComplaintAssignView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role != 'PFE':
-             return Response({'error': "Seul le PFE peut affecter une plainte."}, status=403)
+
+        # Permission check: Only admin or establishment managers can assign
+        if not (request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+            return Response(
+                {'error': "Vous n'êtes pas autorisé à affecter cette plainte."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # For non-national admin, check if complaint belongs to their establishment
+        if request.user.role != 'ADMIN_NATIONAL' and complaint.establishment != request.user.establishment:
+            return Response(
+                {'error': "Vous n'êtes pas autorisé à affecter une plainte d'un autre établissement."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -224,6 +245,15 @@ class ComplaintResolveView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à résoudre cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -250,7 +280,16 @@ class ComplaintEscalateView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        reason = request.data.get('reason', '')
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à clôturer cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
+        notes = request.data.get('notes', '')
         old_status = complaint.status
         complaint.status = ComplaintStatus.ESCALADEE
         complaint.save()
@@ -269,8 +308,21 @@ class ComplaintArbitrateView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in ['DDS', 'DQSS', 'CABINET']:
-            return Response({'error': "Seule une autorité de régulation peut arbitrer."}, status=403)
+
+        # Permission check: Only the complainant can contest
+        if complaint.complainant != request.user:
+            return Response(
+                {'error': "Seul l'auteur de la plainte peut contester sa clôture."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        reason = request.data.get('reason', '')
+
+        if complaint.status != ComplaintStatus.CLOTURE_PROVISOIRE:
+            return Response(
+                {'error': 'Seules les plaintes en clôture provisoire peuvent être contestées.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         old_status = complaint.status
         complaint.status = ComplaintStatus.ARBITREE
@@ -309,6 +361,15 @@ class ComplaintEscalateView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+
+        # Permission check
+        if not (request.user == complaint.assigned_to or
+                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
+             return Response(
+                 {'error': "Vous n'êtes pas autorisé à escalader cette plainte."},
+                 status=status.HTTP_403_FORBIDDEN
+             )
+
         reason = request.data.get('reason', '')
         to_user_id = request.data.get('to_user')
 

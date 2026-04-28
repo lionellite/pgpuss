@@ -20,7 +20,11 @@ export default function PlainteDetailPage() {
   const reload = () => {
     complaintsAPI.detail(id).then(({ data }) => setComplaint(data)).catch(() => navigate('/dashboard/plaintes'))
   }
-  useEffect(() => { reload(); setLoading(false) }, [id])
+  useEffect(() => {
+    reload()
+    setLoading(false)
+  }, [id])
+
   useEffect(() => {
     authAPI.users().then(({ data }) => setAgents(data.results || data)).catch(() => {})
   }, [])
@@ -38,11 +42,16 @@ export default function PlainteDetailPage() {
 
       toast.success('Action effectuée avec succès')
       setModal(null)
+      setFormData({})
       reload()
     } catch { toast.error("Erreur lors de l'action") }
   }
 
-  if (!complaint && loading) return <div className="loading-center"><div className="spinner" /></div>
+  if (!complaint && loading) return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+  )
   if (!complaint) return null
 
   // Permissions Bénin Workflow
@@ -52,168 +61,305 @@ export default function PlainteDetailPage() {
   const isDirecteur = user?.role === 'DIRECTEUR_EST'
 
   return (
-    <div style={{ padding: '1rem 0' }}>
-      <button onClick={() => navigate('/dashboard/plaintes')} className="btn btn-secondary btn-sm" style={{ marginBottom: '2rem' }}>
-        <FiArrowLeft /> RETOUR À LA LISTE
-      </button>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <header className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/dashboard/plaintes')}
+          className="flex items-center text-xs font-bold text-slate-400 hover:text-primary transition-colors uppercase tracking-widest"
+        >
+          <span className="material-symbols-outlined text-lg mr-2">arrow_back</span>
+          Retour à la liste
+        </button>
+        <div className="flex space-x-2">
+          <button className="p-2 text-slate-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined">print</span>
+          </button>
+          <button className="p-2 text-slate-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined">share</span>
+          </button>
+        </div>
+      </header>
 
-      <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dossier N°</div>
-            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>{complaint.ticket_number}</div>
+      {/* Main Info Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 md:p-8 border-b border-slate-50">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="bg-primary/10 text-primary p-3 rounded-xl">
+                <span className="material-symbols-outlined text-3xl">assignment</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dossier Ticket</p>
+                <h1 className="text-2xl font-black text-on-surface tracking-tighter">#{complaint.ticket_number}</h1>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge status={complaint.status} />
+              <PriorityBadge priority={complaint.priority} />
+              {complaint.is_overdue && (
+                <span className="bg-error text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">En retard</span>
+              )}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <StatusBadge status={complaint.status} />
-            <PriorityBadge priority={complaint.priority} />
+
+          <h2 className="text-xl font-bold text-on-surface mb-6 leading-tight">{complaint.title}</h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Établissement</p>
+              <p className="text-sm font-bold text-on-surface">{complaint.establishment_name}</p>
+              <p className="text-[10px] text-slate-400 uppercase">{complaint.service_name || 'Service non spécifié'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Catégorie</p>
+              <p className="text-sm font-bold text-on-surface">{complaint.category_name}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Canal: {complaint.channel_display}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Plaignant</p>
+              <p className="text-sm font-bold text-on-surface">{complaint.complainant_display}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Depuis le {new Date(complaint.created_at).toLocaleDateString('fr-FR')}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Agent Assigné</p>
+              <p className="text-sm font-bold text-primary">{complaint.assigned_to_name || 'Non assigné'}</p>
+            </div>
           </div>
         </div>
-        <h1 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', color: '#111' }}>{complaint.title}</h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          {[
-            { label: 'Établissement', value: complaint.establishment_name },
-            { label: 'Service', value: complaint.service_name || '—' },
-            { label: 'Catégorie', value: complaint.category_name },
-            { label: 'Canal', value: complaint.channel_display },
-            { label: 'Plaignant', value: complaint.complainant_display },
-            { label: 'Affecté à', value: complaint.assigned_to_name || 'Non affecté' },
-            { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
-          ].map((item, i) => (
-            <div key={i} style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
-              <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
-              <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{item.value || '—'}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Workflow Actions */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-
-          {/* PFE Actions */}
-          {isPFE && complaint.status === 'SOUMISE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
-              Accuser réception
+        {/* Action Bar */}
+        <div className="px-8 py-4 bg-slate-50 flex flex-wrap gap-3">
+          {canAssign && (
+            <button className="btn btn-primary px-4 py-2 text-xs" onClick={() => setModal('assign')}>
+              <span className="material-symbols-outlined text-sm mr-2">person_add</span>
+              Affecter
             </button>
           )}
-          {isPFE && complaint.status === 'ACCUSEE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setModal('qualify')}>
-              <FiFileText /> Qualifier
+          {canResolve && (complaint.status === 'AFFECTEE' || complaint.status === 'CLASSIFIEE') && (
+            <button className="btn btn-primary px-4 py-2 text-xs" onClick={() => doAction('start')}>
+              <span className="material-symbols-outlined text-sm mr-2">play_arrow</span>
+              Démarrer l'instruction
             </button>
           )}
-          {isPFE && complaint.status === 'INSTRUITE' && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
-                <FiUser /> Affecter
-              </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
-                Traiter directement
-              </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
-                <FiArrowUp /> Escalader à la Direction
-              </button>
-            </div>
-          )}
-          {isPFE && complaint.status === 'RESOLUE' && (
-            <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
-              <FiLock /> Clôturer
+          {canResolve && complaint.status === 'EN_INSTRUCTION' && (
+            <button className="btn btn-outline border-secondary text-secondary hover:bg-secondary hover:text-white px-4 py-2 text-xs" onClick={() => setModal('resolve')}>
+              <span className="material-symbols-outlined text-sm mr-2">check_circle</span>
+              Résoudre
             </button>
           )}
-
-          {/* Agent Actions */}
-          {isAgent && complaint.status === 'AFFECTEE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => doAction('start')}>
-              🚀 Accepter l'affectation
+          {canClose && complaint.status === 'RESOLUE' && (
+            <button className="btn btn-outline border-slate-400 text-slate-600 hover:bg-slate-600 hover:text-white px-4 py-2 text-xs" onClick={() => setModal('close')}>
+              <span className="material-symbols-outlined text-sm mr-2">lock</span>
+              Clôturer
             </button>
           )}
-          {isAgent && complaint.status === 'EN_TRAITEMENT' && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
-              <FiCheckCircle /> Soumettre rapport
-            </button>
-          )}
-
-          {/* Direction / Régulation Actions */}
-          {isRegulateur && complaint.status === 'ESCALADEE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
-              <FiShield /> Arbitrer
+          {canEscalate && ['EN_INSTRUCTION','AFFECTEE'].includes(complaint.status) && (
+            <button className="btn btn-outline border-error text-error hover:bg-error hover:text-white px-4 py-2 text-xs" onClick={() => setModal('escalate')}>
+              <span className="material-symbols-outlined text-sm mr-2">priority_high</span>
+              Escalader
             </button>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="glass-card" style={{ padding: '1.75rem' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Description</h3>
-            <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
-          </div>
-          {complaint.resolution_notes && (
-            <div className="glass-card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--color-primary)' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>Résolution / Rapport</h3>
-              <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem' }}>{complaint.resolution_notes}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Description & Resolution */}
+        <div className="lg:col-span-2 space-y-6">
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center">
+              <span className="material-symbols-outlined text-primary mr-3">subject</span>
+              Description du dossier
+            </h3>
+            <div className="prose prose-slate max-w-none">
+              <p className="text-on-surface-variant leading-relaxed whitespace-pre-wrap text-sm">
+                {complaint.description}
+              </p>
             </div>
+
+            {complaint.attachments?.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-slate-50">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Pièces jointes</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {complaint.attachments.map((a, i) => (
+                    <a key={i} href={a.file} target="_blank" rel="noreferrer" className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-primary transition-colors group">
+                      <span className="material-symbols-outlined text-primary mr-3">attach_file</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-on-surface truncate">{a.file_name}</p>
+                        <p className="text-[10px] text-slate-400">{(a.file_size / 1024).toFixed(0)} Ko</p>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">download</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {complaint.resolution_notes && (
+            <section className="bg-secondary/5 p-8 rounded-2xl border border-secondary/10">
+              <h3 className="text-xs font-black text-secondary uppercase tracking-[0.2em] mb-6 flex items-center">
+                <span className="material-symbols-outlined mr-3 text-secondary">task_alt</span>
+                Solution Apportée
+              </h3>
+              <div className="space-y-4">
+                <p className="text-sm text-on-surface leading-relaxed font-medium">
+                  {complaint.resolution_notes}
+                </p>
+                {complaint.corrective_actions && (
+                  <div className="mt-4 p-4 bg-white/50 rounded-xl">
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Mesures correctives</p>
+                    <p className="text-xs text-on-surface-variant italic">{complaint.corrective_actions}</p>
+                  </div>
+                )}
+              </div>
+            </section>
           )}
         </div>
 
-        <div className="glass-card" style={{ padding: '1.75rem', alignSelf: 'flex-start' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>Historique</h3>
-          <div className="timeline">
-            {[...complaint.history].reverse().map((h, i) => (
-              <div key={i} className="timeline-item">
-                <div className="timeline-date">{new Date(h.timestamp).toLocaleDateString('fr-FR')}</div>
-                <div className="timeline-title">{h.action}</div>
-                {h.actor_name && <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)' }}>par {h.actor_name}</div>}
-                {h.notes && <div className="timeline-note">{h.notes}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Right Column: History & Timeline */}
+        <aside className="space-y-6">
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center">
+              <span className="material-symbols-outlined text-primary mr-3">history</span>
+              Journal d'activités
+            </h3>
+            <div className="relative space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+              {complaint.history?.length > 0 ? (
+                [...complaint.history].reverse().map((h, i) => (
+                  <div key={i} className="relative pl-8">
+                    <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center z-10 ${
+                      i === 0 ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      <span className="material-symbols-outlined text-[10px]">
+                        {i === 0 ? 'adjust' : 'circle'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter tabular-nums">
+                      {new Date(h.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <p className="text-xs font-bold text-on-surface mt-0.5">{h.action}</p>
+                    {h.actor_name && (
+                      <p className="text-[10px] font-bold text-primary mt-1">Agent: {h.actor_name}</p>
+                    )}
+                    {h.notes && (
+                      <p className="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2 rounded leading-relaxed border-l-2 border-slate-200">
+                        {h.notes}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400 italic text-center py-4">Aucun historique disponible</p>
+              )}
+            </div>
+          </section>
+        </aside>
       </div>
 
       {/* Action Modals */}
       {modal && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Action : {modal}</h3>
-              <button className="modal-close" onClick={() => setModal(null)}>✕</button>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-on-surface">
+                {modal === 'assign' && 'Affecter le dossier'}
+                {modal === 'resolve' && 'Résoudre la plainte'}
+                {modal === 'close' && 'Clôturer provisoirement'}
+                {modal === 'escalate' && 'Escalader le dossier'}
+              </h3>
+              <button onClick={() => setModal(null)} className="text-slate-400 hover:text-error transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </header>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {modal === 'qualify' && (
-                <div className="form-group">
-                  <label className="form-label">Niveau de priorité</label>
-                  <select className="form-select" onChange={e => setFormData({...formData, priority: e.target.value})}>
-                    <option value="P4">P4 - Normal</option>
-                    <option value="P3">P3 - Élevé</option>
-                    <option value="P2">P2 - Urgent</option>
-                    <option value="P1">P1 - Critique</option>
-                  </select>
-                </div>
-              )}
-
+            <div className="p-6 space-y-4">
               {modal === 'assign' && (
-                <div className="form-group">
-                  <label className="form-label">Agent interne</label>
-                  <select className="form-select" onChange={e => setFormData({...formData, assigned_to: e.target.value})}>
-                    <option value="">Sélectionner un agent</option>
-                    {agents.filter(a => a.role === 'AGENT_INTERNE').map(a => (
-                      <option key={a.id} value={a.id}>{a.full_name}</option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Assigner à</label>
+                    <select className="form-select w-full" value={formData.assigned_to || ''}
+                      onChange={e => setFormData(d => ({ ...d, assigned_to: e.target.value }))}>
+                      <option value="">Sélectionnez un agent</option>
+                      {agents.filter(a => a.role !== 'USAGER').map(a => (
+                        <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Instructions (optionnel)</label>
+                    <textarea className="form-textarea w-full text-sm" placeholder="Consignes particulières..."
+                      value={formData.notes || ''} onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))} />
+                  </div>
+                </>
               )}
 
-              {['resolve', 'arbitrate', 'qualify', 'escalate'].includes(modal) && (
-                <textarea className="form-textarea" placeholder="Notes ou commentaires..."
-                  onChange={e => setFormData({...formData, notes: e.target.value, resolution_notes: e.target.value, reason: e.target.value})} />
+              {modal === 'resolve' && (
+                <>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Notes de résolution *</label>
+                    <textarea className="form-textarea w-full text-sm min-h-[100px]" placeholder="Détaillez la solution..."
+                      value={formData.resolution_notes || ''} onChange={e => setFormData(d => ({ ...d, resolution_notes: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Actions correctives (optionnel)</label>
+                    <textarea className="form-textarea w-full text-sm" placeholder="Mesures pour l'avenir..."
+                      value={formData.corrective_actions || ''} onChange={e => setFormData(d => ({ ...d, corrective_actions: e.target.value }))} />
+                  </div>
+                </>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
-                <button className="btn btn-primary" onClick={() => doAction(modal, formData)}>Confirmer</button>
-              </div>
+              {modal === 'close' && (
+                <>
+                  <div className="bg-blue-50 p-4 rounded-xl mb-4">
+                    <p className="text-xs text-blue-800 font-medium">
+                      La clôture provisoire notifie l'usager. Il dispose de 15 jours pour contester avant la clôture définitive.
+                    </p>
+                  </div>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Commentaire final</label>
+                    <textarea className="form-textarea w-full text-sm" placeholder="Dernière note avant clôture..."
+                      value={formData.notes || ''} onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))} />
+                  </div>
+                </>
+              )}
+
+              {modal === 'escalate' && (
+                <>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Escalader vers</label>
+                    <select className="form-select w-full" value={formData.to_user || ''}
+                      onChange={e => setFormData(d => ({ ...d, to_user: e.target.value }))}>
+                      <option value="">Sélectionnez un responsable</option>
+                      {agents.filter(a => ['DIRECTEUR','RESPONSABLE_QUALITE','ADMIN_NATIONAL'].includes(a.role)).map(a => (
+                        <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Motif de l'escalade</label>
+                    <textarea className="form-textarea w-full text-sm" placeholder="Pourquoi ce dossier nécessite-t-il un niveau supérieur ?"
+                      value={formData.reason || ''} onChange={e => setFormData(d => ({ ...d, reason: e.target.value }))} />
+                  </div>
+                </>
+              )}
             </div>
+
+            <footer className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+              <button onClick={() => setModal(null)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-on-surface transition-colors uppercase tracking-widest">
+                Annuler
+              </button>
+              <button
+                className={`btn px-6 py-2 text-xs ${modal === 'escalate' ? 'btn-danger' : 'btn-primary'}`}
+                onClick={() => {
+                  if (modal === 'assign') doAction('assign', formData)
+                  if (modal === 'resolve') doAction('resolve', formData)
+                  if (modal === 'close') doAction('close', formData)
+                  if (modal === 'escalate') doAction('escalate', formData)
+                }}
+              >
+                Confirmer l'action
+              </button>
+            </footer>
           </div>
         </div>
       )}

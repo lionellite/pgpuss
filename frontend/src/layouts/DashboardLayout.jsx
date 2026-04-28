@@ -1,16 +1,12 @@
 import React, { useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  FiBarChart2, FiFileText, FiUsers, FiLogOut, FiMenu,
-  FiX, FiHome, FiTrendingUp, FiBell, FiChevronRight
-} from 'react-icons/fi'
 
 const navItems = [
-  { to: '/dashboard', icon: <FiHome />, label: 'Tableau de bord', exact: true },
-  { to: '/dashboard/plaintes', icon: <FiFileText />, label: 'Plaintes' },
-  { to: '/dashboard/analytique', icon: <FiTrendingUp />, label: 'Analytique' },
-  { to: '/dashboard/utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', roles: ['ADMIN_NATIONAL'] },
+  { to: '/dashboard', icon: 'dashboard', label: 'Tableau de bord', exact: true },
+  { to: '/dashboard/plaintes', icon: 'assignment_late', label: 'File de plaintes' },
+  { to: '/dashboard/analytique', icon: 'assessment', label: 'Rapports' },
+  { to: '/dashboard/utilisateurs', icon: 'group', label: 'Utilisateurs', roles: ['ADMIN_NATIONAL'] },
 ]
 
 export default function DashboardLayout() {
@@ -30,125 +26,156 @@ export default function DashboardLayout() {
   )
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      {/* Sidebar */}
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+      {/* SideNavBar */}
       <aside style={{
-        width: collapsed ? 64 : 240, flexShrink: 0,
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border-color)',
+        width: collapsed ? '80px' : '256px',
+        position: 'fixed', left: 0, top: 0, bottom: 0,
+        background: 'var(--surface-container-low)',
+        borderRight: '1px solid var(--outline-variant)',
         display: 'flex', flexDirection: 'column',
-        transition: 'width 0.3s ease', overflow: 'hidden',
-        position: 'sticky', top: 0, height: '100vh',
+        padding: '1rem 0', zIndex: 50,
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
-        {/* Logo */}
-        <div style={{
-          padding: collapsed ? '1.25rem 0' : '1.25rem 1.25rem',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          gap: '0.75rem',
-        }}>
-          {!collapsed && (
-            <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '8px',
-                background: 'linear-gradient(135deg, #0077B6, #00B4D8)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, color: 'white', fontSize: '0.9rem', fontFamily: 'Outfit',
-              }}>P</div>
-              <div>
-                <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '0.875rem', color: '#F0F4FF' }}>PGP-USS</div>
-                <div style={{ fontSize: '0.6rem', color: '#4A6080' }}>Dashboard</div>
-              </div>
-            </Link>
-          )}
-          <button onClick={() => setCollapsed(!collapsed)} style={{
-            background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-            borderRadius: '8px', padding: '0.4rem', cursor: 'pointer',
-            color: '#8FA3BF', display: 'flex', transition: 'all 0.2s',
+        {/* Branding */}
+        <div style={{ padding: '0 1.5rem', marginBottom: '2rem', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          <h1 style={{
+            fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)',
+            letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem'
           }}>
-            {collapsed ? <FiChevronRight /> : <FiMenu />}
-          </button>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>health_and_safety</span>
+            {!collapsed && 'PGPUSS-Bénin'}
+          </h1>
+          {!collapsed && <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, color: 'var(--outline)', marginTop: '0.25rem' }}>Administration</p>}
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '1rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {/* Navigation */}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {visibleItems.map(item => (
-            <Link key={item.to} to={item.to} title={collapsed ? item.label : ''} style={{
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: collapsed ? '0.75rem' : '0.65rem 0.875rem',
-              borderRadius: '10px', textDecoration: 'none',
-              fontSize: '0.875rem', fontWeight: 500,
-              background: isActive(item) ? 'rgba(0,119,182,0.15)' : 'transparent',
-              color: isActive(item) ? '#00B4D8' : '#8FA3BF',
-              border: isActive(item) ? '1px solid rgba(0,119,182,0.2)' : '1px solid transparent',
-              justifyContent: collapsed ? 'center' : 'flex-start',
+            <Link key={item.to} to={item.to} style={{
+              display: 'flex', alignItems: 'center',
+              padding: '0.75rem 1.5rem',
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: isActive(item) ? 'var(--primary)' : 'var(--on-surface-variant)',
+              background: isActive(item) ? 'rgba(0, 78, 159, 0.08)' : 'transparent',
+              borderRight: isActive(item) ? '4px solid var(--primary)' : '4px solid transparent',
               transition: 'all 0.2s',
+              overflow: 'hidden', whiteSpace: 'nowrap',
             }}>
-              <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+              <span className="material-symbols-outlined" style={{ marginRight: collapsed ? 0 : '12px' }}>{item.icon}</span>
               {!collapsed && item.label}
             </Link>
           ))}
         </nav>
 
-        {/* User + Logout */}
-        <div style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border-color)' }}>
-          {!collapsed && user && (
-            <div style={{
-              padding: '0.75rem', borderRadius: '10px',
-              background: 'rgba(0,119,182,0.05)',
-              border: '1px solid rgba(0,119,182,0.1)',
-              marginBottom: '0.5rem',
-            }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#F0F4FF' }}>{user.full_name}</div>
-              <div style={{ fontSize: '0.7rem', color: '#4A6080' }}>{user.role?.replace('_', ' ')}</div>
-            </div>
-          )}
-          <button onClick={handleLogout} style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            padding: collapsed ? '0.75rem' : '0.65rem 0.875rem',
-            borderRadius: '10px', background: 'rgba(239,71,111,0.05)',
-            border: '1px solid rgba(239,71,111,0.1)',
-            color: '#EF476F', cursor: 'pointer', width: '100%',
-            fontSize: '0.875rem', fontWeight: 500,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            transition: 'all 0.2s',
+        {/* Bottom Actions */}
+        <div style={{ marginTop: 'auto', padding: '0 0.5rem' }}>
+          <button onClick={() => setCollapsed(!collapsed)} style={{
+            width: '100%', padding: '0.75rem', background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            color: 'var(--outline)',
           }}>
-            <FiLogOut style={{ flexShrink: 0 }} />
-            {!collapsed && 'Déconnexion'}
+             <span className="material-symbols-outlined">{collapsed ? 'chevron_right' : 'chevron_left'}</span>
+             {!collapsed && <span style={{ marginLeft: '12px', fontSize: '0.875rem' }}>Réduire</span>}
+          </button>
+          <button onClick={handleLogout} style={{
+            width: '100%', padding: '0.75rem', background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            color: 'var(--error)', transition: 'all 0.2s',
+          }}>
+            <span className="material-symbols-outlined">logout</span>
+            {!collapsed && <span style={{ marginLeft: '12px', fontSize: '0.875rem', fontWeight: 600 }}>Déconnexion</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Top bar */}
+      {/* Main Canvas */}
+      <main style={{
+        flex: 1,
+        marginLeft: collapsed ? '80px' : '256px',
+        minHeight: '100vh',
+        display: 'flex', flexDirection: 'column',
+        transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
+        {/* TopAppBar */}
         <header style={{
-          padding: '0 1.5rem', height: 56,
-          background: 'rgba(8,18,32,0.8)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--border-color)',
+          position: 'sticky', top: 0, zIndex: 40,
+          background: 'var(--surface)',
+          borderBottom: '1px solid var(--outline-variant)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 50,
+          padding: '0.75rem 1.5rem', height: '64px',
         }}>
-          <h1 style={{ fontSize: '0.875rem', color: '#8FA3BF', fontWeight: 500 }}>
-            {visibleItems.find(i => i.exact ? location.pathname === i.to : location.pathname.startsWith(i.to))?.label || 'Dashboard'}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link to="/espace/notifications" style={{ color: '#8FA3BF', fontSize: '1.1rem' }}>
-              <FiBell />
-            </Link>
-            <Link to="/" style={{ fontSize: '0.8rem', color: '#8FA3BF', textDecoration: 'none' }}>
-              ← Site public
-            </Link>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)' }}>
+            {visibleItems.find(i => isActive(i))?.label || 'Administration'}
+          </h2>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            {/* Search */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }} className="hide-mobile">
+              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', color: 'var(--outline)', fontSize: '20px' }}>search</span>
+              <input
+                type="text"
+                placeholder="Rechercher un dossier..."
+                style={{
+                  padding: '0.5rem 1rem 0.5rem 2.5rem',
+                  background: 'var(--surface-container)',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '0.875rem', width: '240px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button style={{
+                padding: '0.5rem', borderRadius: '50%', border: 'none', background: 'none',
+                cursor: 'pointer', color: 'var(--on-surface-variant)', position: 'relative'
+              }}>
+                <span className="material-symbols-outlined">notifications</span>
+                <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', background: 'var(--error)', borderRadius: '50%', border: '2px solid var(--surface)' }}></span>
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
+                <div style={{ textAlign: 'right' }} className="hide-mobile">
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--on-surface)' }}>{user?.full_name}</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--outline)', textTransform: 'uppercase' }}>{user?.role?.replace('_', ' ')}</div>
+                </div>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: 'var(--primary-container)', color: 'var(--on-primary-container)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, fontSize: '0.875rem'
+                }}>
+                  {user?.first_name?.[0]}{user?.last_name?.[0]}
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-          <Outlet />
-        </main>
-      </div>
+        {/* Content Content */}
+        <div style={{ padding: '2rem', flex: 1 }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+            <Outlet />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer style={{
+          padding: '1.5rem 2rem',
+          borderTop: '1px solid var(--surface-container)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'var(--outline)'
+        }}>
+          <p>© 2024 PGPUSS-Bénin - Ministère de la Santé</p>
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+            <Link to="#" style={{ color: 'inherit' }}>Confidentialité</Link>
+            <Link to="#" style={{ color: 'inherit' }}>Support</Link>
+          </div>
+        </footer>
+      </main>
     </div>
   )
 }
