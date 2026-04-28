@@ -30,17 +30,17 @@ export default function DashboardHome() {
   ]
 
   const STATUS_COLORS = {
-    DEPOSEE: '#717171', ENREGISTREE: '#0077b6', CLASSIFIEE: '#6b5b95',
-    AFFECTEE: '#d97706', EN_INSTRUCTION: '#2563eb', RESOLUE: '#059669',
-    CLOTURE_PROVISOIRE: '#059669', CLOTURE_DEFINITIVE: '#059669',
-    CONTESTEE: '#dc2626', ESCALADEE: '#dc2626', REJETEE: '#dc2626',
+    SOUMISE: '#717171', ACCUSEE: '#0077b6', INSTRUITE: '#6b5b95',
+    AFFECTEE: '#d97706', EN_TRAITEMENT: '#2563eb', RESOLUE: '#059669',
+    ARBITREE: '#f59e0b', CLOTUREE: '#1e293b',
+    ESCALADEE: '#dc2626', REJETEE: '#94a3b8',
   }
 
   const STATUS_LABELS = {
-    DEPOSEE: 'Déposée', ENREGISTREE: 'Enregistrée', CLASSIFIEE: 'Classifiée',
-    AFFECTEE: 'Affectée', EN_INSTRUCTION: 'En instruction', RESOLUE: 'Résolue',
-    CLOTURE_PROVISOIRE: 'Clôture prov.', CLOTURE_DEFINITIVE: 'Clôturée',
-    CONTESTEE: 'Contestée', ESCALADEE: 'Escaladée'
+    SOUMISE: 'Soumise', ACCUSEE: 'Accusée', INSTRUITE: 'Instruite',
+    AFFECTEE: 'Affectée', EN_TRAITEMENT: 'Investigation', RESOLUE: 'Résolue',
+    ARBITREE: 'Arbitrée', CLOTUREE: 'Clôturée',
+    ESCALADEE: 'Escaladée'
   }
 
   return (

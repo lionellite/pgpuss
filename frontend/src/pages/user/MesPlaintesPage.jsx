@@ -44,12 +44,12 @@ export default function MesPlaintesPage() {
           <select className="form-select" style={{ width: 'auto', minWidth: 180 }}
             value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">Tous les statuts</option>
-            <option value="DEPOSEE">Déposée</option>
+            <option value="SOUMISE">Soumise</option>
+            <option value="ACCUSEE">Accusée</option>
             <option value="AFFECTEE">Affectée</option>
-            <option value="EN_INSTRUCTION">En instruction</option>
+            <option value="EN_TRAITEMENT">Investigation</option>
             <option value="RESOLUE">Résolue</option>
-            <option value="CLOTURE_PROVISOIRE">Clôture provisoire</option>
-            <option value="CONTESTEE">Contestée</option>
+            <option value="CLOTUREE">Clôturée</option>
           </select>
         </div>
 

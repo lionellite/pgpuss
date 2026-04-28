@@ -49,18 +49,23 @@ export const authAPI = {
   updateUser: (id, data) => api.patch(`/auth/users/${id}/`, data),
 }
 
-// Complaints
+// Complaints (Bénin Workflow)
 export const complaintsAPI = {
   list: (params) => api.get('/complaints/', { params }),
   create: (data) => api.post('/complaints/create/', data),
   detail: (id) => api.get(`/complaints/${id}/`),
   track: (ticket) => api.get(`/complaints/track/${ticket}/`),
+
+  // Actions
+  acknowledge: (id) => api.post(`/complaints/${id}/acknowledge/`),
+  qualify: (id, data) => api.post(`/complaints/${id}/qualify/`, data),
   assign: (id, data) => api.post(`/complaints/${id}/assign/`, data),
-  start: (id) => api.post(`/complaints/${id}/start/`),
+  startInvestigation: (id) => api.post(`/complaints/${id}/start-investigation/`),
   resolve: (id, data) => api.post(`/complaints/${id}/resolve/`, data),
-  close: (id, data) => api.post(`/complaints/${id}/close/`, data),
-  contest: (id, data) => api.post(`/complaints/${id}/contest/`, data),
   escalate: (id, data) => api.post(`/complaints/${id}/escalate/`, data),
+  arbitrate: (id, data) => api.post(`/complaints/${id}/arbitrate/`, data),
+  close: (id, data) => api.post(`/complaints/${id}/close/`, data),
+
   history: (id) => api.get(`/complaints/${id}/history/`),
   attachments: (id) => api.get(`/complaints/${id}/attachments/`),
   addAttachment: (id, formData) => api.post(`/complaints/${id}/attachments/`, formData, {

@@ -58,16 +58,15 @@ class ComplaintListView(generics.ListAPIView):
 
         if user.role == 'USAGER':
             qs = qs.filter(complainant=user)
-        elif user.role == 'AGENT_RECEPTION':
+        elif user.role in ['PFE', 'DIRECTEUR_EST']:
             qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'GESTIONNAIRE_SERVICE':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role == 'DIRECTEUR':
-            qs = qs.filter(establishment=user.establishment)
-        elif user.role in ['ADMIN_NATIONAL', 'AUDITEUR', 'RESPONSABLE_QUALITE']:
-            pass  # All complaints
-        elif user.role == 'MEDIATEUR':
-            qs = qs.filter(status=ComplaintStatus.CONTESTEE)
+        elif user.role == 'AGENT_INTERNE':
+            qs = qs.filter(assigned_to=user)
+        elif user.role == 'DDS':
+            # Superviser les établissements de sa zone (département)
+            qs = qs.filter(establishment__region__name=user.departement)
+        elif user.role in ['ADMIN_PLATEFORME', 'DQSS', 'CABINET']:
+            pass  # Accès global
 
         # Optimization: Use select_related for foreign keys and annotate with attachment count
         # to avoid N+1 queries when rendering the list.
@@ -120,18 +119,67 @@ class ComplaintTrackView(APIView):
         return Response(data)
 
 
-class ComplaintAssignView(APIView):
-    """Affecter une plainte à un agent"""
+class ComplaintAcknowledgeView(APIView):
+    """Accuser réception d'une plainte (Action PFE)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
+        if request.user.role != 'PFE':
+             return Response({'error': "Action réservée au Point Focal Établissement."}, status=403)
+
+        old_status = complaint.status
+        complaint.status = ComplaintStatus.ACCUSEE
+        complaint.registered_at = timezone.now()
+        complaint.save()
+
+        ComplaintHistory.objects.create(
+            complaint=complaint, action='Accusé de réception',
+            old_status=old_status, new_status=ComplaintStatus.ACCUSEE, actor=request.user
+        )
+        return Response({'message': 'Accusé de réception envoyé.'})
+
+
+class ComplaintQualifyView(APIView):
+    """Qualifier / Catégoriser une plainte (Action PFE)"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        if request.user.role != 'PFE':
+             return Response({'error': "Action réservée au PFE."}, status=403)
+
+        serializer = ComplaintActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        old_status = complaint.status
+        complaint.status = ComplaintStatus.INSTRUITE
+        if serializer.validated_data.get('priority'):
+            complaint.priority = serializer.validated_data['priority']
+        complaint.classified_at = timezone.now()
+        complaint.save()
+
+        ComplaintHistory.objects.create(
+            complaint=complaint, action='Plainte qualifiée / instruite',
+            old_status=old_status, new_status=ComplaintStatus.INSTRUITE,
+            actor=request.user, notes=request.data.get('notes', '')
+        )
+        return Response({'message': 'Plainte qualifiée.'})
+
+
+class ComplaintAssignView(APIView):
+    """Affecter une plainte à un agent interne (Action PFE)"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        if request.user.role != 'PFE':
+             return Response({'error': "Seul le PFE peut affecter une plainte."}, status=403)
+
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         assigned_to_id = serializer.validated_data.get('assigned_to')
-        notes = serializer.validated_data.get('notes', '')
-
         if assigned_to_id:
             agent = get_object_or_404(User, pk=assigned_to_id)
             old_status = complaint.status
@@ -141,55 +189,37 @@ class ComplaintAssignView(APIView):
             complaint.save()
 
             ComplaintHistory.objects.create(
-                complaint=complaint,
-                action=f'Plainte affectée à {agent.full_name}',
-                old_status=old_status,
-                new_status=ComplaintStatus.AFFECTEE,
-                actor=request.user,
-                notes=notes
+                complaint=complaint, action=f'Affectée à {agent.full_name}',
+                old_status=old_status, new_status=ComplaintStatus.AFFECTEE,
+                actor=request.user, notes=serializer.validated_data.get('notes', '')
             )
+            notify_user(agent, "Nouvelle affectation", f"Dossier {complaint.ticket_number}", complaint)
 
-            notify_user(
-                agent,
-                "Nouvelle plainte affectée",
-                f"La plainte {complaint.ticket_number} vous a été affectée.",
-                complaint
-            )
-
-        return Response({'message': 'Plainte affectée avec succès.'})
+        return Response({'message': 'Affectation réussie.'})
 
 
-class ComplaintStartView(APIView):
-    """Passer la plainte en cours d'instruction"""
+class ComplaintStartInvestigationView(APIView):
+    """Démarrer l'investigation (Action Agent Interne)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-
-        # Vérification des permissions
-        if not (request.user == complaint.assigned_to or
-                request.user.role in ['ADMIN_NATIONAL', 'DIRECTEUR', 'GESTIONNAIRE_SERVICE']):
-             return Response(
-                 {'error': "Vous n'êtes pas autorisé à démarrer l'instruction de cette plainte."},
-                 status=status.HTTP_403_FORBIDDEN
-             )
+        if complaint.assigned_to != request.user and request.user.role != 'PFE':
+            return Response({'error': "Non autorisé."}, status=403)
 
         old_status = complaint.status
-        complaint.status = ComplaintStatus.EN_INSTRUCTION
+        complaint.status = ComplaintStatus.EN_TRAITEMENT
         complaint.save()
 
         ComplaintHistory.objects.create(
-            complaint=complaint,
-            action='Début de l\'instruction',
-            old_status=old_status,
-            new_status=ComplaintStatus.EN_INSTRUCTION,
-            actor=request.user,
+            complaint=complaint, action='Début du traitement / Investigation',
+            old_status=old_status, new_status=ComplaintStatus.EN_TRAITEMENT, actor=request.user
         )
-        return Response({'message': 'Plainte en cours d\'instruction.'})
+        return Response({'message': 'Traitement démarré.'})
 
 
 class ComplaintResolveView(APIView):
-    """Résoudre une plainte"""
+    """Proposer une résolution (Action Agent ou PFE)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
@@ -200,83 +230,77 @@ class ComplaintResolveView(APIView):
         old_status = complaint.status
         complaint.status = ComplaintStatus.RESOLUE
         complaint.resolution_notes = serializer.validated_data.get('resolution_notes', '')
-        complaint.corrective_actions = serializer.validated_data.get('corrective_actions', '')
         complaint.resolved_at = timezone.now()
         complaint.save()
 
         ComplaintHistory.objects.create(
-            complaint=complaint,
-            action='Plainte résolue',
-            old_status=old_status,
-            new_status=ComplaintStatus.RESOLUE,
-            actor=request.user,
-            notes=complaint.resolution_notes
+            complaint=complaint, action='Résolution proposée',
+            old_status=old_status, new_status=ComplaintStatus.RESOLUE,
+            actor=request.user, notes=complaint.resolution_notes
         )
-
         if complaint.complainant:
-            notify_user(
-                complaint.complainant,
-                "Plainte résolue",
-                f"Votre plainte {complaint.ticket_number} a été marquée comme résolue.",
-                complaint
-            )
+            notify_user(complaint.complainant, "Résolution proposée", f"Une réponse a été apportée à votre plainte.", complaint)
 
-        return Response({'message': 'Plainte résolue avec succès.'})
+        return Response({'message': 'Résolution enregistrée.'})
 
 
-class ComplaintCloseView(APIView):
-    """Clôturer une plainte"""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, pk):
-        complaint = get_object_or_404(Complaint, pk=pk)
-        notes = request.data.get('notes', '')
-        old_status = complaint.status
-
-        complaint.status = ComplaintStatus.CLOTURE_PROVISOIRE
-        complaint.closed_at = timezone.now()
-        complaint.save()
-
-        ComplaintHistory.objects.create(
-            complaint=complaint,
-            action='Clôture provisoire',
-            old_status=old_status,
-            new_status=ComplaintStatus.CLOTURE_PROVISOIRE,
-            actor=request.user,
-            notes=notes
-        )
-
-        return Response({'message': 'Plainte clôturée provisoirement. L\'usager dispose de 15 jours pour contester.'})
-
-
-class ComplaintContestView(APIView):
-    """Contester la clôture d'une plainte"""
+class ComplaintEscalateView(APIView):
+    """Escalader à l'échelon supérieur (PFE -> Direction, ou Direction -> DDS)"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
         reason = request.data.get('reason', '')
-
-        if complaint.status != ComplaintStatus.CLOTURE_PROVISOIRE:
-            return Response(
-                {'error': 'Seules les plaintes en clôture provisoire peuvent être contestées.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         old_status = complaint.status
-        complaint.status = ComplaintStatus.CONTESTEE
+        complaint.status = ComplaintStatus.ESCALADEE
         complaint.save()
 
         ComplaintHistory.objects.create(
-            complaint=complaint,
-            action='Contestation de la clôture',
-            old_status=old_status,
-            new_status=ComplaintStatus.CONTESTEE,
-            actor=request.user,
-            notes=reason
+            complaint=complaint, action='Escalade du dossier',
+            old_status=old_status, new_status=ComplaintStatus.ESCALADEE,
+            actor=request.user, notes=reason
         )
+        return Response({'message': 'Dossier escaladé.'})
 
-        return Response({'message': 'Votre contestation a été enregistrée.'})
+
+class ComplaintArbitrateView(APIView):
+    """Arbitrer un dossier escaladé (Action DDS ou DQSS)"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        if request.user.role not in ['DDS', 'DQSS', 'CABINET']:
+            return Response({'error': "Seule une autorité de régulation peut arbitrer."}, status=403)
+
+        old_status = complaint.status
+        complaint.status = ComplaintStatus.ARBITREE
+        complaint.save()
+
+        ComplaintHistory.objects.create(
+            complaint=complaint, action='Arbitrage rendu',
+            old_status=old_status, new_status=ComplaintStatus.ARBITREE,
+            actor=request.user, notes=request.data.get('notes', 'Décision d\'arbitrage officielle.')
+        )
+        return Response({'message': 'Arbitrage enregistré.'})
+
+
+class ComplaintCloseView(APIView):
+    """Clôturer définitivement (Action PFE)"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        old_status = complaint.status
+        complaint.status = ComplaintStatus.CLOTUREE
+        complaint.closed_at = timezone.now()
+        complaint.save()
+
+        ComplaintHistory.objects.create(
+            complaint=complaint, action='Clôture définitive',
+            old_status=old_status, new_status=ComplaintStatus.CLOTUREE,
+            actor=request.user, notes=request.data.get('notes', '')
+        )
+        return Response({'message': 'Dossier clôturé.'})
 
 
 class ComplaintEscalateView(APIView):

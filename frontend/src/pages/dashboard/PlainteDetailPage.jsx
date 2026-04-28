@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
 import toast from 'react-hot-toast'
-import { FiArrowLeft, FiUser, FiCheckCircle, FiLock, FiArrowUp, FiAlertTriangle } from 'react-icons/fi'
+import { FiArrowLeft, FiUser, FiCheckCircle, FiLock, FiArrowUp, FiFileText, FiShield } from 'react-icons/fi'
 
 export default function PlainteDetailPage() {
   const { id } = useParams()
@@ -14,7 +14,7 @@ export default function PlainteDetailPage() {
   const [complaint, setComplaint] = useState(null)
   const [loading, setLoading] = useState(true)
   const [agents, setAgents] = useState([])
-  const [modal, setModal] = useState(null) // 'assign' | 'resolve' | 'close' | 'escalate'
+  const [modal, setModal] = useState(null) // 'acknowledge' | 'qualify' | 'assign' | 'resolve' | 'escalate' | 'arbitrate' | 'close'
   const [formData, setFormData] = useState({})
 
   const reload = () => {
@@ -27,11 +27,15 @@ export default function PlainteDetailPage() {
 
   const doAction = async (action, payload) => {
     try {
-      if (action === 'assign') await complaintsAPI.assign(id, payload)
-      else if (action === 'start') await complaintsAPI.start(id)
+      if (action === 'acknowledge') await complaintsAPI.acknowledge(id)
+      else if (action === 'qualify') await complaintsAPI.qualify(id, payload)
+      else if (action === 'assign') await complaintsAPI.assign(id, payload)
+      else if (action === 'start') await complaintsAPI.startInvestigation(id)
       else if (action === 'resolve') await complaintsAPI.resolve(id, payload)
-      else if (action === 'close') await complaintsAPI.close(id, payload)
       else if (action === 'escalate') await complaintsAPI.escalate(id, payload)
+      else if (action === 'arbitrate') await complaintsAPI.arbitrate(id, payload)
+      else if (action === 'close') await complaintsAPI.close(id)
+
       toast.success('Action effectuée avec succès')
       setModal(null)
       reload()
@@ -41,10 +45,11 @@ export default function PlainteDetailPage() {
   if (!complaint && loading) return <div className="loading-center"><div className="spinner" /></div>
   if (!complaint) return null
 
-  const canAssign = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL','DIRECTEUR'].includes(user?.role)
-  const canResolve = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL','DIRECTEUR','MEDIATEUR'].includes(user?.role)
-  const canClose = canResolve
-  const canEscalate = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL'].includes(user?.role)
+  // Permissions Bénin Workflow
+  const isPFE = user?.role === 'PFE'
+  const isAgent = user?.role === 'AGENT_INTERNE'
+  const isRegulateur = ['DDS', 'DQSS', 'CABINET'].includes(user?.role)
+  const isDirecteur = user?.role === 'DIRECTEUR_EST'
 
   return (
     <div style={{ padding: '1rem 0' }}>
@@ -52,19 +57,15 @@ export default function PlainteDetailPage() {
         <FiArrowLeft /> RETOUR À LA LISTE
       </button>
 
-      {/* Header */}
       <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dossier N°</div>
-            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>
-              {complaint.ticket_number}
-            </div>
+            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>{complaint.ticket_number}</div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <StatusBadge status={complaint.status} />
             <PriorityBadge priority={complaint.priority} />
-            {complaint.is_overdue && <span className="badge badge-escaladee">RETARD</span>}
           </div>
         </div>
         <h1 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', color: '#111' }}>{complaint.title}</h1>
@@ -76,7 +77,7 @@ export default function PlainteDetailPage() {
             { label: 'Catégorie', value: complaint.category_name },
             { label: 'Canal', value: complaint.channel_display },
             { label: 'Plaignant', value: complaint.complainant_display },
-            { label: 'Assigné à', value: complaint.assigned_to_name || 'Non assigné' },
+            { label: 'Affecté à', value: complaint.assigned_to_name || 'Non affecté' },
             { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
           ].map((item, i) => (
             <div key={i} style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
@@ -86,192 +87,133 @@ export default function PlainteDetailPage() {
           ))}
         </div>
 
-        {/* Actions */}
+        {/* Workflow Actions */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-          {canAssign && (
-            <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
-              <FiUser /> Affecter
+
+          {/* PFE Actions */}
+          {isPFE && complaint.status === 'SOUMISE' && (
+            <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
+              Accuser réception
             </button>
           )}
-          {canResolve && (complaint.status === 'AFFECTEE' || complaint.status === 'CLASSIFIEE') && (
-            <button className="btn btn-primary btn-sm" onClick={() => doAction('start')}>
-              🚀 Démarrer l'instruction
+          {isPFE && complaint.status === 'ACCUSEE' && (
+            <button className="btn btn-primary btn-sm" onClick={() => setModal('qualify')}>
+              <FiFileText /> Qualifier
             </button>
           )}
-          {canResolve && complaint.status === 'EN_INSTRUCTION' && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
-              <FiCheckCircle /> Résoudre
-            </button>
+          {isPFE && complaint.status === 'INSTRUITE' && (
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
+                <FiUser /> Affecter
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
+                Traiter directement
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+                <FiArrowUp /> Escalader à la Direction
+              </button>
+            </div>
           )}
-          {canClose && complaint.status === 'RESOLUE' && (
-            <button className="btn btn-ghost btn-sm" onClick={() => setModal('close')}>
+          {isPFE && complaint.status === 'RESOLUE' && (
+            <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
               <FiLock /> Clôturer
             </button>
           )}
-          {canEscalate && ['EN_INSTRUCTION','AFFECTEE'].includes(complaint.status) && (
-            <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
-              <FiArrowUp /> Escalader
+
+          {/* Agent Actions */}
+          {isAgent && complaint.status === 'AFFECTEE' && (
+            <button className="btn btn-primary btn-sm" onClick={() => doAction('start')}>
+              🚀 Accepter l'affectation
+            </button>
+          )}
+          {isAgent && complaint.status === 'EN_TRAITEMENT' && (
+            <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
+              <FiCheckCircle /> Soumettre rapport
+            </button>
+          )}
+
+          {/* Direction / Régulation Actions */}
+          {isRegulateur && complaint.status === 'ESCALADEE' && (
+            <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
+              <FiShield /> Arbitrer
             </button>
           )}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem' }}>
-        {/* Description + Resolution */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-card" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Description</h3>
-            <p style={{ color: '#8FA3BF', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
+            <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
           </div>
           {complaint.resolution_notes && (
-            <div className="glass-card" style={{ padding: '1.75rem', borderColor: 'rgba(6,214,160,0.2)' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: '#06D6A0' }}>✅ Résolution</h3>
-              <p style={{ color: '#8FA3BF', lineHeight: 1.8, fontSize: '0.9rem' }}>{complaint.resolution_notes}</p>
-              {complaint.corrective_actions && (
-                <>
-                  <h4 style={{ fontWeight: 600, marginTop: '0.75rem', marginBottom: '0.4rem', fontSize: '0.875rem', color: '#F0F4FF' }}>
-                    Actions correctives:
-                  </h4>
-                  <p style={{ color: '#8FA3BF', fontSize: '0.875rem' }}>{complaint.corrective_actions}</p>
-                </>
-              )}
-            </div>
-          )}
-          {/* Attachments */}
-          {complaint.attachments?.length > 0 && (
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Pièces jointes ({complaint.attachments.length})</h3>
-              {complaint.attachments.map((a, i) => (
-                <a key={i} href={a.file} target="_blank" rel="noreferrer" style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem',
-                  background: 'rgba(0,119,182,0.05)', borderRadius: '8px', marginBottom: '0.5rem',
-                  border: '1px solid rgba(0,119,182,0.1)', textDecoration: 'none',
-                }}>
-                  <span>📎</span>
-                  <span style={{ fontSize: '0.875rem', color: '#00B4D8' }}>{a.file_name}</span>
-                  <span style={{ fontSize: '0.75rem', color: '#4A6080', marginLeft: 'auto' }}>
-                    {(a.file_size / 1024).toFixed(0)} Ko
-                  </span>
-                </a>
-              ))}
+            <div className="glass-card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--color-primary)' }}>
+              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>Résolution / Rapport</h3>
+              <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem' }}>{complaint.resolution_notes}</p>
             </div>
           )}
         </div>
 
-        {/* History */}
         <div className="glass-card" style={{ padding: '1.75rem', alignSelf: 'flex-start' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>
-            Historique ({complaint.history?.length || 0})
-          </h3>
-          {complaint.history?.length > 0 ? (
-            <div className="timeline">
-              {[...complaint.history].reverse().map((h, i) => (
-                <div key={i} className="timeline-item">
-                  <div className="timeline-date">
-                    {new Date(h.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div className="timeline-title">{h.action}</div>
-                  {h.actor_name && <div style={{ fontSize: '0.75rem', color: '#3B82F6', marginTop: '0.15rem' }}>par {h.actor_name}</div>}
-                  {h.notes && <div className="timeline-note">{h.notes}</div>}
-                </div>
-              ))}
-            </div>
-          ) : <p style={{ color: '#4A6080', fontSize: '0.875rem' }}>Aucun historique</p>}
+          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>Historique</h3>
+          <div className="timeline">
+            {[...complaint.history].reverse().map((h, i) => (
+              <div key={i} className="timeline-item">
+                <div className="timeline-date">{new Date(h.timestamp).toLocaleDateString('fr-FR')}</div>
+                <div className="timeline-title">{h.action}</div>
+                {h.actor_name && <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)' }}>par {h.actor_name}</div>}
+                {h.notes && <div className="timeline-note">{h.notes}</div>}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Action Modals */}
       {modal && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">
-                {modal === 'assign' && '👤 Affecter la plainte'}
-                {modal === 'resolve' && '✅ Résoudre la plainte'}
-                {modal === 'close' && '🔒 Clôturer la plainte'}
-                {modal === 'escalate' && '⬆️ Escalader la plainte'}
-              </h3>
+              <h3 className="modal-title">Action : {modal}</h3>
               <button className="modal-close" onClick={() => setModal(null)}>✕</button>
             </div>
 
-            {modal === 'assign' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {modal === 'qualify' && (
                 <div className="form-group">
-                  <label className="form-label">Assigner à</label>
-                  <select className="form-select" value={formData.assigned_to || ''}
-                    onChange={e => setFormData(d => ({ ...d, assigned_to: e.target.value }))}>
-                    <option value="">Sélectionnez un agent</option>
-                    {agents.filter(a => a.role !== 'USAGER').map(a => (
-                      <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                  <label className="form-label">Niveau de priorité</label>
+                  <select className="form-select" onChange={e => setFormData({...formData, priority: e.target.value})}>
+                    <option value="P4">P4 - Normal</option>
+                    <option value="P3">P3 - Élevé</option>
+                    <option value="P2">P2 - Urgent</option>
+                    <option value="P1">P1 - Critique</option>
+                  </select>
+                </div>
+              )}
+
+              {modal === 'assign' && (
+                <div className="form-group">
+                  <label className="form-label">Agent interne</label>
+                  <select className="form-select" onChange={e => setFormData({...formData, assigned_to: e.target.value})}>
+                    <option value="">Sélectionner un agent</option>
+                    {agents.filter(a => a.role === 'AGENT_INTERNE').map(a => (
+                      <option key={a.id} value={a.id}>{a.full_name}</option>
                     ))}
                   </select>
                 </div>
-                <textarea className="form-textarea" placeholder="Note (optionnel)"
-                  value={formData.notes || ''} onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))} />
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
-                  <button className="btn btn-primary" onClick={() => doAction('assign', formData)}>Affecter</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {modal === 'resolve' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Notes de résolution *</label>
-                  <textarea className="form-textarea" placeholder="Expliquez la résolution apportée..."
-                    value={formData.resolution_notes || ''} onChange={e => setFormData(d => ({ ...d, resolution_notes: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Actions correctives (optionnel)</label>
-                  <textarea className="form-textarea" placeholder="Mesures prises pour éviter la récurrence..."
-                    value={formData.corrective_actions || ''} onChange={e => setFormData(d => ({ ...d, corrective_actions: e.target.value }))} />
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
-                  <button className="btn btn-secondary" onClick={() => doAction('resolve', formData)}>
-                    <FiCheckCircle /> Marquer comme résolu
-                  </button>
-                </div>
-              </div>
-            )}
+              {['resolve', 'arbitrate', 'qualify', 'escalate'].includes(modal) && (
+                <textarea className="form-textarea" placeholder="Notes ou commentaires..."
+                  onChange={e => setFormData({...formData, notes: e.target.value, resolution_notes: e.target.value, reason: e.target.value})} />
+              )}
 
-            {modal === 'close' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ color: '#8FA3BF', fontSize: '0.875rem' }}>
-                  La plainte sera clôturée provisoirement. L'usager dispose de 15 jours pour contester.
-                </p>
-                <textarea className="form-textarea" placeholder="Note de clôture (optionnel)"
-                  value={formData.notes || ''} onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))} />
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
-                  <button className="btn btn-primary" onClick={() => doAction('close', formData)}>Clôturer</button>
-                </div>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
+                <button className="btn btn-primary" onClick={() => doAction(modal, formData)}>Confirmer</button>
               </div>
-            )}
-
-            {modal === 'escalate' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Escalader vers</label>
-                  <select className="form-select" value={formData.to_user || ''}
-                    onChange={e => setFormData(d => ({ ...d, to_user: e.target.value }))}>
-                    <option value="">Sélectionnez un responsable</option>
-                    {agents.filter(a => ['DIRECTEUR','RESPONSABLE_QUALITE','ADMIN_NATIONAL'].includes(a.role)).map(a => (
-                      <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
-                    ))}
-                  </select>
-                </div>
-                <textarea className="form-textarea" placeholder="Motif de l'escalade..."
-                  value={formData.reason || ''} onChange={e => setFormData(d => ({ ...d, reason: e.target.value }))} />
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
-                  <button className="btn btn-danger" onClick={() => doAction('escalate', formData)}>
-                    <FiArrowUp /> Escalader
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}

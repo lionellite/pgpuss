@@ -57,7 +57,7 @@ export default function PlaintesListPage() {
           <select className="form-select" style={{ width: 'auto', minWidth: 160 }}
             value={filters.status} onChange={e => setFilter('status', e.target.value)}>
             <option value="">Tous les statuts</option>
-            {['DEPOSEE','ENREGISTREE','CLASSIFIEE','AFFECTEE','EN_INSTRUCTION','RESOLUE','CLOTURE_PROVISOIRE','CLOTURE_DEFINITIVE','CONTESTEE','ESCALADEE'].map(s => (
+            {['SOUMISE','ACCUSEE','INSTRUITE','AFFECTEE','EN_TRAITEMENT','RESOLUE','ARBITREE','CLOTUREE','ESCALADEE'].map(s => (
               <option key={s} value={s}>{s.replace(/_/g,' ')}</option>
             ))}
           </select>
