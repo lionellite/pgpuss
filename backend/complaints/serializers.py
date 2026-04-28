@@ -66,7 +66,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user and request.user.is_authenticated:
             validated_data['complainant'] = request.user
-        validated_data['status'] = ComplaintStatus.DEPOSEE
+        validated_data['status'] = ComplaintStatus.SOUMISE
         complaint = super().create(validated_data)
 
         # Perform NLP Analysis (Simulated)
@@ -76,10 +76,10 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         # Create history entry
         ComplaintHistory.objects.create(
             complaint=complaint,
-            action='Dépôt et classification automatique (IA)',
+            action='Dépôt de la plainte',
             new_status=complaint.status,
             actor=complaint.complainant,
-            notes=f'Plainte déposée via {complaint.get_channel_display()}. Catégorisée automatiquement.'
+            notes=f'Plainte déposée via {complaint.get_channel_display()}.'
         )
         return complaint
 

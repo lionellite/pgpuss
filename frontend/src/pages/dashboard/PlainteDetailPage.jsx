@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
 import toast from 'react-hot-toast'
+import { FiArrowLeft, FiUser, FiCheckCircle, FiLock, FiArrowUp, FiFileText, FiShield } from 'react-icons/fi'
 
 export default function PlainteDetailPage() {
   const { id } = useParams()
@@ -13,7 +14,7 @@ export default function PlainteDetailPage() {
   const [complaint, setComplaint] = useState(null)
   const [loading, setLoading] = useState(true)
   const [agents, setAgents] = useState([])
-  const [modal, setModal] = useState(null) // 'assign' | 'resolve' | 'close' | 'escalate'
+  const [modal, setModal] = useState(null) // 'acknowledge' | 'qualify' | 'assign' | 'resolve' | 'escalate' | 'arbitrate' | 'close'
   const [formData, setFormData] = useState({})
 
   const reload = () => {
@@ -30,11 +31,15 @@ export default function PlainteDetailPage() {
 
   const doAction = async (action, payload) => {
     try {
-      if (action === 'assign') await complaintsAPI.assign(id, payload)
-      else if (action === 'start') await complaintsAPI.start(id)
+      if (action === 'acknowledge') await complaintsAPI.acknowledge(id)
+      else if (action === 'qualify') await complaintsAPI.qualify(id, payload)
+      else if (action === 'assign') await complaintsAPI.assign(id, payload)
+      else if (action === 'start') await complaintsAPI.startInvestigation(id)
       else if (action === 'resolve') await complaintsAPI.resolve(id, payload)
-      else if (action === 'close') await complaintsAPI.close(id, payload)
       else if (action === 'escalate') await complaintsAPI.escalate(id, payload)
+      else if (action === 'arbitrate') await complaintsAPI.arbitrate(id, payload)
+      else if (action === 'close') await complaintsAPI.close(id)
+
       toast.success('Action effectuée avec succès')
       setModal(null)
       setFormData({})
@@ -49,10 +54,11 @@ export default function PlainteDetailPage() {
   )
   if (!complaint) return null
 
-  const canAssign = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL','DIRECTEUR'].includes(user?.role)
-  const canResolve = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL','DIRECTEUR','MEDIATEUR'].includes(user?.role)
-  const canClose = canResolve
-  const canEscalate = ['AGENT_RECEPTION','GESTIONNAIRE_SERVICE','ADMIN_NATIONAL'].includes(user?.role)
+  // Permissions Bénin Workflow
+  const isPFE = user?.role === 'PFE'
+  const isAgent = user?.role === 'AGENT_INTERNE'
+  const isRegulateur = ['DDS', 'DQSS', 'CABINET'].includes(user?.role)
+  const isDirecteur = user?.role === 'DIRECTEUR_EST'
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -250,7 +256,7 @@ export default function PlainteDetailPage() {
         </aside>
       </div>
 
-      {/* Modals */}
+      {/* Action Modals */}
       {modal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
