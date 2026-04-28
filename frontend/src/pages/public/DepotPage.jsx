@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { FiUpload, FiX, FiCheckCircle, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX, FiCopy, FiCheck } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
@@ -126,29 +127,50 @@ export default function DepotPage() {
 
   if (submitted) {
     return (
-      <div className="py-20 min-h-[80vh] flex items-center justify-center bg-surface">
-        <div className="max-w-xl w-full mx-auto px-6 text-center">
-          <div className="w-20 h-20 bg-secondary/10 text-secondary rounded-full mx-auto mb-8 flex items-center justify-center">
-            <span className="material-symbols-outlined text-4xl">check_circle</span>
-          </div>
-          <h1 className="text-3xl font-black text-on-surface mb-3">Plainte déposée avec succès !</h1>
-          <p className="text-on-surface-variant mb-10 leading-relaxed">
-            Votre plainte a été enregistrée. Un agent traitera votre dossier dans les plus brefs délais.
-            Conservez précieusement votre numéro de ticket.
-          </p>
-
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mb-10">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Votre numéro de ticket</p>
-            <div className="flex items-center justify-center space-x-4">
-              <span className="text-4xl font-black text-primary tracking-wider tabular-nums">
-                {submitted.ticket_number}
-              </span>
-              <button
-                onClick={() => handleCopy(submitted.ticket_number)}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                title="Copier le numéro"
-              >
-                <span className="material-symbols-outlined">{copied ? 'check' : 'content_copy'}</span>
+      <div style={{ padding: '5rem 0', minHeight: '80vh' }}>
+        <div className="page-container">
+          <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%', margin: '0 auto 2rem',
+              background: 'rgba(6,214,160,0.1)', border: '3px solid #06D6A0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '2.5rem',
+            }}>✅</div>
+            <h1 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '2rem', color: '#F0F4FF', marginBottom: '0.75rem' }}>
+              Plainte déposée !
+            </h1>
+            <p style={{ color: '#8FA3BF', marginBottom: '2rem', lineHeight: 1.7 }}>
+              Votre plainte a été enregistrée avec succès. Conservez votre numéro de ticket pour le suivi.
+            </p>
+            <div style={{
+              padding: '1.5rem', background: 'rgba(6,214,160,0.05)',
+              border: '2px solid rgba(6,214,160,0.3)', borderRadius: '16px', marginBottom: '2rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
+            }}>
+              <div style={{ fontSize: '0.85rem', color: '#8FA3BF' }}>Votre numéro de ticket</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2.5rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
+                  {submitted.ticket_number}
+                </div>
+                <button
+                  onClick={() => handleCopy(submitted.ticket_number)}
+                  aria-label="Copier le numéro de ticket"
+                  style={{
+                    background: 'rgba(6,214,160,0.1)', border: '1px solid rgba(6,214,160,0.3)',
+                    color: '#06D6A0', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(6,214,160,0.2)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'rgba(6,214,160,0.1)'}
+                >
+                  {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={() => navigate(`/suivi?ticket=${submitted.ticket_number}`)}>
+                Suivre ma plainte
               </button>
             </div>
           </div>
@@ -189,14 +211,8 @@ export default function DepotPage() {
           </button>
         </header>
 
-        {/* Multi-step progress bar */}
-        <div className="mb-12 relative">
-          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
-          <div
-            className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-500"
-            style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }}
-          ></div>
-          <div className="relative z-10 flex justify-between">
+          {/* Step indicator */}
+          <nav aria-label="Étapes de la plainte" className="steps" style={{ marginBottom: '3rem' }}>
             {STEPS.map((s, i) => (
               <div key={i} className="flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
@@ -209,11 +225,7 @@ export default function DepotPage() {
                 }`}>{s}</span>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 md:p-12">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          </nav>
 
             {/* Step 0 — Établissement */}
             {step === 0 && (
@@ -222,8 +234,8 @@ export default function DepotPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="form-group">
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Région</label>
-                    <select className="form-select w-full" value={selectedRegion} onChange={e => {
+                    <label className="form-label" htmlFor="region-select">Région</label>
+                    <select id="region-select" className="form-select" value={selectedRegion} onChange={e => {
                       setSelectedRegion(e.target.value)
                       setValue('establishment', '')
                       setValue('service', '')
@@ -234,8 +246,8 @@ export default function DepotPage() {
                   </div>
 
                   <div className="form-group">
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Établissement *</label>
-                    <select className="form-select w-full" {...register('establishment', { required: 'Veuillez choisir un établissement' })}>
+                    <label className="form-label" htmlFor="est-select">Établissement *</label>
+                    <select id="est-select" className="form-select" {...register('establishment', { required: 'Requis' })}>
                       <option value="">Sélectionnez un établissement</option>
                       {establishments
                         .filter(e => !selectedRegion || e.region === selectedRegion)
@@ -258,33 +270,54 @@ export default function DepotPage() {
               </div>
             )}
 
-            {/* Step 1 — Catégorie */}
-            {step === 1 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-bold text-on-surface border-l-4 border-primary pl-4">2. Type de plainte</h2>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {categories.map(cat => (
-                    <label key={cat.id} className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all cursor-pointer group hover:shadow-md ${
-                      String(catId) === String(cat.id) ? 'border-primary bg-primary/5' : 'border-slate-100 bg-slate-50'
-                    }`}>
-                      <input type="radio" value={cat.id} {...register('category', { required: 'Veuillez choisir une catégorie' })} className="hidden" />
-                      <span className="text-3xl mb-4 transform transition-transform group-hover:scale-110">{cat.icon}</span>
-                      <span className="text-[11px] font-bold text-center uppercase tracking-wider text-on-surface">{cat.name}</span>
+              {/* Step 2 — Description */}
+              {step === 2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description de la plainte</h2>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="title-input">Titre de la plainte *</label>
+                    <input className="form-input" placeholder="Résumez votre plainte en une phrase"
+                      {...register('title', { required: 'Titre requis', minLength: { value: 10, message: 'Min. 10 caractères' } })} />
+                    {errors.title && <span className="form-error">{errors.title.message}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Description détaillée *</label>
+                    <textarea className="form-textarea" style={{ minHeight: 180 }}
+                      placeholder="Décrivez le problème en détail : que s'est-il passé ? Quand ? Qui était impliqué ?..."
+                      {...register('description', { required: 'Description requise', minLength: { value: 50, message: 'Min. 50 caractères' } })} />
+                    {errors.description && <span className="form-error">{errors.description.message}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Pièces jointes (optionnel — max 5 fichiers)</label>
+                    <label style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
+                      padding: '2rem', border: '2px dashed rgba(0,119,182,0.3)', borderRadius: '12px',
+                      cursor: 'pointer', background: 'rgba(0,119,182,0.03)',
+                      transition: 'all 0.2s',
+                    }}>
+                      <FiUpload style={{ fontSize: '1.5rem', color: '#8FA3BF' }} aria-hidden="true" />
+                      <span style={{ fontSize: '0.875rem', color: '#8FA3BF' }}>Cliquez pour ajouter des fichiers</span>
+                      <span style={{ fontSize: '0.75rem', color: '#4A6080' }}>PDF, images — Max 10 MB par fichier</span>
+                      <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                     </label>
-                  ))}
-                </div>
-                {errors.category && <p className="text-xs text-error font-medium">{errors.category.message}</p>}
-
-                {selectedCategory?.subcategories?.length > 0 && (
-                  <div className="form-group animate-in fade-in duration-300">
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Sous-catégorie (optionnel)</label>
-                    <select className="form-select w-full" {...register('subcategory')}>
-                      <option value="">Sélectionnez une sous-catégorie</option>
-                      {selectedCategory.subcategories.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
+                    {files.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+                        {files.map((f, i) => (
+                          <div key={i} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0.5rem 0.875rem', background: 'rgba(0,119,182,0.05)',
+                            borderRadius: '8px', border: '1px solid rgba(0,119,182,0.1)',
+                          }}>
+                            <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>📎 {f.name}</span>
+                            <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                              aria-label="Supprimer le fichier"
+                              style={{ background: 'none', border: 'none', color: '#EF476F', cursor: 'pointer' }}>
+                              <FiX />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

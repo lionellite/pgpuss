@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
+import { FiSearch, FiClock, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
@@ -50,17 +51,30 @@ export default function TrackPage() {
           </p>
         </header>
 
-        {/* Search form */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-10">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-              <input
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-xl text-lg font-mono font-bold tracking-widest focus:ring-2 focus:ring-primary transition-all placeholder:text-slate-300 placeholder:font-sans placeholder:tracking-normal placeholder:font-normal"
-                value={ticket}
-                onChange={e => setTicket(e.target.value)}
-                placeholder="EX: PGP-2024-XXXX"
-              />
+          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem' }}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <label htmlFor="ticket-input" className="sr-only">Numéro de ticket</label>
+                <FiSearch aria-hidden="true" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                <input
+                  id="ticket-input"
+                  className="form-input"
+                  style={{ paddingLeft: '2.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  value={ticket}
+                  onChange={e => setTicket(e.target.value)}
+                  placeholder="PGP-2026-AB1234"
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? '...' : 'RECHERCHER'}
+              </button>
+            </form>
+          </div>
+
+          {error && (
+            <div className="alert alert-danger" role="alert" style={{ marginBottom: '1.5rem' }}>
+              <FiAlertCircle style={{ flexShrink: 0 }} aria-hidden="true" />
+              {error}
             </div>
             <button
               type="submit"
@@ -84,21 +98,24 @@ export default function TrackPage() {
           </div>
         )}
 
-        {/* Result */}
-        {result && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="p-8 md:p-12">
-              <div className="flex flex-wrap items-center justify-between gap-6 mb-10">
+          {result && (
+            <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dossier identifié</p>
                   <div className="flex items-center space-x-3">
                     <h2 className="text-3xl font-black text-primary tracking-tighter">{result.ticket_number}</h2>
                     <button
                       onClick={() => handleCopy(result.ticket_number)}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-slate-50 rounded-lg"
-                      title="Copier"
+                      aria-label="Copier le numéro de ticket"
+                      style={{
+                        background: '#f1f1f1', border: '1px solid #ccc',
+                        color: '#333', borderRadius: '4px', padding: '0.35rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
                     >
-                      <span className="material-symbols-outlined text-lg">{copied ? 'check' : 'content_copy'}</span>
+                      {copied ? <FiCheck size={14} aria-hidden="true" /> : <FiCopy size={14} aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
@@ -122,25 +139,10 @@ export default function TrackPage() {
                 </div>
               </div>
 
-              {/* Resolution Notes if available */}
-              {result.resolution_notes && (
-                <div className="bg-secondary/5 p-6 rounded-2xl border border-secondary/10 mb-10">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <span className="material-symbols-outlined text-secondary text-sm">task_alt</span>
-                    <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest">Résolution apportée</h4>
-                  </div>
-                  <p className="text-sm font-medium text-on-surface leading-relaxed italic">
-                    "{result.resolution_notes}"
-                  </p>
-                </div>
-              )}
-
-              {/* Timeline */}
               {result.timeline?.length > 0 && (
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center">
-                    <span className="material-symbols-outlined text-sm mr-3">history</span>
-                    Journal de traitement
+                <div>
+                  <h4 style={{ fontWeight: 600, fontSize: '0.875rem', color: '#666', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Historique du traitement
                   </h4>
                   <div className="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
                     {result.timeline.map((item, i) => (
@@ -168,20 +170,13 @@ export default function TrackPage() {
               )}
             </div>
 
-            <footer className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Plateforme officielle de suivi — Ministère de la Santé
-              </p>
-            </footer>
-          </div>
-        )}
-
-        {/* Info box */}
-        {!result && !error && (
-          <div className="mt-8 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 text-center md:text-left">
-            <div className="flex items-center space-x-3">
-              <span className="material-symbols-outlined text-primary">info</span>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Besoin d'aide ?</p>
+          {!result && !error && (
+            <div className="alert alert-info">
+              <FiClock style={{ flexShrink: 0 }} aria-hidden="true" />
+              <div>
+                <strong>Vous n'avez pas de numéro de ticket ?</strong> Si vous avez déposé une plainte avec un compte,
+                <a href="/connexion" style={{ color: 'var(--color-primary)', marginLeft: '0.25rem' }}>connectez-vous</a> pour accéder directement à vos plaintes.
+              </div>
             </div>
             <p className="text-xs text-slate-400">
               Si vous avez un compte, <a href="/connexion" className="text-primary font-bold underline decoration-primary/30 underline-offset-4">connectez-vous</a> pour gérer toutes vos plaintes.

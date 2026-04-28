@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, Avg, Q, F
+from django.db.models import Count, Avg, Q, F, ExpressionWrapper, fields
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import timedelta
@@ -32,23 +32,26 @@ class DashboardView(APIView):
             ComplaintStatus.EN_INSTRUCTION, ComplaintStatus.ESCALADEE,
             ComplaintStatus.CONTESTEE
         ]
-        closed_statuses = [
-            ComplaintStatus.CLOTURE_PROVISOIRE, ComplaintStatus.CLOTURE_DEFINITIVE
-        ]
 
-        total = qs.count()
-        open_count = qs.filter(status__in=open_statuses).count()
-        resolved = qs.filter(status=ComplaintStatus.RESOLUE).count()
-        overdue = qs.filter(is_overdue=True).count()
+        # Optimization: Use conditional aggregation to fetch multiple counts in a single query
+        counts = qs.aggregate(
+            total=Count('id'),
+            open_count=Count('id', filter=Q(status__in=open_statuses)),
+            resolved=Count('id', filter=Q(status=ComplaintStatus.RESOLUE)),
+            overdue=Count('id', filter=Q(is_overdue=True))
+        )
+        total = counts['total']
+        open_count = counts['open_count']
+        resolved = counts['resolved']
+        overdue = counts['overdue']
 
-        # Average resolution time (in hours)
-        resolved_complaints = qs.filter(resolved_at__isnull=False)
-        if resolved_complaints.exists():
-            total_hours = sum(
-                (c.resolved_at - c.created_at).total_seconds() / 3600
-                for c in resolved_complaints[:100]
-            )
-            avg_resolution = round(total_hours / min(resolved_complaints.count(), 100), 1)
+        # Optimization: Calculate average resolution time in the database
+        avg_resolution_data = qs.filter(resolved_at__isnull=False).aggregate(
+            avg_time=Avg(F('resolved_at') - F('created_at'))
+        )
+        avg_resolution_td = avg_resolution_data['avg_time']
+        if avg_resolution_td:
+            avg_resolution = round(avg_resolution_td.total_seconds() / 3600, 1)
         else:
             avg_resolution = 0
 
@@ -91,8 +94,9 @@ class DashboardView(APIView):
             .order_by('-count')[:10]
         )
 
-        # Recent complaints
-        recent = ComplaintListSerializer(qs[:5], many=True).data
+        # Optimization: Use select_related to avoid N+1 queries in Recent complaints
+        recent_qs = qs.select_related('category', 'establishment', 'assigned_to')[:5]
+        recent = ComplaintListSerializer(recent_qs, many=True).data
 
         return Response({
             'total_complaints': total,
