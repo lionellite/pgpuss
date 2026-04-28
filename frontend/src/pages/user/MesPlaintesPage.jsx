@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
-import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
-import { FiPlusCircle, FiSearch, FiFilter, FiFileText } from 'react-icons/fi'
 
 export default function MesPlaintesPage() {
-  const { user } = useAuth()
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -22,81 +19,94 @@ export default function MesPlaintesPage() {
   }, [search, statusFilter])
 
   return (
-    <div style={{ padding: '2rem 0' }}>
-      <div className="page-container">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 className="page-title">Mes plaintes</h1>
-            <p className="page-subtitle">Suivez l'avancement de toutes vos plaintes</p>
-          </div>
-          <Link to="/espace/deposer" className="btn btn-primary">
-            <FiPlusCircle /> Nouvelle plainte
-          </Link>
+    <div className="py-8 space-y-8 animate-in fade-in duration-500">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-on-surface tracking-tight">Mes plaintes</h1>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Historique de vos signalements</p>
         </div>
+        <Link to="/espace/deposer" className="btn btn-primary px-6">
+          <span className="material-symbols-outlined mr-2">add_circle</span>
+          Nouvelle plainte
+        </Link>
+      </header>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-            <input className="form-input" style={{ paddingLeft: '2.5rem' }}
-              placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <select className="form-select" style={{ width: 'auto', minWidth: 180 }}
-            value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="">Tous les statuts</option>
-            <option value="DEPOSEE">Déposée</option>
-            <option value="AFFECTEE">Affectée</option>
-            <option value="EN_INSTRUCTION">En instruction</option>
-            <option value="RESOLUE">Résolue</option>
-            <option value="CLOTURE_PROVISOIRE">Clôture provisoire</option>
-            <option value="CONTESTEE">Contestée</option>
-          </select>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+        <div className="relative flex-1 min-w-[240px]">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+          <input
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
+            placeholder="Rechercher par ticket ou titre..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
-
-        {loading ? (
-          <div className="loading-center"><div className="spinner" /></div>
-        ) : complaints.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
-            <h3 style={{ color: '#8FA3BF', marginBottom: '0.5rem' }}>Aucune plainte trouvée</h3>
-            <p style={{ color: '#4A6080', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              Vous n'avez pas encore déposé de plainte.
-            </p>
-            <Link to="/deposer" className="btn btn-primary"><FiPlusCircle /> Déposer une plainte</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {complaints.map(c => (
-              <Link key={c.id} to={`/espace/plaintes/${c.id}`} style={{ textDecoration: 'none' }}>
-                <div className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '10px', flexShrink: 0,
-                    background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#00B4D8', fontSize: '1.1rem',
-                  }}><FiFileText /></div>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontWeight: 600, color: '#F0F4FF', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
-                      {c.title}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#8FA3BF' }}>
-                      {c.ticket_number} • {c.establishment_name || 'Établissement non spécifié'} • {c.category_name || '—'}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <StatusBadge status={c.status} />
-                    <PriorityBadge priority={c.priority} />
-                    {c.is_overdue && <span className="badge badge-escaladee">⚠ En retard</span>}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#4A6080', flexShrink: 0 }}>
-                    {new Date(c.created_at).toLocaleDateString('fr-FR')}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <select
+          className="form-select text-sm py-2 bg-white border-slate-200 rounded-lg focus:ring-primary min-w-[180px]"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="">Tous les statuts</option>
+          <option value="DEPOSEE">Déposée</option>
+          <option value="AFFECTEE">Affectée</option>
+          <option value="EN_INSTRUCTION">En instruction</option>
+          <option value="RESOLUE">Résolue</option>
+          <option value="CLOTURE_PROVISOIRE">Clôture provisoire</option>
+          <option value="CONTESTEE">Contestée</option>
+        </select>
       </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+        </div>
+      ) : complaints.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-20 text-center">
+          <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-4xl">inventory_2</span>
+          </div>
+          <h3 className="text-lg font-bold text-on-surface mb-1">Aucune plainte trouvée</h3>
+          <p className="text-sm text-slate-400 mb-8 max-w-xs mx-auto">
+            Vous n'avez pas encore de dossier correspondant à vos critères de recherche.
+          </p>
+          <Link to="/espace/deposer" className="btn btn-primary px-8">Déposer ma première plainte</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {complaints.map(c => (
+            <Link key={c.id} to={`/espace/plaintes/${c.id}`} className="group">
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex flex-col md:flex-row md:items-center gap-4">
+                <div className="bg-primary/5 text-primary p-3 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                  <span className="material-symbols-outlined">description</span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-mono text-xs font-bold text-primary">#{c.ticket_number}</span>
+                    <span className="text-[10px] text-slate-300">•</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                      {new Date(c.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">{c.title}</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight truncate">
+                    {c.establishment_name || 'Établissement non spécifié'}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 md:border-l md:pl-6 border-slate-50">
+                  <StatusBadge status={c.status} />
+                  <PriorityBadge priority={c.priority} />
+                  <span className="material-symbols-outlined text-slate-200 group-hover:text-primary transition-colors group-hover:translate-x-1 duration-300">
+                    chevron_right
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
