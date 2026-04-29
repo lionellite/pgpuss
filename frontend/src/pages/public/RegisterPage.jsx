@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authAPI } from '../../api'
 import toast from 'react-hot-toast'
+import { FiUser, FiMail, FiPhone, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -22,130 +23,95 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8 text-center">
-        <h2 className="text-2xl font-black text-on-surface tracking-tight">Rejoignez-nous</h2>
-        <p className="text-sm font-medium text-slate-400 mt-1">
-          Créez votre compte citoyen pour un suivi personnalisé
+    <div>
+      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.75rem', color: '#F0F4FF' }}>Créer un compte</h2>
+        <p style={{ color: '#8FA3BF', fontSize: '0.875rem', marginTop: '0.3rem' }}>
+          Rejoignez la plateforme pour suivre vos plaintes
         </p>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+      <div className="glass-card" style={{ padding: '2rem' }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Prénom</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">person</span>
-                <input
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                  type="text"
-                  placeholder="Jean"
-                  {...register('first_name', { required: 'Prénom requis' })}
-                />
+              <label className="form-label">Prénom</label>
+              <div style={{ position: 'relative' }}>
+                <FiUser style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+                <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="text" placeholder="Prénom"
+                  {...register('first_name', { required: 'Requis' })} />
               </div>
-              {errors.first_name && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.first_name.message}</p>}
+              {errors.first_name && <span className="form-error">{errors.first_name.message}</span>}
             </div>
             <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Nom</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">person</span>
-                <input
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                  type="text"
-                  placeholder="KOFFI"
-                  {...register('last_name', { required: 'Nom requis' })}
-                />
+              <label className="form-label">Nom</label>
+              <div style={{ position: 'relative' }}>
+                <FiUser style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+                <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="text" placeholder="Nom"
+                  {...register('last_name', { required: 'Requis' })} />
               </div>
-              {errors.last_name && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.last_name.message}</p>}
+              {errors.last_name && <span className="form-error">{errors.last_name.message}</span>}
             </div>
           </div>
 
           <div className="form-group">
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Adresse email</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">mail</span>
-              <input
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                type="email"
-                placeholder="citoyen@exemple.bj"
-                {...register('email', { required: 'Email requis', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' } })}
-              />
+            <label className="form-label">Adresse email</label>
+            <div style={{ position: 'relative' }}>
+              <FiMail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="email" placeholder="exemple@email.com"
+                {...register('email', { required: 'Email requis', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' } })} />
             </div>
-            {errors.email && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.email.message}</p>}
+            {errors.email && <span className="form-error">{errors.email.message}</span>}
           </div>
 
           <div className="form-group">
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Téléphone</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">call</span>
-              <input
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                type="tel"
-                placeholder="+229 00 00 00 00"
-                {...register('phone')}
-              />
+            <label className="form-label">Téléphone (optionnel)</label>
+            <div style={{ position: 'relative' }}>
+              <FiPhone style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="tel" placeholder="+229 XX XX XX XX"
+                {...register('phone')} />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Mot de passe</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
-              <input
-                className="w-full pl-10 pr-10 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                type={showPwd ? 'text' : 'password'}
-                placeholder="••••••••"
-                {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Min. 8 caractères' } })}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPwd(!showPwd)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">{showPwd ? 'visibility_off' : 'visibility'}</span>
-              </button>
+            <label className="form-label">Mot de passe</label>
+            <div style={{ position: 'relative' }}>
+              <FiLock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <input className="form-input" style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+                type={showPwd ? 'text' : 'password'} placeholder="Min. 8 caractères"
+                {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Min. 8 caractères' } })} />
+              <button type="button" onClick={() => setShowPwd(!showPwd)} style={{
+                position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', color: '#8FA3BF', cursor: 'pointer',
+              }}>{showPwd ? <FiEyeOff /> : <FiEye />}</button>
             </div>
-            {errors.password && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.password.message}</p>}
+            {errors.password && <span className="form-error">{errors.password.message}</span>}
           </div>
 
           <div className="form-group">
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Confirmation</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock_reset</span>
-              <input
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary transition-all"
-                type="password"
-                placeholder="Répétez le mot de passe"
+            <label className="form-label">Confirmer le mot de passe</label>
+            <div style={{ position: 'relative' }}>
+              <FiLock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+              <input className="form-input" style={{ paddingLeft: '2.5rem' }}
+                type="password" placeholder="Répétez le mot de passe"
                 {...register('password_confirm', {
                   required: 'Requis',
                   validate: v => v === watch('password') || 'Les mots de passe ne correspondent pas'
-                })}
-              />
+                })} />
             </div>
-            {errors.password_confirm && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.password_confirm.message}</p>}
+            {errors.password_confirm && <span className="form-error">{errors.password_confirm.message}</span>}
           </div>
 
-          <button
-            type="submit"
-            className="w-full btn btn-primary py-3 shadow-lg shadow-primary/20 flex justify-center items-center"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
-            ) : (
-              <span className="flex items-center">
-                <span className="material-symbols-outlined mr-2">person_add</span>
-                Créer mon compte
-              </span>
-            )}
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}
+            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}>
+            {isSubmitting ? 'Création...' : "Créer mon compte"}
           </button>
         </form>
       </div>
 
-      <p className="text-center mt-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
-        Déjà inscrit ?{' '}
-        <Link to="/connexion" className="text-primary hover:underline decoration-2 underline-offset-4">Se connecter</Link>
+      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: '#8FA3BF' }}>
+        Déjà un compte ?{' '}
+        <Link to="/connexion" style={{ color: '#00B4D8', fontWeight: 600 }}>Se connecter</Link>
       </p>
     </div>
   )

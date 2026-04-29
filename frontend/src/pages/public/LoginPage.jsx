@@ -24,39 +24,39 @@ export default function LoginPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '2rem', color: 'var(--on-surface)', marginBottom: '0.5rem' }}>Connexion</h2>
-        <p style={{ color: 'var(--on-surface-variant)', fontSize: '1rem', fontWeight: 500 }}>
+      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.75rem', color: '#F0F4FF' }}>Connexion</h2>
+        <p style={{ color: '#8FA3BF', fontSize: '0.875rem', marginTop: '0.3rem' }}>
           Accédez à votre espace personnel
         </p>
       </div>
 
-      <div className="glass-card" style={{ padding: '2.5rem' }}>
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--on-surface)' }} htmlFor="email">Adresse email</label>
+      <div className="glass-card" style={{ padding: '2rem' }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">Adresse email</label>
             <div style={{ position: 'relative' }}>
-              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--outline)', fontSize: '1.25rem' }}>mail</span>
+              <FiMail aria-hidden="true" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input
                 id="email"
                 className="form-input"
-                style={{ paddingLeft: '3rem' }}
+                style={{ paddingLeft: '2.5rem' }}
                 type="email"
                 placeholder="exemple@email.com"
                 {...register('email', { required: 'Email requis' })}
               />
             </div>
-            {errors.email && <span style={{ fontSize: '0.75rem', color: 'var(--error)', fontWeight: 600 }}>{errors.email.message}</span>}
+            {errors.email && <span className="form-error">{errors.email.message}</span>}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--on-surface)' }} htmlFor="password">Mot de passe</label>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">Mot de passe</label>
             <div style={{ position: 'relative' }}>
-              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--outline)', fontSize: '1.25rem' }}>lock</span>
+              <FiLock aria-hidden="true" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input
                 id="password"
                 className="form-input"
-                style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
+                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
                 type={showPwd ? 'text' : 'password'}
                 placeholder="Votre mot de passe"
                 {...register('password', { required: 'Mot de passe requis' })}
@@ -66,48 +66,42 @@ export default function LoginPage() {
                 onClick={() => setShowPwd(!showPwd)}
                 aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 style={{
-                  position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', color: 'var(--outline)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center'
+                  position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: '#8FA3BF', cursor: 'pointer',
                 }}
               >
-                <span className="material-symbols-outlined">{showPwd ? 'visibility_off' : 'visibility'}</span>
+                {showPwd ? <FiEyeOff /> : <FiEye />}
               </button>
             </div>
-            {errors.password && <span style={{ fontSize: '0.75rem', color: 'var(--error)', fontWeight: 600 }}>{errors.password.message}</span>}
+            {errors.password && <span className="form-error">{errors.password.message}</span>}
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ width: '100%', justifyContent: 'center', marginTop: '1rem', height: '3rem' }}>
-            <span className="material-symbols-outlined">login</span> {isSubmitting ? 'Connexion...' : 'Se connecter'}
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}>
+            <FiLogIn /> {isSubmitting ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 
         {/* Demo accounts */}
-        <div style={{ marginTop: '2rem', padding: '1.25rem', background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', border: '1px solid var(--outline-variant)' }}>
-          <p style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginBottom: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Comptes démo :</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {[
-              { label: 'Usager', email: 'usager@pgpuss.bj', pwd: 'usager123' },
-              { label: 'Agent', email: 'agent@pgpuss.bj', pwd: 'agent123' },
-              { label: 'Admin', email: 'admin@pgpuss.bj', pwd: 'admin123' },
-            ].map(d => (
-              <div key={d.email} style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{d.label}:</span>
-                <span style={{ fontFamily: 'monospace' }}>{d.email} / {d.pwd}</span>
-              </div>
-            ))}
-          </div>
+        <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(0,119,182,0.05)', borderRadius: '10px', border: '1px solid rgba(0,119,182,0.1)' }}>
+          <p style={{ fontSize: '0.75rem', color: '#8FA3BF', marginBottom: '0.5rem', fontWeight: 600 }}>Comptes démo :</p>
+          {[
+            { label: 'Usager', email: 'usager@pgpuss.bj', pwd: 'usager123' },
+            { label: 'Agent', email: 'agent@pgpuss.bj', pwd: 'agent123' },
+            { label: 'Admin', email: 'admin@pgpuss.bj', pwd: 'admin123' },
+          ].map(d => (
+            <div key={d.email} style={{ fontSize: '0.75rem', color: '#4A6080', lineHeight: 1.8 }}>
+              <span style={{ color: '#00B4D8' }}>{d.label}:</span> {d.email} / {d.pwd}
+            </div>
+          ))}
         </div>
       </div>
 
-      <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', fontWeight: 500 }}>
+      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: '#8FA3BF' }}>
         Pas encore de compte ?{' '}
-        <Link to="/inscription" style={{ color: 'var(--primary)', fontWeight: 700 }}>S'inscrire</Link>
+        <Link to="/inscription" style={{ color: '#00B4D8', fontWeight: 600 }}>S'inscrire</Link>
       </p>
-      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', fontWeight: 500 }}>
-        <Link to="/suivi" style={{ color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-          Suivre une plainte sans compte <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>arrow_forward</span>
-        </Link>
+      <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#8FA3BF' }}>
+        <Link to="/suivi" style={{ color: '#8FA3BF' }}>Suivre une plainte sans compte →</Link>
       </p>
     </div>
   )
