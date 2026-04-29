@@ -1,0 +1,33 @@
+
+> pgpuss-frontend@1.0.0 dev
+> vite --host 0.0.0.0
+
+
+  VITE v5.4.21  ready in 258 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.0.2:5173/
+2:21:28 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+2:21:28 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+2:21:28 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+2:21:28 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx
+2:22:10 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+2:22:17 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+2:22:29 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+2:22:43 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx
+2:43:21 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+2:43:21 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+2:43:21 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+2:43:22 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx
+2:57:41 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+2:57:43 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+2:57:44 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+2:57:46 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx
+2:59:42 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+2:59:42 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+2:59:42 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+2:59:42 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx
+3:00:24 PM [vite] hmr update /src/contexts/AuthContext.jsx, /src/layouts/MainLayout.jsx, /src/pages/public/LandingPage.jsx, /src/pages/public/RegisterPage.jsx, /src/pages/public/TrackPage.jsx, /src/pages/public/DepotPage.jsx, /src/pages/user/MesPlaintesPage.jsx, /src/pages/user/DetailPlaintePage.jsx, /src/pages/user/NotificationsPage.jsx, /src/pages/user/ProfilPage.jsx, /src/pages/dashboard/DashboardHome.jsx, /src/pages/dashboard/PlaintesListPage.jsx, /src/pages/dashboard/PlainteDetailPage.jsx, /src/pages/dashboard/AnalyticsPage.jsx, /src/pages/dashboard/UsersPage.jsx
+3:00:28 PM [vite] hmr update /src/pages/dashboard/PlainteDetailPage.jsx
+3:00:30 PM [vite] hmr update /src/pages/public/DepotPage.jsx
+3:00:32 PM [vite] hmr update /src/pages/user/NotificationsPage.jsx

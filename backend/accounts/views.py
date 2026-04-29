@@ -64,9 +64,9 @@ class UserListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['ADMIN_NATIONAL', 'AUDITEUR']:
+        if user.role in ['ADMIN_PLATEFORME', 'AUDITEUR']:
             return User.objects.all()
-        elif user.role in ['DIRECTEUR', 'GESTIONNAIRE_SERVICE']:
+        elif user.role in ['DIRECTEUR_EST_EST', 'GESTIONNAIRE_SERVICE']:
             return User.objects.filter(establishment=user.establishment)
         return User.objects.filter(id=user.id)
 
@@ -78,8 +78,8 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['ADMIN_NATIONAL', 'AUDITEUR']:
+        if user.role in ['ADMIN_PLATEFORME', 'AUDITEUR']:
             return User.objects.all()
-        elif user.role in ['DIRECTEUR', 'GESTIONNAIRE_SERVICE']:
+        elif user.role in ['DIRECTEUR_EST_EST', 'GESTIONNAIRE_SERVICE']:
             return User.objects.filter(establishment=user.establishment)
         return User.objects.filter(id=user.id)

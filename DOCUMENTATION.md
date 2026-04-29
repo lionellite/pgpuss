@@ -57,3 +57,12 @@ Support natif pour :
 - PFE : `pfe@pgpuss.bj` / `pfe123`
 - DDS : `dds@pgpuss.bj` / `dds123`
 - Usager : `usager@pgpuss.bj` / `usager123`
+
+## 📱 Application Mobile (Flutter)
+Une application mobile native est disponible dans le dossier `mobile/`.
+- **Lancement** :
+  ```bash
+  cd mobile
+  flutter run
+  ```
+- **Fonctionnalités** : Dépôt de plainte, Suivi par ticket, Authentification.

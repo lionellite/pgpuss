@@ -1,0 +1,298 @@
+Watching for file changes with StatReloader
+[13/Apr/2026 14:39:41] "GET /api/analytics/public-stats/ HTTP/1.1" 200 93
+/app/backend/complaints/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 14:38:52
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/urls.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 14:42:38
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+[13/Apr/2026 14:59:35] "GET /api/analytics/public-stats/ HTTP/1.1" 200 93
+[13/Apr/2026 14:59:36] "GET /api/complaints/categories/ HTTP/1.1" 200 6358
+[13/Apr/2026 14:59:36] "GET /api/establishments/regions/ HTTP/1.1" 200 1246
+[13/Apr/2026 14:59:36] "GET /api/establishments/ HTTP/1.1" 200 3745
+[13/Apr/2026 14:59:38] "POST /api/auth/login/ HTTP/1.1" 200 582
+[13/Apr/2026 14:59:38] "GET /api/auth/me/ HTTP/1.1" 200 376
+[13/Apr/2026 14:59:38] "GET /api/analytics/dashboard/ HTTP/1.1" 200 4172
+[13/Apr/2026 14:59:39] "GET /api/auth/me/ HTTP/1.1" 200 376
+[13/Apr/2026 14:59:39] "GET /api/analytics/dashboard/ HTTP/1.1" 200 4172
+/app/backend/complaints/serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 14:42:42
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:21:31
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:21:42
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:21:47
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/urls.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:21:59
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:22:03
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:41:41
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:43:23
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:57:37
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:57:40
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 15:59:43
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 16:00:19
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/app/backend/complaints/urls.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 16:00:22
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+[13/Apr/2026 16:15:22] "GET /api/analytics/public-stats/ HTTP/1.1" 200 93
+[13/Apr/2026 16:16:43] "GET /api/analytics/public-stats/ HTTP/1.1" 200 93
+[13/Apr/2026 16:16:45] "GET /api/establishments/regions/ HTTP/1.1" 200 1246
+[13/Apr/2026 16:16:45] "GET /api/complaints/categories/ HTTP/1.1" 200 6358
+[13/Apr/2026 16:16:45] "GET /api/establishments/ HTTP/1.1" 200 3745
+[13/Apr/2026 16:16:47] "POST /api/auth/login/ HTTP/1.1" 200 582
+[13/Apr/2026 16:16:47] "GET /api/auth/me/ HTTP/1.1" 200 376
+[13/Apr/2026 16:16:47] "GET /api/analytics/dashboard/ HTTP/1.1" 200 4172
+[13/Apr/2026 16:16:48] "GET /api/auth/me/ HTTP/1.1" 200 376
+[13/Apr/2026 16:16:48] "GET /api/analytics/dashboard/ HTTP/1.1" 200 4172
+/app/backend/config/settings.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 13, 2026 - 16:00:25
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Traceback (most recent call last):
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/base.py", line 420, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/commands/runserver.py", line 69, in execute
+    super().execute(*args, **options)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/base.py", line 464, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/commands/runserver.py", line 80, in handle
+    if not settings.DEBUG and not settings.ALLOWED_HOSTS:
+           ^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 75, in __getattr__
+    self._setup(name)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 62, in _setup
+    self._wrapped = Settings(settings_module)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 162, in __init__
+    mod = importlib.import_module(self.SETTINGS_MODULE)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/app/backend/config/settings.py", line 8, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/backend/manage.py", line 22, in <module>
+    main()
+  File "/app/backend/manage.py", line 18, in main
+    execute_from_command_line(sys.argv)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/__init__.py", line 443, in execute_from_command_line
+    utility.execute()
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/__init__.py", line 437, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/core/management/base.py", line 433, in run_from_argv
+    connections.close_all()
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/connection.py", line 84, in close_all
+    for conn in self.all(initialized_only=True):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/connection.py", line 78, in all
+    for alias in self
+                 ^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/connection.py", line 73, in __iter__
+    return iter(self.settings)
+                ^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/connection.py", line 45, in settings
+    self._settings = self.configure_settings(self._settings)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/db/utils.py", line 151, in configure_settings
+    databases = super().configure_settings(databases)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/utils/connection.py", line 50, in configure_settings
+    settings = getattr(django_settings, self.settings_name)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 75, in __getattr__
+    self._setup(name)
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 62, in _setup
+    self._wrapped = Settings(settings_module)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/venv/lib/python3.12/site-packages/django/conf/__init__.py", line 162, in __init__
+    mod = importlib.import_module(self.SETTINGS_MODULE)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/app/backend/config/settings.py", line 8, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'

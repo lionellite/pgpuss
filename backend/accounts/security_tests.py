@@ -32,11 +32,11 @@ class SecurityTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_privilege_escalation_vulnerability(self):
-        """Test if user1 can change their own role to ADMIN_NATIONAL"""
+        """Test if user1 can change their own role to ADMIN_PLATEFORME"""
         self.client.force_authenticate(user=self.user1)
         response = self.client.patch(f'/api/auth/users/{self.user1.id}/', {
-            'role': 'ADMIN_NATIONAL'
+            'role': 'ADMIN_PLATEFORME'
         })
         # This SHOULD NOT change the role
         self.user1.refresh_from_db()
-        self.assertNotEqual(self.user1.role, 'ADMIN_NATIONAL')
+        self.assertNotEqual(self.user1.role, 'ADMIN_PLATEFORME')
