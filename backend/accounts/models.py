@@ -4,14 +4,14 @@ import uuid
 
 
 class UserRole(models.TextChoices):
-    USAGER = 'USAGER', 'Usager / Plaignant'
-    AGENT_RECEPTION = 'AGENT_RECEPTION', 'Agent de réception'
-    GESTIONNAIRE_SERVICE = 'GESTIONNAIRE_SERVICE', 'Gestionnaire de service'
-    MEDIATEUR = 'MEDIATEUR', 'Médiateur'
-    DIRECTEUR = 'DIRECTEUR', "Directeur d'établissement"
-    RESPONSABLE_QUALITE = 'RESPONSABLE_QUALITE', 'Responsable qualité'
-    ADMIN_NATIONAL = 'ADMIN_NATIONAL', 'Administrateur national'
-    AUDITEUR = 'AUDITEUR', 'Auditeur'
+    USAGER = 'USAGER', 'Usager (Plaignant)'
+    PFE = 'PFE', 'Point Focal Établissement'
+    DIRECTEUR_EST = 'DIRECTEUR_EST', "Direction de l'Établissement"
+    DDS = 'DDS', 'Direction Départementale de la Santé'
+    DQSS = 'DQSS', 'DQSS / Agence Nationale Qualité'
+    CABINET = 'CABINET', 'Ministère de la Santé (Cabinet)'
+    AGENT_INTERNE = 'AGENT_INTERNE', 'Agent Affecté (Interne)'
+    ADMIN_PLATEFORME = 'ADMIN_PLATEFORME', 'Administrateur Plateforme'
 
 
 class UserManager(BaseUserManager):
@@ -27,7 +27,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('role', UserRole.ADMIN_NATIONAL)
+        extra_fields.setdefault('role', UserRole.ADMIN_PLATEFORME)
         return self.create_user(email, password, **extra_fields)
 
 
@@ -39,6 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=100)
     role = models.CharField(max_length=30, choices=UserRole.choices, default=UserRole.USAGER)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    departement = models.CharField(max_length=100, blank=True, null=True, help_text="Pour DDS")
     language_pref = models.CharField(max_length=5, default='fr')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -72,15 +73,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def is_admin(self):
-        return self.role == UserRole.ADMIN_NATIONAL
+        return self.role == UserRole.ADMIN_PLATEFORME
 
     @property
     def is_agent(self):
-        return self.role in [
-            UserRole.AGENT_RECEPTION,
-            UserRole.GESTIONNAIRE_SERVICE,
-            UserRole.MEDIATEUR,
-            UserRole.DIRECTEUR,
-            UserRole.RESPONSABLE_QUALITE,
-            UserRole.ADMIN_NATIONAL,
-        ]
+        return self.role != UserRole.USAGER

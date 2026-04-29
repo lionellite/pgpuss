@@ -115,7 +115,6 @@ export default function DepotPage() {
       const { data: result } = await complaintsAPI.create(formData)
       setSubmitted(result)
       toast.success('Plainte déposée avec succès!')
-      window.scrollTo(0, 0)
     } catch (e) {
       toast.error("Erreur lors du dépôt. Vérifiez tous les champs.")
     }
@@ -136,33 +135,30 @@ export default function DepotPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '2.5rem',
             }}>✅</div>
-            <h1 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '2rem', color: '#F0F4FF', marginBottom: '0.75rem' }}>
+            <h1 style={{ fontFamily: 'Inter', fontWeight: 800, fontSize: '2rem', color: '#111', marginBottom: '0.75rem' }}>
               Plainte déposée !
             </h1>
-            <p style={{ color: '#8FA3BF', marginBottom: '2rem', lineHeight: 1.7 }}>
+            <p style={{ color: '#666', marginBottom: '2rem', lineHeight: 1.7 }}>
               Votre plainte a été enregistrée avec succès. Conservez votre numéro de ticket pour le suivi.
             </p>
             <div style={{
-              padding: '1.5rem', background: 'rgba(6,214,160,0.05)',
-              border: '2px solid rgba(6,214,160,0.3)', borderRadius: '16px', marginBottom: '2rem',
+              padding: '1.5rem', background: '#f0f9f5',
+              border: '2px solid #06D6A0', borderRadius: '8px', marginBottom: '2rem',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
             }}>
-              <div style={{ fontSize: '0.85rem', color: '#8FA3BF' }}>Votre numéro de ticket</div>
+              <div style={{ fontSize: '0.85rem', color: '#666' }}>Votre numéro de ticket</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '2.5rem', color: '#06D6A0', letterSpacing: '0.1em' }}>
+                <div style={{ fontWeight: 900, fontSize: '2.5rem', color: '#008751', letterSpacing: '0.1em' }}>
                   {submitted.ticket_number}
                 </div>
                 <button
                   onClick={() => handleCopy(submitted.ticket_number)}
                   aria-label="Copier le numéro de ticket"
                   style={{
-                    background: 'rgba(6,214,160,0.1)', border: '1px solid rgba(6,214,160,0.3)',
-                    color: '#06D6A0', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer',
+                    background: 'white', border: '1px solid #ccc',
+                    color: '#333', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.2s',
                   }}
-                  onMouseOver={e => e.currentTarget.style.background = 'rgba(6,214,160,0.2)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'rgba(6,214,160,0.1)'}
                 >
                   {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
                 </button>
@@ -172,16 +168,12 @@ export default function DepotPage() {
               <button className="btn btn-primary" onClick={() => navigate(`/suivi?ticket=${submitted.ticket_number}`)}>
                 Suivre ma plainte
               </button>
+              {user && (
+                <button className="btn btn-ghost" onClick={() => navigate('/espace/plaintes')}>
+                  Mes plaintes
+                </button>
+              )}
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="btn btn-primary px-8" onClick={() => navigate(`/suivi?ticket=${submitted.ticket_number}`)}>
-              Suivre ma plainte
-            </button>
-            <button className="btn btn-outline px-8" onClick={() => navigate('/')}>
-              Retour à l'accueil
-            </button>
           </div>
         </div>
       </div>
@@ -189,316 +181,159 @@ export default function DepotPage() {
   }
 
   return (
-    <div className="py-12 min-h-screen bg-surface">
-      <div className="max-w-3xl mx-auto px-6">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-3xl font-black text-on-surface mb-2">Déposer une plainte</h1>
-            <p className="text-on-surface-variant max-w-lg">
-              Contribuez à l'amélioration du système de santé en signalant tout dysfonctionnement.
-            </p>
+    <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
+      <div className="page-container">
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ marginBottom: '3rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 className="page-title">Déposer une plainte</h1>
+              <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleVocal}
+              className={`btn ${vocalEnabled ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ borderRadius: '50px', padding: '0.5rem 1rem' }}
+              title={vocalEnabled ? "Désactiver l'aide vocale" : "Activer l'aide vocale"}
+            >
+              {vocalEnabled ? <FiVolume2 /> : <FiVolumeX />}
+              <span style={{ fontSize: '0.7rem', marginLeft: '0.3rem' }}>{t('vocal_help')}</span>
+            </button>
           </div>
-          <button
-            onClick={toggleVocal}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all text-sm font-bold ${
-              vocalEnabled ? 'bg-primary text-white' : 'bg-white text-on-surface-variant border border-slate-200 hover:border-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg">
-              {vocalEnabled ? 'volume_up' : 'volume_off'}
-            </span>
-            <span>Aide Vocale</span>
-          </button>
-        </header>
 
-          {/* Step indicator */}
-          <nav aria-label="Étapes de la plainte" className="steps" style={{ marginBottom: '3rem' }}>
+          <div className="steps" style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {STEPS.map((s, i) => (
-              <div key={i} className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  i < step ? 'bg-primary text-white' : i === step ? 'bg-primary text-white scale-125' : 'bg-white text-slate-400 border-2 border-slate-200'
-                }`}>
-                  {i < step ? <span className="material-symbols-outlined text-sm">check</span> : i + 1}
+              <React.Fragment key={i}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <div className={`step-circle ${i < step ? 'done' : i === step ? 'active' : ''}`}
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: i < step ? '#008751' : i === step ? '#008751' : '#eee',
+                      color: i <= step ? 'white' : '#999', fontSize: '0.8rem', fontWeight: 700
+                    }}>
+                    {i < step ? '✓' : i + 1}
+                  </div>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, color: i === step ? '#111' : '#999', textTransform: 'uppercase' }}>{s}</span>
                 </div>
-                <span className={`mt-3 text-[10px] font-bold uppercase tracking-widest hidden md:block ${
-                  i === step ? 'text-primary' : 'text-slate-400'
-                }`}>{s}</span>
-              </div>
+                {i < STEPS.length - 1 && <div style={{ height: 2, background: i < step ? '#008751' : '#eee', flex: 1, marginBottom: '1.2rem' }} />}
+              </React.Fragment>
             ))}
-          </nav>
+          </div>
 
-            {/* Step 0 — Établissement */}
-            {step === 0 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-bold text-on-surface border-l-4 border-primary pl-4">1. Lieu du dysfonctionnement</h2>
+          <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+            <form onSubmit={handleSubmit(onSubmit)}>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {step === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#111' }}>1. Établissement concerné</h2>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="region-select">Région</label>
-                    <select id="region-select" className="form-select" value={selectedRegion} onChange={e => {
+                    <label className="form-label">Région</label>
+                    <select className="form-select" value={selectedRegion} onChange={e => {
                       setSelectedRegion(e.target.value)
                       setValue('establishment', '')
-                      setValue('service', '')
                     }}>
                       <option value="">Toutes les régions</option>
                       {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   </div>
-
                   <div className="form-group">
-                    <label className="form-label" htmlFor="est-select">Établissement *</label>
-                    <select id="est-select" className="form-select" {...register('establishment', { required: 'Requis' })}>
+                    <label className="form-label">Établissement *</label>
+                    <select className="form-select" {...register('establishment', { required: 'Requis' })}>
                       <option value="">Sélectionnez un établissement</option>
                       {establishments
                         .filter(e => !selectedRegion || e.region === selectedRegion)
-                        .map(e => <option key={e.id} value={e.id}>{e.name} ({e.type_display})</option>)
+                        .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
                       }
                     </select>
-                    {errors.establishment && <p className="text-xs text-error mt-2 font-medium">{errors.establishment.message}</p>}
+                    {errors.establishment && <span className="form-error">{errors.establishment.message}</span>}
                   </div>
                 </div>
+              )}
 
-                {services.length > 0 && (
-                  <div className="form-group animate-in fade-in duration-300">
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Service (optionnel)</label>
-                    <select className="form-select w-full" {...register('service')}>
-                      <option value="">Sélectionnez un service</option>
-                      {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+              {step === 1 && (
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>2. Type de plainte</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                    {categories.map(cat => (
+                      <label key={cat.id} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
+                        padding: '1.5rem', borderRadius: '4px', cursor: 'pointer',
+                        background: String(catId) === String(cat.id) ? '#f0f9f5' : '#fff',
+                        border: String(catId) === String(cat.id) ? '2px solid #008751' : '1px solid #ddd',
+                        textAlign: 'center',
+                      }}>
+                        <input type="radio" value={cat.id} {...register('category', { required: 'Requis' })} style={{ display: 'none' }} />
+                        <span style={{ fontSize: '2rem' }}>{cat.icon}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cat.name}</span>
+                      </label>
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
+                  {errors.category && <span className="form-error">{errors.category.message}</span>}
+                </div>
+              )}
 
-              {/* Step 2 — Description */}
               {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description de la plainte</h2>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description</h2>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="title-input">Titre de la plainte *</label>
-                    <input className="form-input" placeholder="Résumez votre plainte en une phrase"
-                      {...register('title', { required: 'Titre requis', minLength: { value: 10, message: 'Min. 10 caractères' } })} />
-                    {errors.title && <span className="form-error">{errors.title.message}</span>}
+                    <label className="form-label">Titre de la plainte *</label>
+                    <input className="form-input" placeholder="Résumez votre plainte"
+                      {...register('title', { required: 'Titre requis' })} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Description détaillée *</label>
-                    <textarea className="form-textarea" style={{ minHeight: 180 }}
-                      placeholder="Décrivez le problème en détail : que s'est-il passé ? Quand ? Qui était impliqué ?..."
-                      {...register('description', { required: 'Description requise', minLength: { value: 50, message: 'Min. 50 caractères' } })} />
-                    {errors.description && <span className="form-error">{errors.description.message}</span>}
+                    <label className="form-label">Détails *</label>
+                    <textarea className="form-textarea" style={{ minHeight: 150 }}
+                      placeholder="Expliquez ce qui s'est passé..."
+                      {...register('description', { required: 'Description requise' })} />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Pièces jointes (optionnel — max 5 fichiers)</label>
-                    <label style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                      padding: '2rem', border: '2px dashed rgba(0,119,182,0.3)', borderRadius: '12px',
-                      cursor: 'pointer', background: 'rgba(0,119,182,0.03)',
-                      transition: 'all 0.2s',
-                    }}>
-                      <FiUpload style={{ fontSize: '1.5rem', color: '#8FA3BF' }} aria-hidden="true" />
-                      <span style={{ fontSize: '0.875rem', color: '#8FA3BF' }}>Cliquez pour ajouter des fichiers</span>
-                      <span style={{ fontSize: '0.75rem', color: '#4A6080' }}>PDF, images — Max 10 MB par fichier</span>
-                      <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                    </label>
-                    {files.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-                        {files.map((f, i) => (
-                          <div key={i} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '0.5rem 0.875rem', background: 'rgba(0,119,182,0.05)',
-                            borderRadius: '8px', border: '1px solid rgba(0,119,182,0.1)',
-                          }}>
-                            <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>📎 {f.name}</span>
-                            <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}
-                              aria-label="Supprimer le fichier"
-                              style={{ background: 'none', border: 'none', color: '#EF476F', cursor: 'pointer' }}>
-                              <FiX />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 2 — Description */}
-            {step === 2 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-bold text-on-surface border-l-4 border-primary pl-4">3. Détails de la situation</h2>
-
-                <div className="form-group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Objet de la plainte *</label>
-                  <input
-                    className="form-input w-full"
-                    placeholder="Ex: Refus de prise en charge en urgence"
-                    {...register('title', { required: 'Un titre est requis', minLength: { value: 10, message: 'Soyez un peu plus précis (min 10 car.)' } })}
-                  />
-                  {errors.title && <p className="text-xs text-error mt-2 font-medium">{errors.title.message}</p>}
                 </div>
+              )}
 
-                <div className="form-group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Description détaillée *</label>
-                  <textarea
-                    className="form-textarea w-full min-h-[160px]"
-                    placeholder="Expliquez ce qui s'est passé, quand, et qui était impliqué..."
-                    {...register('description', { required: 'La description est obligatoire', minLength: { value: 50, message: 'Donnez plus de détails (min 50 car.)' } })}
-                  />
-                  {errors.description && <p className="text-xs text-error mt-2 font-medium">{errors.description.message}</p>}
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Documents (max 5)</label>
-                  <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-primary transition-colors cursor-pointer group relative">
-                    <div className="space-y-2 text-center">
-                      <span className="material-symbols-outlined text-slate-400 text-4xl group-hover:text-primary transition-colors">cloud_upload</span>
-                      <div className="flex text-sm text-slate-600">
-                        <span className="font-bold text-primary">Téléverser des fichiers</span>
-                        <input type="file" multiple onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                      </div>
-                      <p className="text-xs text-slate-400">PDF, JPG, PNG jusqu'à 10MB</p>
-                    </div>
-                  </div>
-
-                  {files.length > 0 && (
-                    <div className="mt-4 grid grid-cols-1 gap-2">
-                      {files.map((f, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                          <div className="flex items-center">
-                            <span className="material-symbols-outlined text-primary mr-2">description</span>
-                            <span className="text-xs font-medium text-on-surface truncate max-w-[200px]">{f.name}</span>
-                          </div>
-                          <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="text-error hover:bg-error/10 p-1 rounded">
-                            <span className="material-symbols-outlined text-sm">close</span>
-                          </button>
-                        </div>
-                      ))}
+              {step === 3 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>4. Identité</h2>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input type="checkbox" {...register('is_anonymous')} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Déposer de façon anonyme</span>
+                  </label>
+                  {!isAnonymous && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <input className="form-input" placeholder="Nom complet" {...register('complainant_name')} />
+                      <input className="form-input" placeholder="Email" {...register('complainant_email')} />
+                      <input className="form-input" placeholder="Téléphone" {...register('complainant_phone')} />
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Step 3 — Identité */}
-            {step === 3 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-bold text-on-surface border-l-4 border-primary pl-4">4. Identité et contact</h2>
-
-                <label className={`flex items-start p-6 rounded-xl border-2 transition-all cursor-pointer ${
-                  isAnonymous ? 'border-primary bg-primary/5' : 'border-slate-100 bg-slate-50'
-                }`}>
-                  <input type="checkbox" {...register('is_anonymous')} className="mt-1 w-5 h-5 rounded text-primary border-slate-300 focus:ring-primary" />
-                  <div className="ml-4">
-                    <span className="block text-sm font-bold text-on-surface">Déposer de façon anonyme</span>
-                    <span className="block text-xs text-on-surface-variant mt-1">Vos données personnelles ne seront pas partagées avec l'établissement.</span>
+              {step === 4 && (
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>5. Confirmation</h2>
+                  <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '4px', marginBottom: '2rem' }}>
+                    <p style={{ fontSize: '0.9rem', color: '#444' }}>Veuillez vérifier vos informations avant de valider.</p>
                   </div>
-                </label>
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ width: '100%' }}>
+                    {isSubmitting ? 'Envoi...' : 'Soumettre ma plainte'}
+                  </button>
+                </div>
+              )}
 
-                {!isAnonymous && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Nom Complet</label>
-                      <input className="form-input w-full" placeholder="Prénom et NOM" {...register('complainant_name')} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Email</label>
-                      <input className="form-input w-full" type="email" placeholder="votre@email.com" {...register('complainant_email')} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">Téléphone</label>
-                      <input className="form-input w-full" type="tel" placeholder="+229 00 00 00 00" {...register('complainant_phone')} />
-                    </div>
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                {step > 0 && step < 5 && (
+                  <button type="button" className="btn btn-ghost" onClick={() => setStep(s => s - 1)}>
+                    <FiChevronLeft /> Précédent
+                  </button>
                 )}
-
-                {isAnonymous && (
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start">
-                    <span className="material-symbols-outlined text-blue-600 mr-3">info</span>
-                    <p className="text-xs text-blue-800 leading-relaxed">
-                      L'anonymat protège votre identité mais pourrait ralentir certaines vérifications spécifiques.
-                      S'il s'agit d'une urgence vitale, nous recommandons de fournir vos coordonnées.
-                    </p>
-                  </div>
+                {step < 4 && (
+                  <button type="button" className="btn btn-primary" onClick={() => setStep(s => s + 1)} style={{ marginLeft: 'auto' }}>
+                    Suivant <FiChevronRight />
+                  </button>
                 )}
               </div>
-            )}
-
-            {/* Step 4 — Confirmation */}
-            {step === 4 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-bold text-on-surface border-l-4 border-primary pl-4">5. Vérification finale</h2>
-
-                <div className="bg-slate-50 rounded-2xl overflow-hidden divide-y divide-slate-200">
-                  {[
-                    { label: 'Lieu', value: establishments.find(e => String(e.id) === String(watch('establishment')))?.name },
-                    { label: 'Type', value: selectedCategory?.name },
-                    { label: 'Sujet', value: watch('title') },
-                    { label: 'Anonyme', value: isAnonymous ? 'Oui' : 'Non' },
-                    { label: 'Documents', value: files.length > 0 ? `${files.length} fichier(s)` : 'Aucun' },
-                  ].map((row, i) => (
-                    <div key={i} className="px-6 py-4 flex justify-between gap-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{row.label}</span>
-                      <span className="text-sm font-bold text-on-surface text-right">{row.value || '—'}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                  <p className="text-[11px] text-primary font-medium leading-relaxed">
-                    En soumettant cette plainte, vous certifiez que les informations fournies sont exactes au meilleur de votre connaissance.
-                    Toute fausse déclaration intentionnelle peut faire l'objet de poursuites.
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full btn btn-primary py-4 text-lg shadow-lg shadow-primary/20"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
-                      Soumission...
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <span className="material-symbols-outlined mr-2">send</span>
-                      Confirmer et Envoyer
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Navigation buttons */}
-            <div className="mt-12 flex items-center justify-between pt-8 border-t border-slate-100">
-              {step > 0 && (
-                <button type="button" className="btn btn-ghost px-6" onClick={() => setStep(s => s - 1)}>
-                  <span className="material-symbols-outlined mr-2">arrow_back</span>
-                  Précédent
-                </button>
-              )}
-              <div className="flex-1"></div>
-              {step < 4 && (
-                <button
-                  type="button"
-                  className="btn btn-primary px-8"
-                  onClick={() => {
-                    // Basic validation before step change
-                    if (step === 0 && !watch('establishment')) return toast.error('Choisissez un établissement');
-                    if (step === 1 && !watch('category')) return toast.error('Choisissez une catégorie');
-                    if (step === 2 && (!watch('title') || !watch('description'))) return toast.error('Complétez la description');
-                    setStep(s => s + 1);
-                    window.scrollTo(0, 0);
-                  }}
-                >
-                  Suivant
-                  <span className="material-symbols-outlined ml-2">arrow_forward</span>
-                </button>
-              )}
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

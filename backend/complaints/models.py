@@ -27,18 +27,15 @@ class Category(models.Model):
 
 
 class ComplaintStatus(models.TextChoices):
-    DEPOSEE = 'DEPOSEE', 'Déposée'
-    ENREGISTREE = 'ENREGISTREE', 'Enregistrée'
-    CLASSIFIEE = 'CLASSIFIEE', 'Classifiée'
+    SOUMISE = 'SOUMISE', 'Soumise'
+    ACCUSEE = 'ACCUSEE', 'Accusée de réception'
+    INSTRUITE = 'INSTRUITE', 'Instruite / Qualifiée'
     AFFECTEE = 'AFFECTEE', 'Affectée'
-    EN_INSTRUCTION = 'EN_INSTRUCTION', 'En instruction'
+    EN_TRAITEMENT = 'EN_TRAITEMENT', 'En traitement / Investigation'
     RESOLUE = 'RESOLUE', 'Résolue'
-    NOTIFIEE = 'NOTIFIEE', 'Notifiée'
-    CLOTURE_PROVISOIRE = 'CLOTURE_PROVISOIRE', 'Clôture provisoire'
-    FEEDBACK = 'FEEDBACK', 'Feedback'
-    CLOTURE_DEFINITIVE = 'CLOTURE_DEFINITIVE', 'Clôture définitive'
-    CONTESTEE = 'CONTESTEE', 'Contestée'
     ESCALADEE = 'ESCALADEE', 'Escaladée'
+    ARBITREE = 'ARBITREE', 'Arbitrée'
+    CLOTUREE = 'CLOTUREE', 'Clôturée'
     REJETEE = 'REJETEE', 'Rejetée'
 
 
@@ -81,7 +78,7 @@ class Complaint(models.Model):
         Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategory_complaints'
     )
     priority = models.CharField(max_length=5, choices=ComplaintPriority.choices, default=ComplaintPriority.P4_NORMAL)
-    status = models.CharField(max_length=25, choices=ComplaintStatus.choices, default=ComplaintStatus.DEPOSEE)
+    status = models.CharField(max_length=25, choices=ComplaintStatus.choices, default=ComplaintStatus.SOUMISE)
     channel = models.CharField(max_length=10, choices=ComplaintChannel.choices, default=ComplaintChannel.WEB)
     
     # Identity
@@ -157,20 +154,21 @@ class Complaint(models.Model):
         keywords = {
             'soin': 'Qualité des soins',
             'erreur': 'Qualité des soins',
-            'médicament': 'Disponibilité des médicaments',
-            'pharmacie': 'Disponibilité des médicaments',
-            'argent': 'Facturation et coûts',
-            'payé': 'Facturation et coûts',
-            'facture': 'Facturation et coûts',
-            'attente': 'Attente et délais',
-            'retard': 'Attente et délais',
-            'accueil': "Conditions d'accueil",
-            'propre': "Conditions d'accueil",
-            'insulte': 'Comportement du personnel',
-            'respect': 'Comportement du personnel',
+            'médicament': 'Médicaments',
+            'pharmacie': 'Médicaments',
+            'argent': 'Facturation & frais',
+            'payé': 'Facturation & frais',
+            'facture': 'Facturation & frais',
+            'attente': 'Accès aux soins',
+            'retard': 'Accès aux soins',
+            'accueil': "Accueil & comportement",
+            'propre': "Infrastructure & hygiène",
+            'insulte': 'Accueil & comportement',
+            'respect': 'Accueil & comportement',
             'secret': 'Confidentialité',
             'dossier': 'Confidentialité',
             'refus': 'Accès aux soins',
+            'décès': 'Urgence / cas critique',
         }
 
         found_category = None
@@ -194,11 +192,6 @@ class Complaint(models.Model):
 
         # 3. Set Deadline
         self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
-
-        # 4. Update status if it was just DEPOSEE
-        if self.status == ComplaintStatus.DEPOSEE:
-            self.status = ComplaintStatus.CLASSIFIEE
-            self.classified_at = timezone.now()
 
 
 class Attachment(models.Model):

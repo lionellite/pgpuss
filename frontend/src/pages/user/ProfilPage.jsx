@@ -3,9 +3,10 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useForm } from 'react-hook-form'
 import { authAPI } from '../../api'
 import toast from 'react-hot-toast'
+import { FiUser, FiMail, FiPhone, FiLock } from 'react-icons/fi'
 
 const ROLE_LABELS = {
-  USAGER: 'Citoyen',
+  USAGER: 'Usager / Plaignant',
   AGENT_RECEPTION: 'Agent de réception',
   GESTIONNAIRE_SERVICE: 'Gestionnaire de service',
   MEDIATEUR: 'Médiateur',
@@ -24,140 +25,99 @@ export default function ProfilPage() {
   const { register: reg2, handleSubmit: hs2, watch, formState: { errors: e2, isSubmitting: s2 } } = useForm()
 
   const updateProfile = async (data) => {
-    try {
-      await authAPI.updateProfile(data)
-      toast.success('Profil mis à jour avec succès')
-    } catch {
-      toast.error('Erreur lors de la mise à jour')
-    }
+    try { await authAPI.updateProfile(data); toast.success('Profil mis à jour') }
+    catch { toast.error('Erreur lors de la mise à jour') }
   }
 
   const changePassword = async (data) => {
-    try {
-      await authAPI.changePassword(data)
-      toast.success('Mot de passe modifié avec succès')
-    } catch (e) {
+    try { await authAPI.changePassword(data); toast.success('Mot de passe modifié') }
+    catch (e) {
       const msg = e.response?.data?.old_password?.[0]
       toast.error(msg || 'Erreur lors du changement de mot de passe')
     }
   }
 
   return (
-    <div className="py-8 space-y-8 animate-in fade-in duration-500 max-w-2xl mx-auto">
-      <header>
-        <h1 className="text-2xl font-black text-on-surface tracking-tight">Paramètres du compte</h1>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Gérez vos informations personnelles et votre sécurité</p>
-      </header>
+    <div style={{ padding: '2rem 0' }}>
+      <div className="page-container" style={{ maxWidth: 640 }}>
+        <h1 className="page-title" style={{ marginBottom: '2rem' }}>Mon profil</h1>
 
-      {/* Identity Card */}
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-error"></div>
-        <div className="w-20 h-20 rounded-full mx-auto mb-4 bg-primary/10 text-primary flex items-center justify-center text-3xl font-black border-4 border-white shadow-md">
-          {user?.first_name?.[0]}{user?.last_name?.[0]}
-        </div>
-        <h2 className="text-xl font-black text-on-surface tracking-tight">{user?.full_name}</h2>
-        <p className="text-sm font-medium text-slate-400 mt-1">{user?.email}</p>
-        <div className="mt-4 flex justify-center">
-          <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+        {/* Profile card */}
+        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1rem',
+            background: 'linear-gradient(135deg, #0077B6, #06D6A0)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '2rem', color: 'white', fontFamily: 'Outfit', fontWeight: 800,
+          }}>{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+          <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem' }}>{user?.full_name}</h2>
+          <p style={{ color: '#8FA3BF', fontSize: '0.875rem', marginTop: '0.25rem' }}>{user?.email}</p>
+          <span className="badge badge-enregistree" style={{ marginTop: '0.75rem' }}>
             {ROLE_LABELS[user?.role] || user?.role}
           </span>
         </div>
-      </section>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl">
-        <button
-          onClick={() => setTab('profile')}
-          className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${
-            tab === 'profile' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Informations
-        </button>
-        <button
-          onClick={() => setTab('password')}
-          className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${
-            tab === 'password' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Sécurité
-        </button>
-      </div>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          {['profile', 'password'].map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'} btn-sm`}>
+              {t === 'profile' ? '👤 Informations' : '🔒 Mot de passe'}
+            </button>
+          ))}
+        </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-        {tab === 'profile' && (
-          <form onSubmit={hs1(updateProfile)} className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="form-group">
-                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Prénom</label>
-                <input className="form-input w-full" {...reg1('first_name')} />
+        <div className="glass-card" style={{ padding: '2rem' }}>
+          {tab === 'profile' && (
+            <form onSubmit={hs1(updateProfile)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label"><FiUser style={{ marginRight: '0.3rem' }} />Prénom</label>
+                  <input className="form-input" {...reg1('first_name')} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nom</label>
+                  <input className="form-input" {...reg1('last_name')} />
+                </div>
               </div>
               <div className="form-group">
-                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Nom de famille</label>
-                <input className="form-input w-full" {...reg1('last_name')} />
+                <label className="form-label"><FiMail style={{ marginRight: '0.3rem' }} />Email</label>
+                <input className="form-input" value={user?.email} disabled style={{ opacity: 0.5 }} />
               </div>
-            </div>
-
-            <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Email (non modifiable)</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-300">lock</span>
-                <input className="form-input w-full pl-10 bg-slate-50 border-transparent text-slate-400 cursor-not-allowed" value={user?.email} disabled />
+              <div className="form-group">
+                <label className="form-label"><FiPhone style={{ marginRight: '0.3rem' }} />Téléphone</label>
+                <input className="form-input" type="tel" placeholder="+229 XX XX XX XX" {...reg1('phone')} />
               </div>
-            </div>
+              <button type="submit" className="btn btn-primary" disabled={s1}>
+                {s1 ? 'Mise à jour...' : 'Enregistrer les modifications'}
+              </button>
+            </form>
+          )}
 
-            <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Téléphone</label>
-              <input className="form-input w-full" type="tel" placeholder="+229 00 00 00 00" {...reg1('phone')} />
-            </div>
-
-            <button type="submit" className="w-full btn btn-primary py-3 flex justify-center items-center shadow-lg shadow-primary/10" disabled={s1}>
-              {s1 ? (
-                <span className="material-symbols-outlined animate-spin">progress_activity</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined mr-2">save</span>
-                  Sauvegarder les modifications
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        {tab === 'password' && (
-          <form onSubmit={hs2(changePassword)} className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Mot de passe actuel</label>
-              <input className="form-input w-full" type="password" {...reg2('old_password', { required: 'Mot de passe actuel requis' })} />
-              {e2.old_password && <p className="text-[10px] text-error font-bold mt-1 uppercase">{e2.old_password.message}</p>}
-            </div>
-
-            <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Nouveau mot de passe</label>
-              <input className="form-input w-full" type="password" placeholder="Min. 8 caractères"
-                {...reg2('new_password', { required: 'Nouveau mot de passe requis', minLength: { value: 8, message: 'Min. 8 caractères' } })} />
-              {e2.new_password && <p className="text-[10px] text-error font-bold mt-1 uppercase">{e2.new_password.message}</p>}
-            </div>
-
-            <div className="form-group">
-              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Confirmation</label>
-              <input className="form-input w-full" type="password" placeholder="Confirmez le nouveau mot de passe"
-                {...reg2('confirm', { validate: v => v === watch('new_password') || 'Les mots de passe ne correspondent pas' })} />
-              {e2.confirm && <p className="text-[10px] text-error font-bold mt-1 uppercase">{e2.confirm.message}</p>}
-            </div>
-
-            <button type="submit" className="w-full btn btn-primary py-3 flex justify-center items-center shadow-lg shadow-primary/10" disabled={s2}>
-              {s2 ? (
-                <span className="material-symbols-outlined animate-spin">progress_activity</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined mr-2">security</span>
-                  Modifier mon mot de passe
-                </>
-              )}
-            </button>
-          </form>
-        )}
+          {tab === 'password' && (
+            <form onSubmit={hs2(changePassword)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label className="form-label"><FiLock style={{ marginRight: '0.3rem' }} />Mot de passe actuel</label>
+                <input className="form-input" type="password" {...reg2('old_password', { required: 'Requis' })} />
+                {e2.old_password && <span className="form-error">{e2.old_password.message}</span>}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nouveau mot de passe</label>
+                <input className="form-input" type="password"
+                  {...reg2('new_password', { required: 'Requis', minLength: { value: 8, message: 'Min. 8 caractères' } })} />
+                {e2.new_password && <span className="form-error">{e2.new_password.message}</span>}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Confirmer le nouveau mot de passe</label>
+                <input className="form-input" type="password"
+                  {...reg2('confirm', { validate: v => v === watch('new_password') || 'Les mots de passe ne correspondent pas' })} />
+                {e2.confirm && <span className="form-error">{e2.confirm.message}</span>}
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={s2}>
+                {s2 ? 'Modification...' : 'Changer le mot de passe'}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )
