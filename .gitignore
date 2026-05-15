@@ -1,0 +1,60 @@
+# Common
+.DS_Store
+.env
+.env.local
+*.log
+
+# Backend (Django)
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/db.sqlite3
+backend/media/
+backend/static/
+backend/staticfiles/
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.env/
+
+# Frontend (Node/React/Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.vite/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.eslintcache
+
+# Mobile (Flutter)
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/android/local.properties
+mobile/android/**/generated/
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/android/.gradle/
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/flutter_export_environment.sh
+mobile/ios/Runner/GeneratedPluginRegistrant.h
+mobile/ios/Runner/GeneratedPluginRegistrant.m
+mobile/ios/.last_build_id
+mobile/ios/Pods/
+mobile/macos/Flutter/ephemeral/
+mobile/macos/Pods/
+mobile/*.iml
+mobile/*.ipr
+mobile/*.iws
+mobile/.idea/
+mobile/.vscode/
+mobile/.history/
+
+# AI/Assistant
+.gemini/

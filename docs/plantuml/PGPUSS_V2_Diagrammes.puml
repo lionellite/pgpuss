@@ -1,0 +1,508 @@
+'
+' PGPUSS — Diagrammes PlantUML (CDC v2.0 + code Django actuel)
+' Un fichier, 4 diagrammes. Chaque bloc est prévu pour tenir sur une page A4.
+'
+
+@startuml
+title PGPUSS — Diagramme de classes (modèles principaux)
+
+' A4 paysage (recommandé pour un diagramme de classes)
+left to right direction
+skinparam pageSize A4
+skinparam pageMargin 10
+skinparam dpi 140
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide methods
+hide empty members
+
+package "accounts" {
+  enum UserRole {
+    USAGER
+    PFE
+    AGENT_INTERNE
+    DIRECTEUR_EST
+    DDS
+    DQSS
+    CABINET
+    ADMIN_PLATEFORME
+  }
+
+  class User {
+    +id: UUID
+    +email: Email
+    +phone: String?
+    +first_name: String
+    +last_name: String
+    +role: UserRole
+    +departement: String?
+    +language_pref: String
+    +is_active: Boolean
+    +created_at: DateTime
+  }
+}
+
+package "establishments" {
+  class Region {
+    +id: UUID
+    +name: String
+    +code: String
+  }
+
+  enum EstablishmentType {
+    CHU
+    CHR
+    HZ
+    CS
+    PRIVE
+    PHARMACIE
+    LABORATOIRE
+  }
+
+  class Establishment {
+    +id: UUID
+    +name: String
+    +type: EstablishmentType
+    +address: Text
+    +phone: String
+    +email: Email
+    +is_active: Boolean
+  }
+
+  class Service {
+    +id: UUID
+    +name: String
+    +is_active: Boolean
+  }
+}
+
+package "complaints" {
+  class Category {
+    +id: UUID
+    +name: String
+    +icon: String
+    +description: Text
+    +order: Integer
+  }
+
+  enum ComplaintStatus {
+    SOUMISE
+    ACCUSEE
+    INSTRUITE
+    AFFECTEE
+    EN_TRAITEMENT
+    RESOLUE
+    ESCALADEE
+    ARBITREE
+    CLOTUREE
+    REJETEE
+  }
+
+  enum ComplaintPriority {
+    P1
+    P2
+    P3
+    P4
+    P5
+  }
+
+  enum ComplaintChannel {
+    WEB
+    MOBILE
+    SMS
+    CHATBOT
+    GUICHET
+  }
+
+  class Complaint {
+    +id: UUID
+    +ticket_number: String
+    +title: String
+    +description: Text
+    +priority: ComplaintPriority
+    +status: ComplaintStatus
+    +channel: ComplaintChannel
+    +is_anonymous: Boolean
+    +complainant_name: String
+    +complainant_phone: String
+    +complainant_email: Email
+    +resolution_notes: Text
+    +corrective_actions: Text
+    +resolution_accepted: Boolean?
+    +resolution_validated: Boolean?
+    +deadline: DateTime?
+    +is_overdue: Boolean
+    +created_at: DateTime
+  }
+
+  class Attachment {
+    +id: UUID
+    +file: File
+    +file_name: String
+    +file_type: String
+    +file_size: Integer
+    +uploaded_at: DateTime
+  }
+
+  class ComplaintHistory {
+    +id: UUID
+    +action: String
+    +old_status: String
+    +new_status: String
+    +notes: Text
+    +timestamp: DateTime
+  }
+
+  class Escalation {
+    +id: UUID
+    +reason: Text
+    +escalated_at: DateTime
+  }
+
+  enum ComplaintDocumentType {
+    FICHE_PLAINTE
+    RECEPISSE_ACCUSATION
+    FICHE_QUALIFICATION
+    BON_AFFECTATION
+    JOURNAL_INSTRUCTION
+    RAPPORT_RESOLUTION
+    DOSSIER_ESCALADE
+    DECISION_ARBITRAGE
+    FICHE_CLOTURE
+  }
+
+  class ComplaintDocument {
+    +id: UUID
+    +doc_type: ComplaintDocumentType
+    +payload: JSON
+    +created_at: DateTime
+  }
+}
+
+package "notifications" {
+  enum NotificationType {
+    EMAIL
+    SMS
+    PUSH
+    IN_APP
+  }
+
+  class Notification {
+    +id: UUID
+    +type: NotificationType
+    +title: String
+    +message: Text
+    +is_read: Boolean
+    +created_at: DateTime
+  }
+}
+
+package "analytics" {
+  class SatisfactionSurvey {
+    +id: UUID
+    +rating: Integer(1..5)
+    +nps_score: Integer(0..10)?
+    +comment: Text
+    +created_at: DateTime
+  }
+}
+
+' Relations principales (alignées sur le code)
+Region "1" o-- "0..*" Establishment : contient >
+Establishment "1" o-- "0..*" Service : propose >
+
+User "0..1" --> "0..*" Complaint : dépose (complainant)
+User "0..1" --> "0..*" Complaint : traite (assigned_to)
+User "0..1" --> "0..*" Complaint : valide (resolution_validated_by)
+User "0..1" --> "0..*" Complaint : suit DDS (dds_assigned_to)
+User "0..1" --> "0..*" Notification : reçoit >
+User "0..1" --> "0..*" ComplaintHistory : agit (actor)
+
+Establishment "1" <-- "0..*" Complaint : concerne >
+Service "0..1" <-- "0..*" Complaint : service >
+
+Category "0..1" <-- "0..*" Complaint : catégorie >
+Category "0..1" <-- "0..*" Complaint : sous-catégorie >
+Category "0..1" o-- "0..*" Category : parent/sous-catégories
+
+Complaint "1" o-- "0..*" Attachment : pièces jointes >
+Complaint "1" o-- "0..*" ComplaintHistory : historique >
+Complaint "1" o-- "0..*" Escalation : escalades >
+Complaint "1" o-- "0..*" ComplaintDocument : documents >
+Complaint "1" o-- "0..*" Notification : notifications >
+Complaint "1" o-- "0..1" SatisfactionSurvey : satisfaction >
+
+Escalation "0..*" --> "0..1" User : de (from_user)
+Escalation "0..*" --> "0..1" User : vers (to_user)
+ComplaintDocument "0..*" --> "0..1" User : généré par (created_by)
+Service "0..*" --> "0..1" User : chef (head)
+User "0..*" --> "0..1" Establishment : rattaché à
+
+@enduml
+
+
+@startuml
+title PGPUSS — Diagramme de cas d'utilisation (acteurs CDC v2.0)
+
+' A4 portrait (bon rendu pour les cas d’utilisation)
+top to bottom direction
+skinparam pageSize A4
+skinparam pageMargin 10
+skinparam dpi 140
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #F7FBFF
+  BorderColor #1B4D89
+}
+
+actor "Usager\n(Plaignant)" as Usager
+actor "PFE\n(Point Focal)" as PFE
+actor "Agent interne\n(Affecté)" as Agent
+actor "Direction\nÉtablissement" as Dir
+actor "DDS\n(Inspecteur/Arbitre)" as DDS
+actor "DQSS / Agence\nQualité" as DQSS
+actor "Cabinet\nMinistère" as Cabinet
+actor "Administrateur\nPlateforme" as Admin
+
+rectangle "PGPUSS — Plateforme de gestion des plaintes" {
+  (Soumettre une plainte\n(web/mobile/SMS/chatbot/guichet)) as UC_Depot
+  (Déposer anonymement\nou identifié) as UC_Anon
+  (Joindre des pièces\njustificatives) as UC_Att
+  (Consulter le statut\net l'historique) as UC_Suivi
+  (Recevoir des notifications\n(SMS/Email/Push/In-App)) as UC_Notif
+  (Compléter des informations\nsur demande) as UC_Compl
+  (Accepter la résolution) as UC_Accept
+  (Contester la clôture\n/ demander recours ≤ 15j) as UC_Recours
+  (Retirer une plainte\navant clôture) as UC_Retrait
+
+  (Accuser réception\n≤ 48h) as UC_AR
+  (Qualifier / catégoriser\n(P1..P7) + priorité) as UC_Qualif
+  (Affecter à un service\nou un agent) as UC_Affect
+  (Traiter / investiguer\net documenter) as UC_Traiter
+  (Demander extension\navec motif) as UC_Ext
+  (Proposer une résolution\nréponse officielle) as UC_Reso
+  (Valider / refuser la résolution\n(Direction)) as UC_Val
+  (Escalader (DDS/DQSS/Cabinet)\nsi dépassement / criticité) as UC_Esc
+  (Arbitrer et notifier\n(décision contraignante)) as UC_Arb
+  (Clôturer et archiver\n(10 ans) + enquête NPS) as UC_Clot
+
+  (Administrer la plateforme\nutilisateurs/roles/RBAC) as UC_Admin
+  (Gérer référentiels\nétablissements/catégories) as UC_Ref
+  (Tableaux de bord & rapports\n(KPIs, tendances)) as UC_KPI
+  (Audit / conformité\n(piste d'audit immuable)) as UC_Audit
+}
+
+Usager --> UC_Depot
+Usager --> UC_Suivi
+Usager --> UC_Notif
+Usager --> UC_Compl
+Usager --> UC_Accept
+Usager --> UC_Recours
+Usager --> UC_Retrait
+
+UC_Depot .> UC_Anon : <<include>>
+UC_Depot .> UC_Att : <<include>>
+
+PFE --> UC_AR
+PFE --> UC_Qualif
+PFE --> UC_Affect
+PFE --> UC_Reso
+PFE --> UC_Esc
+PFE --> UC_Clot
+
+Agent --> UC_Traiter
+Agent --> UC_Ext
+Agent --> UC_Affect
+
+Dir --> UC_Val
+Dir --> UC_Esc
+Dir --> UC_KPI
+
+DDS --> UC_Arb
+DDS --> UC_Esc
+DDS --> UC_KPI
+
+DQSS --> UC_Audit
+DQSS --> UC_KPI
+
+Cabinet --> UC_Audit
+Cabinet --> UC_Arb
+
+Admin --> UC_Admin
+Admin --> UC_Ref
+Admin --> UC_Audit
+
+UC_Reso .> UC_Val : <<include>>
+UC_Clot .> UC_KPI : <<include>>
+UC_Traiter .> UC_Audit : <<include>>
+UC_Arb .> UC_Audit : <<include>>
+
+@enduml
+
+
+@startuml
+title PGPUSS — Diagramme d'activité (workflow de traitement d'une plainte)
+
+' A4 portrait (flux vertical lisible)
+skinparam pageSize A4
+skinparam pageMargin 10
+skinparam dpi 140
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #2E2E2E
+  BarColor #1B4D89
+}
+
+start
+
+:SOUMISE\nUsager dépose plainte\n(canaux: WEB/MOBILE/SMS/CHATBOT/GUICHET);\nDocument: Fiche de plainte;\nTicket: PGP-AAAA-XX9999;
+
+if (Dépôt anonyme ?) then (Oui)
+  :Stocker identité minimale\n(nom/téléphone/email optionnels);\nRBAC & confidentialité;
+else (Non)
+  :Associer au compte usager;\nAuthentification;
+endif
+
+partition "PFE (Point Focal Établissement)" {
+  :ACCUSÉE\nAccusé de réception ≤ 48h;\nDocument: Récépissé automatique;
+  :INSTRUITE\nQualification + catégorisation (P1..P7)\n+ niveau de priorité (P1..P5);\nNLP (si disponible) + contrôle humain;\nDocument: Fiche de qualification;
+  :Calculer délai cible et deadline;\nActiver alertes (relance/escalade);
+  :AFFECTÉE\nAffectation à un service / agent;\nDocument: Bon d'affectation;
+}
+
+partition "Agent affecté (interne)" {
+  :Accepter/refuser l'affectation;\n(Refus => retour PFE);
+  if (Affectation acceptée ?) then (Oui)
+    :EN TRAITEMENT\nInvestigation + collecte d'éléments;\nDocument: Journal d'instruction;
+    if (Besoin d'extension ?) then (Oui)
+      :Demander extension\n(motif + nouvelle date);\nPFE enregistre la demande;
+    endif
+    :Soumettre un rapport de traitement\n(conclusions + recommandations);
+  else (Non)
+    :Réorientation vers PFE\navec justification;
+    -> :AFFECTÉE\nNouvelle affectation;
+  endif
+}
+
+partition "PFE + Direction Établissement" {
+  :RÉSOLUE\nRédiger la réponse officielle;\nDocument: Rapport de résolution;
+  :Validation Direction\n(acceptation / renvoi pour correction);
+}
+
+if (Résolution validée ?) then (Oui)
+  :Notifier l'usager\n(SMS/Email/Push/In-App);
+  if (Usager accepte ?) then (Oui)
+    :CLÔTURÉE\nArchiver 10 ans;\nDocument: Fiche de clôture;\nDéclencher enquête satisfaction (NPS);
+    stop
+  else (Non)
+    :Recours / contestation ≤ 15j;
+    :ESCALADÉE\nTransmettre dossier complet;\nDocument: Dossier d'escalade;
+  endif
+else (Non)
+  :Correction demandée par Direction;
+  -> :RÉSOLUE\n(nouvelle proposition);
+endif
+
+partition "DDS / DQSS / Cabinet" {
+  :Réception dossier escaladé;\nAffecter un inspecteur DDS si besoin;
+  :ARBITRÉE\nEnquête + décision contraignante;\nDocument: Décision d'arbitrage;
+  :Notifier toutes les parties;
+  :CLÔTURÉE\nExécution décision + archivage;\nEnquête satisfaction si applicable;
+}
+
+stop
+@enduml
+
+
+@startuml
+title PGPUSS — Diagramme d'architecture (cible CDC v2.0)
+
+' A4 paysage (mieux pour l’architecture)
+left to right direction
+skinparam pageSize A4
+skinparam pageMargin 10
+skinparam dpi 140
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+cloud "Canaux usagers" as Channels {
+  [Web (React)] as Web
+  [Mobile (Flutter)] as Mobile
+  [SMS] as SMS
+  [Chatbot\n(WhatsApp/Facebook)] as Bot
+  [Guichet\nnumérique] as Kiosk
+}
+
+node "Plateforme (Docker/Kubernetes)" as Platform {
+  [API Backend\n(Django REST)] as API
+  [Service Auth\n(MFA + JWT)] as Auth
+  [Service Plaintes\n(workflow)] as Complaints
+  [Service Notifications] as Notifs
+  [Service Analytics\n(KPIs, rapports)] as Analytics
+  [Module NLP\n(classification)] as NLP
+  [Bus événements\n(Kafka/RabbitMQ)] as Bus
+  [Cache / Sessions\n(Redis)] as Redis
+  [OpenAPI/Swagger] as Swagger
+}
+
+database "PostgreSQL\n(données relationnelles)" as PG
+database "MongoDB\n(documents/pièces)" as Mongo
+folder "Stockage objet S3\n(pièces jointes)" as S3
+
+node "Observabilité" as Obs {
+  [Prometheus] as Prom
+  [Grafana] as Graf
+}
+
+' Flux principaux
+Web --> API
+Mobile --> API
+SMS --> API : via passerelle SMS
+Bot --> API : via gateway chatbot
+Kiosk --> API
+
+API --> Auth
+API --> Complaints
+API --> Notifs
+API --> Analytics
+API --> Swagger
+
+Complaints --> PG
+Complaints --> Mongo
+Complaints --> S3
+Complaints --> Redis
+Complaints --> Bus : publie événements\n(changement d'état)
+Complaints --> NLP : classification auto\n(si activée)
+
+Notifs --> Bus : consomme événements
+Notifs --> PG
+
+Analytics --> PG
+Analytics --> Bus : consomme événements
+
+API --> Prom
+Complaints --> Prom
+Notifs --> Prom
+Analytics --> Prom
+Prom --> Graf
+
+note right of Complaints
+Sécurité & conformité:
+- RBAC (rôles CDC)
+- TLS 1.3 (transit)
+- Chiffrement (repos)
+- Piste d'audit immuable
+- Archivage ≥ 10 ans
+end note
+
+@enduml
+

@@ -1,0 +1,88 @@
+# https://dart.dev/guides/libraries/private-files
+# Created by https://www.toptal.com/developers/gitignore/api/flutter,android,visualstudiocode,intellij+all,macos
+
+# Flutter/Dart/Pub related
+# -----------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Android related
+# ---------------
+**/android/local.properties
+**/android/**/generated/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+.gradle/
+build/
+
+# iOS/macOS related
+# -----------------
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/App.framework
+**/ios/Flutter/App.podspec
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/TemporaryGenerated.xcconfig
+**/ios/Runner/GeneratedPluginRegistrant.h
+**/ios/Runner/GeneratedPluginRegistrant.m
+**/ios/.last_build_id
+**/ios/.last_build_id
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/flutter_export_environment.sh
+**/macos/Runner/GeneratedPluginRegistrant.swift
+**/ios/Pods/
+**/macos/Pods/
+.DS_Store
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+xcuserdata/
+
+# IntelliJ related
+# ----------------
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Visual Studio Code related
+# --------------------------
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Symbolication related
+# ---------------------
+app.*.symbols
+
+# Obfuscation related
+# -------------------
+app.*.map.json
+
+# Environment variables
+# ---------------------
+.env
+.env.*
+*.secret
+
+# Miscellaneous
+# -------------
+*.class
+*.log
+*.pyc
+*.swp
+.atom/
+.build/
+.buildlog/
+.svn/
+.swiftpm/
