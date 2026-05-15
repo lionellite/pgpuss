@@ -6,3 +6,6 @@ django-filter
 psycopg2-binary
 python-dotenv
 dj-database-url
+# Stockage fichiers médias en production (Cloudinary)
+cloudinary
+django-cloudinary-storage

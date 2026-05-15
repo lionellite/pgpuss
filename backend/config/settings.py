@@ -5,6 +5,7 @@ Django settings for PGP-USS project.
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
     'establishments',
     'notifications',
     'analytics',
+    'support',
 ]
 
 MIDDLEWARE = [
@@ -67,6 +69,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+# Backend d'authentification : email OU téléphone
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.PhoneOrEmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 import dj_database_url
 
@@ -131,12 +139,14 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS
+# CORS : accepter toutes les origines pour l'API REST (mobile + frontend)
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:3000',
 ]
+# Pour les appels depuis l'app mobile Flutter, autoriser toutes les origines
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # File upload limits
@@ -156,3 +166,16 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PGP-USS <noreply@pgpuss.local>")
 SITE_NAME = os.environ.get("SITE_NAME", "PGP-USS Santé Bénin")
+
+# Stockage des fichiers médias
+# En production (si CLOUDINARY_URL est défini), utiliser Cloudinary
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+if CLOUDINARY_URL:
+    import cloudinary
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    CLOUDINARY_STORAGE = {'CLOUDINARY_URL': CLOUDINARY_URL}
+else:
+    # Développement local : stockage fichiers local
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'

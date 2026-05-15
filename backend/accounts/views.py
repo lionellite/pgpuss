@@ -1,8 +1,11 @@
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from .models import UserRole
 from .serializers import (
     UserRegistrationSerializer,
@@ -10,13 +13,15 @@ from .serializers import (
     AdminUserUpdateSerializer,
     UserProfileUpdateSerializer,
     ChangePasswordSerializer,
+    PhoneLoginSerializer,
+    AdminPasswordResetSerializer,
 )
 
 User = get_user_model()
 
 
 class RegisterView(generics.CreateAPIView):
-    """Inscription d'un nouvel usager"""
+    """Inscription d'un nouvel usager (email OU téléphone)."""
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegistrationSerializer
@@ -31,8 +36,29 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class PhoneLoginView(APIView):
+    """
+    Connexion par email OU numéro de téléphone.
+    Retourne un JWT access + refresh identique à /api/auth/login/.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PhoneLoginSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': UserSerializer(user).data,
+            'must_change_password': user.must_change_password,
+        })
+
+
 class ProfileView(generics.RetrieveUpdateAPIView):
-    """Profil de l'utilisateur connecté"""
+    """Profil de l'utilisateur connecté."""
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -46,54 +72,159 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
 
 class ChangePasswordView(APIView):
-    """Changement de mot de passe"""
+    """Changement de mot de passe (utilisateur connecté)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        request.user.set_password(serializer.validated_data['new_password'])
-        request.user.save()
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.must_change_password = False
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        user.save()
         return Response({'message': 'Mot de passe modifié avec succès.'})
 
 
+# ───────────────────────────────────────────────────────────────
+# Administration des utilisateurs (ADMIN_PLATEFORME uniquement)
+# ───────────────────────────────────────────────────────────────
+
+class IsAdminPlateforme(permissions.BasePermission):
+    """Permission : réservé à l'administrateur plateforme."""
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == UserRole.ADMIN_PLATEFORME
+        )
+
+
 class UserListView(generics.ListAPIView):
-    """Liste des utilisateurs (admin uniquement)"""
+    """
+    Liste des utilisateurs.
+    - ADMIN_PLATEFORME : tous les utilisateurs
+    - DIRECTEUR_EST / PFE : uniquement leur établissement
+    - Autres : uniquement leur propre profil
+    """
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['role', 'is_active', 'establishment']
-    search_fields = ['first_name', 'last_name', 'email']
+    search_fields = ['first_name', 'last_name', 'email', 'phone']
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in [UserRole.ADMIN_PLATEFORME, UserRole.DQSS, UserRole.CABINET]:
-            return User.objects.all()
+        if user.role == UserRole.ADMIN_PLATEFORME:
+            return User.objects.select_related('establishment').all()
         elif user.role in [UserRole.DIRECTEUR_EST, UserRole.PFE]:
             return User.objects.filter(establishment=user.establishment)
         return User.objects.filter(id=user.id)
 
 
-class UserDetailView(generics.RetrieveUpdateAPIView):
-    """Détail d'un utilisateur (admin)"""
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Détail d'un utilisateur.
+    PATCH : modifier infos/rôle (admin uniquement)
+    DELETE : désactiver le compte (admin uniquement)
+    """
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
         user = self.request.user
-        if self.request.method in ['PUT', 'PATCH'] and user.role in [UserRole.ADMIN_PLATEFORME, UserRole.DQSS, UserRole.CABINET]:
+        if self.request.method in ['PUT', 'PATCH'] and user.role == UserRole.ADMIN_PLATEFORME:
             return AdminUserUpdateSerializer
         return UserSerializer
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in [UserRole.ADMIN_PLATEFORME, UserRole.DQSS, UserRole.CABINET]:
-            return User.objects.all()
+        if user.role == UserRole.ADMIN_PLATEFORME:
+            return User.objects.select_related('establishment').all()
         elif user.role in [UserRole.DIRECTEUR_EST, UserRole.PFE]:
             return User.objects.filter(establishment=user.establishment)
         return User.objects.filter(id=user.id)
 
     def update(self, request, *args, **kwargs):
-        # Empêche la “gestion users” par des non-admins
-        if request.user.role not in [UserRole.ADMIN_PLATEFORME, UserRole.DQSS, UserRole.CABINET]:
-            return Response({'error': "Action réservée à l'administration."}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role != UserRole.ADMIN_PLATEFORME:
+            return Response(
+                {'error': "Modification réservée à l'administrateur plateforme."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Soft-delete : désactive le compte sans le supprimer."""
+        if request.user.role != UserRole.ADMIN_PLATEFORME:
+            return Response(
+                {'error': "Suppression réservée à l'administrateur plateforme."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        user = self.get_object()
+        if user == request.user:
+            return Response(
+                {'error': "Vous ne pouvez pas supprimer votre propre compte."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        hard_delete = request.query_params.get('hard', 'false').lower() == 'true'
+        if hard_delete:
+            user.delete()
+            return Response({'message': 'Compte supprimé définitivement.'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            user.is_active = False
+            user.save(update_fields=['is_active'])
+            return Response({'message': 'Compte désactivé.'})
+
+
+class AdminResetPasswordView(APIView):
+    """
+    ADMIN : initier un reset de mot de passe pour un utilisateur.
+    Peut définir un nouveau mot de passe directement,
+    ou générer un token à transmettre à l'utilisateur.
+    """
+    permission_classes = [IsAdminPlateforme]
+
+    def post(self, request, pk):
+        target_user = get_object_or_404(User, pk=pk)
+        serializer = AdminPasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_password = serializer.validated_data.get('new_password')
+
+        if new_password:
+            # Définir directement le nouveau mdp
+            try:
+                validate_password(new_password, user=target_user)
+            except ValidationError as e:
+                return Response({'error': list(e.messages)}, status=400)
+            target_user.set_password(new_password)
+            target_user.must_change_password = True
+            target_user.password_reset_token = None
+            target_user.save()
+            return Response({
+                'message': f'Mot de passe défini pour {target_user.full_name}. '
+                           f'L\'utilisateur devra le changer à la prochaine connexion.'
+            })
+        else:
+            # Générer un token de réinitialisation
+            token = target_user.generate_password_reset_token()
+            return Response({
+                'message': f'Token de réinitialisation généré pour {target_user.full_name}.',
+                'token': token,
+                'expires_at': target_user.password_reset_expires,
+                'note': 'Transmettez ce token à l\'utilisateur pour qu\'il réinitialise son mot de passe.'
+            })
+
+
+class RolesListView(APIView):
+    """Liste des rôles disponibles (admin et agents)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != UserRole.ADMIN_PLATEFORME:
+            return Response({'error': 'Accès réservé à l\'administrateur.'}, status=403)
+        roles = [
+            {'code': role.value, 'label': role.label}
+            for role in UserRole
+        ]
+        return Response(roles)

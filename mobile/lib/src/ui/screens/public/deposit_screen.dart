@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../api/complaints_api.dart';
 import '../../../api/establishments_api.dart';
 import '../../../models/category.dart';
@@ -124,9 +126,30 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       }
       final result = await ref.read(complaintsApiProvider).create(formData);
       setState(() { _success = true; _ticketNumber = (result['ticket_number'] as String?) ?? 'N/A'; });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) { return; }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors du dépôt.')));
+      String msg = 'Erreur lors du dépôt. Veuillez réessayer.';
+      if (e is dio.DioException) {
+        final data = e.response?.data;
+        if (data is Map) {
+          final errors = data.entries
+              .map((entry) {
+                final val = entry.value;
+                if (val is List) return val.join(', ');
+                return val.toString();
+              })
+              .join('\n');
+          if (errors.isNotEmpty) msg = errors;
+        }
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: const Color(0xFFE8112D),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+        ));
     } finally {
       if (mounted) { setState(() => _submitting = false); }
     }
@@ -138,7 +161,20 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     final regions = ref.watch(regionsProvider);
     final categories = ref.watch(categoriesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Déposer une plainte')),
+      appBar: AppBar(
+        title: const Text('Déposer une plainte'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Retour à l\'accueil',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
+      ),
       body: Column(children: [
         _buildStepIndicator(),
         Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(20), child: _buildStep(regions, categories))),

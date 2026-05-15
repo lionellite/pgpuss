@@ -52,22 +52,71 @@ class CategoryListView(generics.ListAPIView):
 
 
 class ComplaintCreateView(generics.CreateAPIView):
-    """Dépôt d'une nouvelle plainte (JSON ou multipart : pièces jointes + message vocal)."""
+    """
+    Dépôt d'une nouvelle plainte.
+    - Réservé aux USAGERS (avec compte) ou aux visiteurs anonymes.
+    - Les agents, PFE, directeurs, etc. ne peuvent PAS déposer de plainte.
+    - Si anonyme : le numéro de téléphone est obligatoire.
+    """
     serializer_class = ComplaintCreateSerializer
     permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
+        # Bloquer les agents/staff connectés (réservé aux usagers)
+        if request.user.is_authenticated and request.user.role != UserRole.USAGER:
+            return Response(
+                {'error': 'Le dépôt de plainte est réservé aux usagers. '
+                          'Les agents ne peuvent pas déposer de plainte.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validation : si anonyme, téléphone obligatoire
+        is_anonymous = request.data.get('is_anonymous', False)
+        if is_anonymous in [True, 'true', '1', 'True']:
+            phone = (request.data.get('complainant_phone') or '').strip()
+            if not phone:
+                return Response(
+                    {'error': 'Pour une plainte anonyme, le numéro de téléphone est obligatoire.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         complaint = serializer.save()
 
         vf = request.FILES.get('voice_file')
         if vf:
+            # Validation type audio
+            allowed_audio = ['audio/', 'video/']
+            ct = getattr(vf, 'content_type', '') or ''
+            if not any(ct.startswith(a) for a in allowed_audio):
+                return Response(
+                    {'error': 'Le fichier vocal doit être un fichier audio (mp3, m4a, wav, ogg...).'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if vf.size > 50 * 1024 * 1024:  # 50 MB max
+                return Response({'error': 'Le fichier vocal ne doit pas dépasser 50 MB.'}, status=400)
             complaint.voice_file = vf
-            complaint.save()
+            complaint.save(update_fields=['voice_file'])
 
         for f in request.FILES.getlist('attachments'):
+            # Validation taille (10 MB max par pièce jointe)
+            if f.size > 10 * 1024 * 1024:
+                return Response(
+                    {'error': f'La pièce jointe "{f.name}" dépasse la taille maximale de 10 MB.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # Types autorisés
+            allowed_types = ['image/', 'application/pdf', 'audio/', 'video/',
+                             'application/msword', 'application/vnd.openxmlformats']
+            ct = getattr(f, 'content_type', '') or ''
+            if not any(ct.startswith(a) for a in allowed_types):
+                return Response(
+                    {'error': f'Type de fichier non autorisé pour "{f.name}". '
+                              f'Formats acceptés : images, PDF, audio, vidéo, Word.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             Attachment.objects.create(
                 complaint=complaint,
                 file=f,
@@ -91,7 +140,16 @@ class ComplaintCreateView(generics.CreateAPIView):
 
 
 class ComplaintListView(generics.ListAPIView):
-    """Liste des plaintes (filtrée selon le rôle)"""
+    """
+    Liste des plaintes filtrée selon le rôle :
+    - USAGER : ses propres plaintes
+    - PFE / DIRECTEUR_EST : plaintes de leur établissement
+    - DDS : plaintes de leur zone/département (par défaut : escaladées)
+    - DQSS / CABINET : toutes (par défaut : escaladées à leur niveau)
+    - ADMIN : tout sans filtre
+    Paramètre ?scope=all pour les rôles supérieurs pour voir TOUTES les plaintes
+    de leur périmètre, pas seulement les escaladées.
+    """
     serializer_class = ComplaintListSerializer
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['status', 'priority', 'category', 'establishment', 'channel', 'is_anonymous']
@@ -100,22 +158,45 @@ class ComplaintListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        scope = self.request.query_params.get('scope', 'default')
         qs = Complaint.objects.all()
 
         if user.role == UserRole.USAGER:
             qs = qs.filter(complainant=user)
+
         elif user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST]:
-            qs = qs.filter(establishment=user.establishment)
+            # Strictement leur établissement
+            if user.establishment_id:
+                qs = qs.filter(establishment=user.establishment)
+            else:
+                qs = qs.none()
+
         elif user.role == UserRole.AGENT_INTERNE:
             qs = qs.filter(assigned_to=user)
-        elif user.role == UserRole.DDS:
-            # Superviser les établissements de sa zone (département)
-            qs = qs.filter(establishment__region__name=user.departement)
-        elif user.role in [UserRole.ADMIN_PLATEFORME, UserRole.DQSS, UserRole.CABINET]:
-            pass  # Accès global
 
-        # Optimization: Use select_related for foreign keys and annotate with attachment count
-        # to avoid N+1 queries when rendering the list.
+        elif user.role == UserRole.DDS:
+            # Zone de compétence (département)
+            if user.departement:
+                qs = qs.filter(establishment__region__name=user.departement)
+            else:
+                qs = qs.none()
+            # Par défaut : uniquement les escaladées
+            if scope != 'all':
+                qs = qs.filter(status=ComplaintStatus.ESCALADEE)
+
+        elif user.role == UserRole.DQSS:
+            # Par défaut : escaladées pour le niveau DQSS
+            if scope != 'all':
+                qs = qs.filter(status=ComplaintStatus.ESCALADEE)
+
+        elif user.role == UserRole.CABINET:
+            # Par défaut : escaladées + arbitrées pour le ministère
+            if scope != 'all':
+                qs = qs.filter(status__in=[ComplaintStatus.ESCALADEE, ComplaintStatus.ARBITREE])
+
+        elif user.role == UserRole.ADMIN_PLATEFORME:
+            pass  # Accès global sans filtre
+
         return qs.select_related(
             'category', 'establishment', 'assigned_to'
         ).annotate(
@@ -807,21 +888,29 @@ class ComplaintArbitrateView(APIView):
 
 
 class ComplaintCloseView(APIView):
-    """Clôturer définitivement (Action PFE)"""
+    """Clôturer définitivement un dossier — notes obligatoires (min. 30 caractères)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in [UserRole.PFE, UserRole.DDS, UserRole.DQSS, UserRole.CABINET, UserRole.ADMIN_PLATEFORME]:
-            return Response({'error': "Non autorisé."}, status=403)
+        if request.user.role not in [UserRole.PFE, UserRole.DDS, UserRole.DQSS,
+                                     UserRole.CABINET, UserRole.ADMIN_PLATEFORME]:
+            return Response({'error': 'Non autorisé.'}, status=403)
         if request.user.role == UserRole.PFE and complaint.establishment_id and request.user.establishment_id != complaint.establishment_id:
-            return Response({'error': "Le PFE ne peut clôturer que les dossiers de son établissement."}, status=403)
+            return Response({'error': 'Le PFE ne peut clôturer que les dossiers de son établissement.'}, status=403)
         if complaint.status not in [ComplaintStatus.RESOLUE, ComplaintStatus.ARBITREE]:
-            return Response({'error': "La clôture est possible après RÉSOLUE ou ARBITRÉE."}, status=400)
-        # Règle: si clôture depuis RESOLUE, il faut l'accord usager (sauf anonymat)
+            return Response({'error': 'La clôture est possible après RÉSOLUE ou ARBITRÉE.'}, status=400)
         if complaint.status == ComplaintStatus.RESOLUE and not complaint.is_anonymous and complaint.complainant_id:
             if complaint.resolution_accepted is not True:
-                return Response({'error': "Clôture impossible: l'usager doit accepter la résolution."}, status=400)
+                return Response({'error': "Clôture impossible : l'usager doit accepter la résolution."}, status=400)
+
+        # Notes de clôture obligatoires
+        notes = request.data.get('notes', '').strip()
+        if not notes:
+            return Response({'error': 'Le champ notes est obligatoire pour la clôture.'}, status=400)
+        if len(notes) < 30:
+            return Response({'error': 'Les notes de clôture doivent contenir au moins 30 caractères. '
+                                      'Décrivez les actions menées et les conclusions du dossier.'}, status=400)
 
         old_status = complaint.status
         complaint.status = ComplaintStatus.CLOTUREE
@@ -831,9 +920,8 @@ class ComplaintCloseView(APIView):
         ComplaintHistory.objects.create(
             complaint=complaint, action='Clôture définitive',
             old_status=old_status, new_status=ComplaintStatus.CLOTUREE,
-            actor=request.user, notes=request.data.get('notes', '')
+            actor=request.user, notes=notes
         )
-        # Document: fiche clôture
         generate_document(
             complaint=complaint,
             doc_type=ComplaintDocumentType.FICHE_CLOTURE,
@@ -842,7 +930,7 @@ class ComplaintCloseView(APIView):
                 "document": {
                     "title": "Fiche de clôture",
                     "closed_at": complaint.closed_at.isoformat() if complaint.closed_at else None,
-                    "motif": request.data.get('notes', ''),
+                    "motif": notes,
                     "satisfaction": complaint.resolution_ack_notes if complaint.resolution_accepted else None,
                 }
             },
@@ -909,23 +997,34 @@ class ComplaintReopenView(APIView):
         return Response({"message": "Plainte rouverte."})
 
 class ComplaintEscalateView(APIView):
-    """Escalader une plainte (PFE/Direction/DDS/DQSS/Cabinet)"""
+    """Escalader une plainte — notes et raison obligatoires (min. 30 caractères)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in [UserRole.USAGER, UserRole.PFE, UserRole.DIRECTEUR_EST, UserRole.DDS, UserRole.DQSS, UserRole.CABINET, UserRole.ADMIN_PLATEFORME]:
-            return Response({'error': "Non autorisé."}, status=403)
+        if request.user.role not in [UserRole.USAGER, UserRole.PFE, UserRole.DIRECTEUR_EST,
+                                     UserRole.DDS, UserRole.DQSS, UserRole.CABINET,
+                                     UserRole.ADMIN_PLATEFORME]:
+            return Response({'error': 'Non autorisé.'}, status=403)
         if request.user.role == UserRole.USAGER and complaint.complainant_id != request.user.id:
-            return Response({'error': "Vous ne pouvez escalader que vos propres plaintes."}, status=403)
+            return Response({'error': 'Vous ne pouvez escalader que vos propres plaintes.'}, status=403)
         if request.user.role == UserRole.PFE and complaint.establishment_id and request.user.establishment_id != complaint.establishment_id:
-            return Response({'error': "Le PFE ne peut escalader que les dossiers de son établissement."}, status=403)
+            return Response({'error': 'Le PFE ne peut escalader que les dossiers de son établissement.'}, status=403)
         if complaint.status not in [ComplaintStatus.INSTRUITE, ComplaintStatus.EN_TRAITEMENT, ComplaintStatus.RESOLUE]:
-            return Response({'error': "Escalade possible depuis INSTRUITE / EN_TRAITEMENT / RÉSOLUE (contestation)."}, status=400)
-        reason = request.data.get('reason', '')
-        to_user_id = request.data.get('to_user')
+            return Response({'error': 'Escalade possible depuis INSTRUITE / EN_TRAITEMENT / RÉSOLUE.'}, status=400)
 
+        # Notes et raison obligatoires
+        reason = request.data.get('reason', '').strip()
+        notes = request.data.get('notes', reason).strip()
+        if not reason:
+            return Response({'error': 'Le champ reason (raison de l\'escalade) est obligatoire.'}, status=400)
+        if len(reason) < 30:
+            return Response({'error': 'La raison de l\'escalade doit contenir au moins 30 caractères. '
+                                      'Décrivez précisément le motif de l\'escalade.'}, status=400)
+
+        to_user_id = request.data.get('to_user')
         to_user = get_object_or_404(User, pk=to_user_id) if to_user_id else None
+
         old_status = complaint.status
         complaint.status = ComplaintStatus.ESCALADEE
         complaint.save()
@@ -936,16 +1035,14 @@ class ComplaintEscalateView(APIView):
             to_user=to_user,
             reason=reason
         )
-
         ComplaintHistory.objects.create(
             complaint=complaint,
             action='Escalade de la plainte',
             old_status=old_status,
             new_status=ComplaintStatus.ESCALADEE,
             actor=request.user,
-            notes=reason
+            notes=notes
         )
-        # Document: dossier escalade
         generate_document(
             complaint=complaint,
             doc_type=ComplaintDocumentType.DOSSIER_ESCALADE,
@@ -958,7 +1055,6 @@ class ComplaintEscalateView(APIView):
                 }
             },
         )
-
         return Response({'message': 'Plainte escaladée avec succès.'})
 
 
@@ -1024,3 +1120,48 @@ class ComplaintHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         return ComplaintHistory.objects.filter(complaint_id=self.kwargs['pk'])
+
+
+class MyScopeView(APIView):
+    """
+    Retourne les établissements, zones et services accessibles selon le rôle.
+    Utilisé par l'onglet de navigation dans le frontend/mobile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from establishments.models import Establishment, Region
+        from establishments.serializers import EstablishmentSerializer
+
+        user = request.user
+        data = {
+            'role': user.role,
+            'role_display': user.get_role_display(),
+            'scope': 'global',
+            'establishments': [],
+            'regions': [],
+        }
+
+        if user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST, UserRole.AGENT_INTERNE]:
+            if user.establishment:
+                data['scope'] = 'establishment'
+                data['establishments'] = EstablishmentSerializer([user.establishment], many=True).data
+            else:
+                data['scope'] = 'none'
+
+        elif user.role == UserRole.DDS:
+            data['scope'] = 'department'
+            data['departement'] = user.departement
+            if user.departement:
+                ests = Establishment.objects.filter(region__name=user.departement)
+                data['establishments'] = EstablishmentSerializer(ests, many=True).data
+
+        elif user.role in [UserRole.DQSS, UserRole.CABINET, UserRole.ADMIN_PLATEFORME]:
+            data['scope'] = 'national'
+            regions = Region.objects.all()
+            data['regions'] = [{'id': str(r.id), 'name': r.name} for r in regions]
+            data['establishments'] = EstablishmentSerializer(
+                Establishment.objects.select_related('region').all(), many=True
+            ).data
+
+        return Response(data)

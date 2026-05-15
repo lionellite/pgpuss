@@ -48,24 +48,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             phone: _phoneCtrl.text.trim(),
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compte créé ! Connectez-vous.')),
+      // Afficher un dialogue de confirmation avant de rediriger
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Color(0xFF008751), size: 28),
+              SizedBox(width: 8),
+              Text('Compte créé !'),
+            ],
+          ),
+          content: Text(
+            'Votre compte a été créé avec succès.\n'
+            'Vous pouvez maintenant vous connecter avec\n${_emailCtrl.text.trim()}',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.go('/login');
+              },
+              child: const Text('Se connecter'),
+            ),
+          ],
+        ),
       );
-      context.go('/login');
     } on DioException catch (e) {
       if (!mounted) return;
       final data = e.response?.data;
       String msg = "Erreur lors de l'inscription.";
-      if (data is Map && data['email'] != null) {
-        msg = 'Cet email est déjà utilisé.';
+      if (data is Map) {
+        // Extraire tous les messages d'erreur du backend
+        final errors = data.entries
+            .map((entry) {
+              final val = entry.value;
+              if (val is List) return val.join(', ');
+              return val.toString();
+            })
+            .join('\n');
+        if (errors.isNotEmpty) msg = errors;
       }
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: const Color(0xFFE8112D),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+        ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur lors de l'inscription.")),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+          content: Text("Erreur lors de l'inscription. Vérifiez votre connexion."),
+          backgroundColor: Color(0xFFE8112D),
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+        ));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

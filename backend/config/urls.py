@@ -15,7 +15,11 @@ urlpatterns = [
     path('api/admin/', include('complaints.admin_urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/analytics/', include('analytics.urls')),
+    path('api/support/', include('support.urls')),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    media_url = getattr(settings, 'MEDIA_URL', '/media/')
+    media_root = getattr(settings, 'MEDIA_ROOT', None)
+    if media_root:
+        urlpatterns += static(media_url, document_root=media_root)

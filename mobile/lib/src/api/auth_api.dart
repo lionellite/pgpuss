@@ -37,6 +37,7 @@ class AuthApi {
       'last_name': lastName,
       'email': email,
       'password': password,
+      'password_confirm': password,
       if (phone != null && phone.isNotEmpty) 'phone': phone,
     });
   }

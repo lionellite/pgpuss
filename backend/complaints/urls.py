@@ -4,6 +4,8 @@ from . import views, api_social
 urlpatterns = [
     # Categories
     path('categories/', views.CategoryListView.as_view(), name='category_list'),
+    # Mon périmètre (établissements/zones selon rôle)
+    path('my-scope/', views.MyScopeView.as_view(), name='my_scope'),
     # Complaints CRUD
     path('', views.ComplaintListView.as_view(), name='complaint_list'),
     path('create/', views.ComplaintCreateView.as_view(), name='complaint_create'),

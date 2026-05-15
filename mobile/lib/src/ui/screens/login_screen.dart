@@ -35,19 +35,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordCtrl.text,
           );
     } on DioException catch (e) {
-      final msg = (e.response?.data is Map<String, dynamic>)
-          ? ((e.response?.data as Map<String, dynamic>)['detail']
-                  as String?) ??
-              'Connexion impossible.'
-          : 'Connexion impossible.';
+      final data = e.response?.data;
+      String msg = 'Identifiants incorrects. Vérifiez votre email et mot de passe.';
+      if (data is Map<String, dynamic>) {
+        msg = (data['detail'] as String?) ?? msg;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: const Color(0xFFE8112D),
+          duration: const Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+        ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connexion impossible.')),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+          content: Text('Connexion impossible. Vérifiez votre connexion internet.'),
+          backgroundColor: Color(0xFFE8112D),
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+        ));
     }
   }
 
