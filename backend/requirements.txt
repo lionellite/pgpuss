@@ -5,3 +5,4 @@ djangorestframework-simplejwt
 django-filter
 psycopg2-binary
 python-dotenv
+dj-database-url

@@ -20,7 +20,7 @@ class AppConfig {
   /// Passée via `--dart-define=API_BASE_URL=...` ou valeur par défaut.
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.100.214.221:8000',
+    defaultValue: 'https://pgpuss-git-master-lionels-projects-c5af5fda.vercel.app',
   );
 
   /// Nom de l'application

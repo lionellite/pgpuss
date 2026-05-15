@@ -68,16 +68,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database - SQLite (dev) / PostgreSQL (prod)
+import dj_database_url
+
+# Database - PostgreSQL (prod) / SQLite (dev)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql' if os.environ.get('DB_NAME') else 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.environ.get('DB_USER', ''),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', ''),
-        'PORT': os.environ.get('DB_PORT', ''),
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 AUTH_USER_MODEL = 'accounts.User'
