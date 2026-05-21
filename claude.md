@@ -50,40 +50,115 @@ pgpuss-main/
 ## 4. Pyramide Sanitaire du Bénin (Hiérarchie)
 
 ```
-Niveau National (Ministère / DQSS / Cabinet)
-    └── Niveau Départemental (DDS × 12 départements)
-        └── Niveau Zone Sanitaire (34 zones, regroupent plusieurs communes)
-            └── Niveau Périphérique (Formations sanitaires : CHU, CHR, HZ, CS, Privé)
+Niveau 4 — National (Ministère / DQSS / Cabinet)         ← PF-DQSS + PNUSS National
+    └── Niveau 3 — Départemental (DDS × 12 départements) ← PF-DDS + PNUSS Départemental
+        └── Niveau 2 — Zone Sanitaire (34 zones)         ← PFZS + PNUSS Zone
+            └── Niveau 1 — Périphérique (Formations sanitaires : CHU, CHR, HZ, CS, Privé)
+                                                          ← PFE + Agents internes + Direction + PNUSS Établissement
 ```
 
-**Point Focal à chaque niveau :**
-- `PFE` — Point Focal Établissement (niveau périphérique)
-- `PFZS` — Point Focal Zone Sanitaire
-- `DDS` — Point Focal Départemental
-- `DQSS` / `CABINET` — Niveau national
+**Principes clés (CDC v3) :**
+- Chaque niveau de la pyramide dispose d'un **Point Focal** désigné
+- La **PNUSS** a une représentation à **chaque** niveau de la pyramide (transversal)
+- Chaque structure dispose d'**agents internes** affectés aux enquêtes
+- Le **Call Center 136** est un canal d'entrée national (pas un niveau hiérarchique)
 
-**Acteurs transversaux :**
-- `PNUSS` — Plateforme Nationale des Usagers des Services de Santé (représentation à chaque niveau)
-- `AGENT_CALL_CENTER` — Agent du call center 136 (ligne verte gratuite)
-- `AGENT_INTERNE` — Agent affecté pour traitement
-- `DIRECTEUR_EST` — Directeur d'établissement
-- `ADMIN_PLATEFORME` — Administrateur système
+### Acteurs par niveau
+
+| Niveau | Point Focal | PNUSS | Autres acteurs |
+|--------|-------------|-------|----------------|
+| **Périphérique** (Établissement) | PFE | PNUSS Établissement | Agents internes, Directeur |
+| **Zone Sanitaire** | PFZS | PNUSS Zone | — |
+| **Départemental** | PF-DDS (`DDS`) | PNUSS Département | Inspecteurs DDS |
+| **National** | PF-DQSS (`DQSS`) | PNUSS National | Cabinet Ministère |
+| **Transversal** | — | — | Agent Call Center 136, Admin plateforme |
 
 ## 5. Rôles Backend (`UserRole`)
 
-| Code | Libellé | Scope des données |
-|------|---------|-------------------|
-| `USAGER` | Plaignant | Ses propres plaintes |
-| `PFE` | Point Focal Établissement | Plaintes de son établissement |
-| `PFZS` | Point Focal Zone Sanitaire | Plaintes de sa zone sanitaire |
-| `DIRECTEUR_EST` | Directeur d'établissement | Plaintes de son établissement |
-| `AGENT_INTERNE` | Agent affecté | Plaintes qui lui sont affectées |
-| `DDS` | Direction Départementale Santé | Plaintes de son département (filtrées sur `establishment.region.name == user.departement`) |
-| `DQSS` | Agence Qualité Nationale | Toutes (par défaut : escaladées) |
-| `CABINET` | Ministère de la Santé | Toutes |
-| `AGENT_CALL_CENTER` | Agent Call Center 136 | Plaintes qu'il a transcrites |
-| `PNUSS` | Représentant PNUSS | Selon rattachement : zone_sanitaire, département ou national |
-| `ADMIN_PLATEFORME` | Administrateur | Tout |
+| Code | Libellé | Niveau pyramide | Rattachement | Scope des données |
+|------|---------|-----------------|--------------|-------------------|
+| `USAGER` | Plaignant | — | — | Ses propres plaintes |
+| `PFE` | Point Focal Établissement | Périphérique | `establishment` | Plaintes de son établissement |
+| `AGENT_INTERNE` | Agent affecté | Périphérique | `establishment` | Plaintes qui lui sont affectées |
+| `DIRECTEUR_EST` | Directeur d'établissement | Périphérique | `establishment` | Plaintes de son établissement |
+| `PFZS` | Point Focal Zone Sanitaire | Zone Sanitaire | `zone_sanitaire` | Plaintes de sa zone sanitaire |
+| `DDS` | Point Focal DDS (PF-DDS) | Départemental | `departement` | Plaintes de son département |
+| `DQSS` | PF-DQSS / Agence Qualité | National | — | Toutes (par défaut : escaladées) |
+| `CABINET` | Ministère de la Santé | National | — | Toutes |
+| `AGENT_CALL_CENTER` | Agent Call Center 136 | Transversal | — | Plaintes qu'il a transcrites |
+| `PNUSS` | Représentant PNUSS | Multi-niveaux | `zone_sanitaire` OU `departement` OU aucun (= national) | Selon rattachement |
+| `ADMIN_PLATEFORME` | Administrateur système | Transversal | — | Tout |
+
+### 5b. Utilisateurs Tests
+
+> **Mot de passe commun** : même mot de passe que `admin@pgpuss.bj` (défini lors du setup initial)
+
+#### Niveau Périphérique — Établissements
+
+| Email | Rôle | Rattachement |
+|-------|------|-------------|
+| `pfe@pgpuss.bj` | PFE | CHU de Cotonou (CNHU-HKM) |
+| `pfe.cnhu@pgpuss.bj` | PFE | CHU de Cotonou (CNHU-HKM) |
+| `pfe.parakou@pgpuss.bj` | PFE | CHU de Parakou |
+| `pfe.abomey@pgpuss.bj` | PFE | Hôpital de Zone d'Abomey-Calavi |
+| `pfe.lokossa@pgpuss.bj` | PFE | Hôpital de Zone de Lokossa |
+| `directeur@pgpuss.bj` | DIRECTEUR_EST | CHU de Cotonou (CNHU-HKM) |
+| `dir.cnhu@pgpuss.bj` | DIRECTEUR_EST | CHU de Cotonou (CNHU-HKM) |
+| `dir.parakou@pgpuss.bj` | DIRECTEUR_EST | CHU de Parakou |
+| `agent.interne@pgpuss.bj` | AGENT_INTERNE | CHU de Cotonou (CNHU-HKM) |
+| `agent.cnhu@pgpuss.bj` | AGENT_INTERNE | CHU de Cotonou (CNHU-HKM) |
+| `agent.parakou@pgpuss.bj` | AGENT_INTERNE | CHU de Parakou |
+
+#### Niveau Zone Sanitaire
+
+| Email | Rôle | Rattachement |
+|-------|------|-------------|
+| `pfzs@pgpuss.bj` | PFZS | Zone Sanitaire Cotonou 1-2-3 |
+| `pfzs.cotonou@pgpuss.bj` | PFZS | Zone Sanitaire Cotonou 1-2-3 |
+| `pfzs.abomey@pgpuss.bj` | PFZS | Zone Sanitaire Abomey-Calavi/So-Ava |
+| `pfzs.parakou@pgpuss.bj` | PFZS | Zone Sanitaire Parakou/N'Dali |
+
+#### Niveau Départemental (PF-DDS)
+
+| Email | Rôle | Département |
+|-------|------|------------|
+| `dds@pgpuss.bj` | DDS | Littoral |
+| `dds.littoral@pgpuss.bj` | DDS | Littoral |
+| `dds.atlantique@pgpuss.bj` | DDS | Atlantique |
+| `dds.borgou@pgpuss.bj` | DDS | Borgou |
+
+#### Niveau National
+
+| Email | Rôle | Description |
+|-------|------|------------|
+| `dqss@pgpuss.bj` | DQSS | Point Focal National — Agence Qualité |
+| `cabinet@pgpuss.bj` | CABINET | Ministère de la Santé |
+
+#### Call Center 136 (Ligne Verte)
+
+| Email | Rôle |
+|-------|------|
+| `callcenter@pgpuss.bj` | AGENT_CALL_CENTER |
+| `cc136.agent1@pgpuss.bj` | AGENT_CALL_CENTER |
+| `cc136.agent2@pgpuss.bj` | AGENT_CALL_CENTER |
+
+#### PNUSS — Représentants à chaque niveau
+
+| Email | Rôle | Niveau | Rattachement |
+|-------|------|--------|-------------|
+| `pnuss.national@pgpuss.bj` | PNUSS | National | — (visibilité nationale) |
+| `pnuss.littoral@pgpuss.bj` | PNUSS | Départemental | Littoral |
+| `pnuss.borgou@pgpuss.bj` | PNUSS | Départemental | Borgou |
+| `pnuss.cotonou@pgpuss.bj` | PNUSS | Zone Sanitaire | Zone Sanitaire Cotonou 1-2-3 |
+| `pnuss.parakou@pgpuss.bj` | PNUSS | Zone Sanitaire | Zone Sanitaire Parakou/N'Dali |
+
+#### Autres
+
+| Email | Rôle |
+|-------|------|
+| `admin@pgpuss.bj` | ADMIN_PLATEFORME |
+| `usager@pgpuss.bj` | USAGER |
+| `usager2@pgpuss.bj` | USAGER |
 
 ## 6. Modèles Clés
 
