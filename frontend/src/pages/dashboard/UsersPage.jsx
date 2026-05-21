@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { authAPI } from '../../api'
+import { authAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { FiSearch, FiUser, FiEdit2, FiCheck, FiX } from 'react-icons/fi'
@@ -9,13 +9,21 @@ const ROLE_LABELS = {
   PFE: 'Point Focal Établissement (PFE)',
   AGENT_INTERNE: 'Agent interne',
   DIRECTEUR_EST: "Direction de l'établissement",
+  PFZS: 'Point Focal Zone Sanitaire (PFZS)',
   DDS: 'Direction Départementale de la Santé (DDS)',
   DQSS: 'DQSS / Agence Qualité',
   CABINET: 'Ministère (Cabinet)',
+  AGENT_CALL_CENTER: 'Agent Call Center 136',
+  PNUSS: 'Représentant PNUSS',
   ADMIN_PLATEFORME: 'Admin plateforme',
 }
 
 const ROLE_OPTIONS = Object.entries(ROLE_LABELS)
+
+// Rôles qui nécessitent un rattachement zone sanitaire
+const ROLES_NEED_ZONE = ['PFZS', 'PNUSS']
+// Rôles qui nécessitent un rattachement département
+const ROLES_NEED_DEPT = ['DDS', 'PNUSS']
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth()
@@ -25,6 +33,15 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [editing, setEditing] = useState(null)
   const [editRole, setEditRole] = useState('')
+  const [editZone, setEditZone] = useState('')
+  const [editDept, setEditDept] = useState('')
+  const [zones, setZones] = useState([])
+  const [regions, setRegions] = useState([])
+
+  useEffect(() => {
+    establishmentsAPI.zones().then(({ data }) => setZones(data.results || data)).catch(() => {})
+    establishmentsAPI.regions().then(({ data }) => setRegions(data.results || data)).catch(() => {})
+  }, [])
 
   const load = () => {
     setLoading(true)
@@ -36,10 +53,24 @@ export default function UsersPage() {
 
   useEffect(load, [search, roleFilter])
 
-  const saveRole = async (userId) => {
+  const startEdit = (u) => {
+    setEditing(u.id)
+    setEditRole(u.role)
+    setEditZone(u.zone_sanitaire || '')
+    setEditDept(u.departement || '')
+  }
+
+  const saveUser = async (userId) => {
     try {
-      await authAPI.updateUser(userId, { role: editRole })
-      toast.success('Rôle mis à jour')
+      const patch = { role: editRole }
+      if (ROLES_NEED_ZONE.includes(editRole)) {
+        patch.zone_sanitaire = editZone || null
+      }
+      if (ROLES_NEED_DEPT.includes(editRole)) {
+        patch.departement = editDept || ''
+      }
+      await authAPI.updateUser(userId, patch)
+      toast.success('Utilisateur mis à jour')
       setEditing(null)
       load()
     } catch { toast.error('Erreur lors de la mise à jour') }
@@ -54,7 +85,7 @@ export default function UsersPage() {
   }
 
   if (currentUser?.role !== 'ADMIN_PLATEFORME') {
-    return <div className="loading-center" style={{ color: '#8FA3BF' }}>Accès réservé à l’administrateur de la plateforme.</div>
+    return <div className="loading-center" style={{ color: '#8FA3BF' }}>Accès réservé à l'administrateur de la plateforme.</div>
   }
 
   return (
@@ -88,7 +119,7 @@ export default function UsersPage() {
                 <th>UTILISATEUR</th>
                 <th>EMAIL</th>
                 <th>RÔLE</th>
-                <th>ÉTABLISSEMENT</th>
+                <th>RATTACHEMENT</th>
                 <th>STATUT</th>
                 <th>INSCRIT LE</th>
                 <th>ACTIONS</th>
@@ -118,19 +149,40 @@ export default function UsersPage() {
                   <td style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>{u.email}</td>
                   <td>
                     {editing === u.id ? (
-                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                         <select className="form-select" style={{ padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
                           value={editRole} onChange={e => setEditRole(e.target.value)}>
                           {ROLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '0.3rem' }} onClick={() => saveRole(u.id)}><FiCheck /></button>
-                        <button className="btn btn-ghost btn-sm" style={{ padding: '0.3rem' }} onClick={() => setEditing(null)}><FiX /></button>
+                        {ROLES_NEED_ZONE.includes(editRole) && (
+                          <select className="form-select" style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
+                            value={editZone} onChange={e => setEditZone(e.target.value)}>
+                            <option value="">Zone sanitaire…</option>
+                            {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                          </select>
+                        )}
+                        {ROLES_NEED_DEPT.includes(editRole) && (
+                          <select className="form-select" style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
+                            value={editDept} onChange={e => setEditDept(e.target.value)}>
+                            <option value="">Département…</option>
+                            {regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                          </select>
+                        )}
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <button className="btn btn-secondary btn-sm" style={{ padding: '0.3rem' }} onClick={() => saveUser(u.id)}><FiCheck /></button>
+                          <button className="btn btn-ghost btn-sm" style={{ padding: '0.3rem' }} onClick={() => setEditing(null)}><FiX /></button>
+                        </div>
                       </div>
                     ) : (
                       <span className="badge badge-info">{ROLE_LABELS[u.role] || u.role}</span>
                     )}
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>{u.establishment_name || '—'}</td>
+                  <td style={{ fontSize: '0.75rem', color: '#8FA3BF' }}>
+                    {u.establishment_name && <div>🏥 {u.establishment_name}</div>}
+                    {u.zone_sanitaire_name && <div>🗺️ {u.zone_sanitaire_name}</div>}
+                    {u.departement && <div>🏛️ {u.departement}</div>}
+                    {!u.establishment_name && !u.zone_sanitaire_name && !u.departement && '—'}
+                  </td>
                   <td>
                     <span className={`badge ${u.is_active ? 'badge-resolue' : 'badge-rejetee'}`}>
                       {u.is_active ? 'Actif' : 'Inactif'}
@@ -143,8 +195,8 @@ export default function UsersPage() {
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       {u.id !== currentUser?.id && (
                         <>
-                          <button className="btn btn-ghost btn-sm" title="Modifier le rôle"
-                            onClick={() => { setEditing(u.id); setEditRole(u.role) }}>
+                          <button className="btn btn-ghost btn-sm" title="Modifier"
+                            onClick={() => startEdit(u)}>
                             <FiEdit2 />
                           </button>
                           <button className={`btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-secondary'}`}

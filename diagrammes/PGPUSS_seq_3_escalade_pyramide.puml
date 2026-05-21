@@ -1,0 +1,93 @@
+@startuml PGPUSS_3_Escalade_Pyramide
+
+title PGPUSS — (3/4) Escalade Pyramide Sanitaire
+
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam sequenceGroupBorderThickness 1.5
+skinparam participantBackgroundColor #EBF5FB
+skinparam participantBorderColor #2E75B6
+skinparam participantFontSize 11
+skinparam actorBackgroundColor #FEF9E7
+skinparam actorBorderColor #F39C12
+skinparam sequenceArrowColor #2E75B6
+skinparam sequenceLifeLineBorderColor #2E75B6
+skinparam sequenceLifeLineBackgroundColor #D6EAF8
+skinparam sequenceDividerBackgroundColor #1F4E79
+skinparam sequenceDividerFontColor #FFFFFF
+skinparam noteBorderColor #85929E
+skinparam noteBackgroundColor #FDFEFE
+
+actor       "Usager"               as USG
+participant "PGPUSS\n(Système)"    as SYS
+participant "PFE"                  as PFE
+participant "PNUSS"                as PNS
+participant "PFZS\n(Zone Sanit.)"  as PFZS
+participant "DDS\n(Département)"   as DDS
+participant "DQSS /\nMinistère"    as MIN
+participant "Notifications"        as NOTIF
+
+note over SYS : Pré-condition : état ESCALADÉE
+
+== 7. Escalade — Zone Sanitaire (PFZS) ==
+
+PFE  -> SYS  : Escalader vers PFZS\n(non résoluble au niveau établissement)
+SYS  --> PFZS : Dossier escaladé (notification)
+note over SYS : État : ESCALADÉE (niveau zone)
+
+PFZS -> SYS  : Accuser réception du dossier
+PFZS -> SYS  : Instruire / coordonner investigation\ninter-établissements
+
+alt Résolution possible au niveau zone
+    PFZS -> SYS  : Proposer résolution
+    SYS  -> NOTIF : Notification usager
+    NOTIF --> USG : Résolution proposée
+end
+
+alt Escalade DDS requise (P1/P2 ou non résolu)
+    PFZS -> SYS  : Escalader à la DDS
+    SYS  --> DDS : Dossier escaladé (notification)
+end
+
+PFZS -> SYS  : Rapport périodique à la DDS
+
+PNS  -> SYS  : Tableau de bord PNUSS zone\n(statistiques : tendances, taux résolution)
+
+== 8. Escalade — DDS (Département) ==
+
+DDS  -> SYS  : Accuser réception
+DDS  -> SYS  : Affecter à un inspecteur DDS
+DDS  -> SYS  : Instruire enquête\n(commission d'inspection)
+note over SYS : État : ESCALADÉE (niveau département)
+
+alt Résolution au niveau département
+    DDS  -> SYS  : Arbitrer (décision contraignante)
+    note over SYS : État : ARBITRÉE
+    SYS  -> NOTIF : Notifier toutes les parties
+    NOTIF --> USG : Décision d'arbitrage
+    NOTIF --> PFE : Décision d'arbitrage
+    DDS  -> SYS  : Clôturer le dossier
+    note over SYS : État : CLÔTURÉE
+end
+
+alt Cas systémique / P7 / récurrent
+    DDS  -> SYS  : Escalader au Ministère / DQSS
+    SYS  --> MIN : Dossier niveau national (notification)
+end
+
+DDS  -> SYS  : Rapport départemental au Ministère
+PNS  -> SYS  : Plaidoyer PNUSS auprès de la DDS
+
+== 9. Niveau National — DQSS / Ministère ==
+
+MIN  -> SYS  : Superviser tous dossiers\n(visibilité nationale complète)
+MIN  -> SYS  : Déclencher audit établissement
+MIN  -> SYS  : Émettre injonction officielle\n(mesures correctives contraignantes)
+MIN  -> SYS  : Produire rapport national
+MIN  -> SYS  : Clôturer définitivement\n(après exécution des mesures)
+note over SYS : État : CLÔTURÉE
+
+PNS  -> SYS  : Plaidoyer PNUSS national\n+ Rapports consolidés vers Ministère
+
+@enduml

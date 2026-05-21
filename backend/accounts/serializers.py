@@ -91,6 +91,7 @@ class PhoneLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
     establishment_name = serializers.CharField(source='establishment.name', read_only=True, default=None)
+    zone_sanitaire_name = serializers.CharField(source='zone_sanitaire.name', read_only=True, default=None)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
 
     class Meta:
@@ -99,10 +100,12 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'email', 'phone', 'first_name', 'last_name',
             'full_name', 'role', 'role_display', 'avatar', 'language_pref',
             'establishment', 'establishment_name',
+            'zone_sanitaire', 'zone_sanitaire_name',
+            'departement',
             'is_active', 'must_change_password', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'role', 'is_active',
-                            'establishment', 'must_change_password']
+                            'establishment', 'zone_sanitaire', 'departement', 'must_change_password']
 
 
 class AdminUserUpdateSerializer(serializers.ModelSerializer):
@@ -121,6 +124,7 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'phone',
             'role', 'is_active',
             'establishment', 'departement',
+            'zone_sanitaire',
         ]
 
     def validate_email(self, value):

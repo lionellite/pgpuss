@@ -39,8 +39,9 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Text('🏥', style: TextStyle(fontSize: 48)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Image.asset('assets/images/logo.png'),
                   ),
                 ),
                 const SizedBox(height: 28),

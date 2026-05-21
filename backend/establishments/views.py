@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
-from .models import Region, Establishment, Service, EstablishmentOperationalStatus
+from .models import Region, ZoneSanitaire, Establishment, Service, EstablishmentOperationalStatus
 from .serializers import (
-    RegionSerializer, EstablishmentSerializer,
+    RegionSerializer, ZoneSanitaireSerializer, EstablishmentSerializer,
     EstablishmentListSerializer, ServiceSerializer
 )
 
@@ -10,6 +10,17 @@ class RegionListView(generics.ListAPIView):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class ZoneSanitaireListView(generics.ListAPIView):
+    """Liste des zones sanitaires, filtrable par région/département."""
+    serializer_class = ZoneSanitaireSerializer
+    permission_classes = [permissions.AllowAny]
+    filterset_fields = ['region', 'is_active']
+    search_fields = ['name', 'communes']
+
+    def get_queryset(self):
+        return ZoneSanitaire.objects.filter(is_active=True).select_related('region')
 
 
 class EstablishmentListView(generics.ListAPIView):

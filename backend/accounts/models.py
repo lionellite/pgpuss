@@ -7,11 +7,14 @@ import secrets
 class UserRole(models.TextChoices):
     USAGER = 'USAGER', 'Usager (Plaignant)'
     PFE = 'PFE', 'Point Focal Établissement'
-    DIRECTEUR_EST = 'DIRECTEUR_EST', "Direction de l'Établissement"
-    DDS = 'DDS', 'Direction Départementale de la Santé'
+    PFZS = 'PFZS', 'Point Focal Zone Sanitaire'
+    DIRECTEUR_EST = 'DIRECTEUR_EST', "Établissement (Direction)"
+    DDS = 'DDS', 'Direction Départementale de la Santé (DDS)'
     DQSS = 'DQSS', 'DQSS / Agence Nationale Qualité'
     CABINET = 'CABINET', 'Ministère de la Santé (Cabinet)'
     AGENT_INTERNE = 'AGENT_INTERNE', 'Agent Affecté (Interne)'
+    AGENT_CALL_CENTER = 'AGENT_CALL_CENTER', 'Agent Call Center 136'
+    PNUSS = 'PNUSS', 'Représentant PNUSS'
     ADMIN_PLATEFORME = 'ADMIN_PLATEFORME', 'Administrateur Plateforme'
 
 
@@ -55,6 +58,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Pour les DDS : département de compétence
     departement = models.CharField(max_length=100, blank=True, null=True,
                                    help_text="Département de compétence (pour rôle DDS)")
+
+    # Pour les PFZS et PNUSS (niveau zone) : zone sanitaire de compétence
+    zone_sanitaire = models.ForeignKey(
+        'establishments.ZoneSanitaire',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='agents',
+        verbose_name='Zone Sanitaire',
+        help_text='Zone sanitaire de compétence (pour PFZS, PNUSS niveau zone).',
+    )
+
     language_pref = models.CharField(max_length=5, default='fr')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

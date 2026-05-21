@@ -40,8 +40,8 @@ function PrivateRoute({ children, roles }) {
 function AgentRoute({ children }) {
   return (
     <PrivateRoute roles={[
-      'PFE', 'AGENT_INTERNE', 'DIRECTEUR_EST',
-      'DDS', 'DQSS', 'CABINET', 'ADMIN_PLATEFORME'
+      'PFE', 'PFZS', 'AGENT_INTERNE', 'DIRECTEUR_EST',
+      'DDS', 'DQSS', 'CABINET', 'AGENT_CALL_CENTER', 'PNUSS', 'ADMIN_PLATEFORME'
     ]}>
       {children}
     </PrivateRoute>

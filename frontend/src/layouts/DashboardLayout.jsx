@@ -4,17 +4,31 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   FiFileText, FiUsers, FiLogOut, FiMenu,
   FiHome, FiTrendingUp, FiBell, FiChevronRight,
-  FiLayers, FiMapPin,
+  FiLayers, FiMapPin, FiPhone, FiShield,
 } from 'react-icons/fi'
 
-const navItems = [
-  { to: '/dashboard', icon: <FiHome />, label: 'Tableau de bord', exact: true },
-  { to: '/dashboard/plaintes', icon: <FiFileText />, label: 'Plaintes' },
-  { to: '/dashboard/analytique', icon: <FiTrendingUp />, label: 'Analytique' },
-  { to: '/dashboard/utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', roles: ['ADMIN_PLATEFORME'] },
-  { to: '/dashboard/etablissements', icon: <FiMapPin />, label: 'Établissements', roles: ['ADMIN_PLATEFORME'] },
-  { to: '/dashboard/referentiels', icon: <FiLayers />, label: 'Référentiels', roles: ['ADMIN_PLATEFORME'] },
-]
+const getNavItems = (role) => {
+  const items = [
+    { to: '/dashboard', icon: <FiHome />, label: 'Tableau de bord', exact: true },
+    { to: '/dashboard/plaintes', icon: <FiFileText />, label: 'Plaintes' },
+  ]
+
+  // Call Center 136 : accès rapide au formulaire de saisie
+  if (role === 'AGENT_CALL_CENTER') {
+    items.push({ to: '/deposer', icon: <FiPhone />, label: 'Saisie plainte 136' })
+  }
+
+  items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp />, label: 'Analytique' })
+
+  // Admin : gestion utilisateurs, établissements, référentiels
+  if (role === 'ADMIN_PLATEFORME') {
+    items.push({ to: '/dashboard/utilisateurs', icon: <FiUsers />, label: 'Utilisateurs' })
+    items.push({ to: '/dashboard/etablissements', icon: <FiMapPin />, label: 'Établissements' })
+    items.push({ to: '/dashboard/referentiels', icon: <FiLayers />, label: 'Référentiels' })
+  }
+
+  return items
+}
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
@@ -28,9 +42,7 @@ export default function DashboardLayout() {
     ? location.pathname === item.to
     : location.pathname.startsWith(item.to)
 
-  const visibleItems = navItems.filter(item =>
-    !item.roles || (user && item.roles.includes(user.role))
-  )
+  const visibleItems = getNavItems(user?.role)
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
@@ -51,20 +63,22 @@ export default function DashboardLayout() {
           justifyContent: collapsed ? 'center' : 'space-between',
           gap: '0.75rem',
         }}>
-          {!collapsed && (
-            <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '8px',
-                background: 'var(--color-primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, color: 'white', fontSize: '0.9rem',
-              }}>P</div>
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '8px',
+              background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '2px',
+            }}>
+              <img src="/logo.png" alt="PGP-USS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            {!collapsed && (
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>PGP-USS</div>
+                <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>PGP-USS</div>
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Dashboard</div>
               </div>
-            </Link>
-          )}
+            )}
+          </Link>
           <button onClick={() => setCollapsed(!collapsed)} style={{
             background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
             borderRadius: '8px', padding: '0.4rem', cursor: 'pointer',

@@ -7,6 +7,7 @@ const OPS = ['OPERATIONAL', 'LIMITED', 'CLOSED_TEMP', 'CLOSED_PERM']
 
 export default function EstablishmentsAdminPage() {
   const [regions, setRegions] = useState([])
+  const [zones, setZones] = useState([])
   const [list, setList] = useState([])
   const [selected, setSelected] = useState(null)
   const [services, setServices] = useState([])
@@ -14,6 +15,7 @@ export default function EstablishmentsAdminPage() {
     name: '',
     type: 'HZ',
     region: '',
+    zone_sanitaire: '',
     address: '',
     phone: '',
     email: '',
@@ -24,6 +26,7 @@ export default function EstablishmentsAdminPage() {
 
   const loadRegions = () => {
     establishmentsAPI.regions().then(({ data }) => setRegions(data.results || data)).catch(() => {})
+    establishmentsAPI.zones().then(({ data }) => setZones(data.results || data)).catch(() => {})
   }
 
   const loadList = () => {
@@ -58,6 +61,7 @@ export default function EstablishmentsAdminPage() {
         name: '',
         type: 'HZ',
         region: newEst.region,
+        zone_sanitaire: newEst.zone_sanitaire,
         address: '',
         phone: '',
         email: '',
@@ -127,6 +131,10 @@ export default function EstablishmentsAdminPage() {
               <option value="">Région</option>
               {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
+            <select className="form-select" value={newEst.zone_sanitaire} onChange={(e) => setNewEst({ ...newEst, zone_sanitaire: e.target.value })}>
+              <option value="">Zone Sanitaire (optionnelle)</option>
+              {zones.filter(z => !newEst.region || z.region === newEst.region).map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+            </select>
             <textarea className="form-textarea" placeholder="Adresse" value={newEst.address} onChange={(e) => setNewEst({ ...newEst, address: e.target.value })} rows={2} />
             <input className="form-input" placeholder="Téléphone" value={newEst.phone} onChange={(e) => setNewEst({ ...newEst, phone: e.target.value })} />
             <input className="form-input" placeholder="Email" value={newEst.email} onChange={(e) => setNewEst({ ...newEst, email: e.target.value })} />
@@ -176,6 +184,13 @@ export default function EstablishmentsAdminPage() {
                   Fonctionnement{' '}
                   <select className="form-select" style={{ marginLeft: '0.35rem' }} value={selected.operational_status} onChange={(ev) => patchEst({ operational_status: ev.target.value })}>
                     {OPS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </label>
+                <label style={{ fontSize: '0.8rem' }}>
+                  Zone Sanitaire{' '}
+                  <select className="form-select" style={{ marginLeft: '0.35rem' }} value={selected.zone_sanitaire || ''} onChange={(ev) => patchEst({ zone_sanitaire: ev.target.value || null })}>
+                    <option value="">Aucune</option>
+                    {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                   </select>
                 </label>
                 <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>

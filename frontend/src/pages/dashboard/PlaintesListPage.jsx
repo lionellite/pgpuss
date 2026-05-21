@@ -1,17 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { complaintsAPI } from '../../api'
+import { complaintsAPI, establishmentsAPI } from '../../api'
+import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
 import { FiSearch, FiFilter, FiEye, FiRefreshCw } from 'react-icons/fi'
 
 export default function PlaintesListPage() {
+  const { user } = useAuth()
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [count, setCount] = useState(0)
-  const [filters, setFilters] = useState({ search: '', status: '', priority: '', channel: '' })
+  const [filters, setFilters] = useState({ search: '', status: '', priority: '', channel: '', zone_sanitaire: '' })
+  const [zones, setZones] = useState([])
+  const [scope, setScope] = useState('default')
   const PAGE_SIZE = 20
+
+  // Rôles hiérarchiques qui peuvent basculer entre « escaladées » et « tout le périmètre »
+  const hasScope = ['DDS', 'DQSS', 'CABINET'].includes(user?.role)
+
+  useEffect(() => {
+    if (['PFZS', 'DDS', 'PNUSS', 'ADMIN_PLATEFORME'].includes(user?.role)) {
+      establishmentsAPI.zones().then(({ data }) => setZones(data.results || data)).catch(() => {})
+    }
+  }, [user?.role])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -20,6 +33,8 @@ export default function PlaintesListPage() {
       status: filters.status || undefined,
       priority: filters.priority || undefined,
       channel: filters.channel || undefined,
+      zone_sanitaire: filters.zone_sanitaire || undefined,
+      scope: hasScope ? scope : undefined,
       page,
       page_size: PAGE_SIZE,
     }).then(({ data }) => {
@@ -27,7 +42,7 @@ export default function PlaintesListPage() {
       setCount(data.count || (data.results || data).length)
     }).catch(() => setComplaints([]))
     .finally(() => setLoading(false))
-  }, [filters, page])
+  }, [filters, page, scope])
 
   useEffect(() => { load() }, [load])
 
@@ -40,9 +55,18 @@ export default function PlaintesListPage() {
           <h1 className="page-title">Gestion des plaintes</h1>
           <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>{count} dossier(s) répertorié(s)</p>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={load}>
-          <FiRefreshCw /> ACTUALISER
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {hasScope && (
+            <select className="form-select" style={{ width: 'auto', minWidth: 160, fontSize: '0.8rem' }}
+              value={scope} onChange={e => { setScope(e.target.value); setPage(1) }}>
+              <option value="default">Escaladées uniquement</option>
+              <option value="all">Tout le périmètre</option>
+            </select>
+          )}
+          <button className="btn btn-secondary btn-sm" onClick={load}>
+            <FiRefreshCw /> ACTUALISER
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -69,8 +93,15 @@ export default function PlaintesListPage() {
           <select className="form-select" style={{ width: 'auto', minWidth: 140 }}
             value={filters.channel} onChange={e => setFilter('channel', e.target.value)}>
             <option value="">Tous canaux</option>
-            {['WEB','MOBILE','SMS','CHATBOT','GUICHET'].map(c => <option key={c} value={c}>{c}</option>)}
+            {['WEB','MOBILE','SMS','CHATBOT','GUICHET','CALL_CENTER'].map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+          {zones.length > 0 && (
+            <select className="form-select" style={{ width: 'auto', minWidth: 180 }}
+              value={filters.zone_sanitaire} onChange={e => setFilter('zone_sanitaire', e.target.value)}>
+              <option value="">Toutes zones sanitaires</option>
+              {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+            </select>
+          )}
         </div>
       </div>
 

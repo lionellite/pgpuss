@@ -1,0 +1,267 @@
+@startuml PGPUSS_DiagrammeClasses
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle italic
+skinparam classHeaderBackgroundColor #FFFFFF
+skinparam classBorderColor #000000
+skinparam classBackgroundColor #FFFFFF
+skinparam classArrowColor #000000
+skinparam classFontColor #000000
+skinparam classFontSize 12
+skinparam classAttributeFontSize 11
+skinparam padding 5
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam linetype ortho
+hide circle
+
+' ============================================================
+'  ENTITÉS PRINCIPALES
+' ============================================================
+
+class Plainte {
+    +id
+    +numeroDossier
+    +titre
+    +description
+    +dateDepot
+    +canal
+    +statut
+    +priorite
+    +categorieId
+    +usagerId
+    +etablissementId
+    +pfeFocalId
+    +dateEcheance
+    +dateCloture
+    +anonyme
+    +score_nlp
+}
+
+class Usager {
+    +id
+    +nom
+    +prenom
+    +telephone
+    +email
+    +commune
+    +dateNaissance
+    +identiteVerifiee
+    +createdAt
+}
+
+class PointFocal {
+    +id
+    +nom
+    +prenom
+    +email
+    +telephone
+    +role
+    +niveauPyramide
+    +entiteId
+    +actif
+    +createdAt
+}
+
+class Etablissement {
+    +id
+    +nom
+    +type
+    +adresse
+    +commune
+    +zoneSanitaireId
+    +statut
+    +createdAt
+}
+
+class ZoneSanitaire {
+    +id
+    +nom
+    +departementId
+    +createdAt
+}
+
+class Departement {
+    +id
+    +nom
+    +createdAt
+}
+
+class Notification {
+    +id
+    +plaintegId
+    +destinataireId
+    +typeDestinataire
+    +canal
+    +message
+    +statut
+    +dateEnvoi
+    +lu
+}
+
+class Categorie {
+    +id
+    +libelle
+    +description
+    +niveauPriorite
+}
+
+class Escalade {
+    +id
+    +plainteId
+    +niveauDepart
+    +niveauArrivee
+    +dateEscalade
+    +motif
+    +declenchePar
+}
+
+class Instruction {
+    +id
+    +plainteId
+    +agentId
+    +action
+    +dateAction
+    +commentaire
+    +pieceJointe
+}
+
+class Document {
+    +id
+    +plainteId
+    +type
+    +cheminFichier
+    +dateGeneration
+    +genereParId
+    +signature
+}
+
+class Arbitrage {
+    +id
+    +plainteId
+    +arbitreId
+    +niveauArbitrage
+    +decision
+    +dateDecision
+    +motif
+}
+
+class Satisfaction {
+    +id
+    +plainteId
+    +usagerId
+    +scoreNPS
+    +commentaire
+    +dateEvaluation
+}
+
+class PNUSS {
+    +id
+    +nom
+    +prenom
+    +email
+    +telephone
+    +niveauRepresentation
+    +entiteId
+    +actif
+}
+
+' ============================================================
+'  SERVICES
+' ============================================================
+
+class PlainteService {
+    +soumettrePlainte(Plainte p)
+    +getPlainte(int id)
+    +getAllPlaintes()
+    +updateStatut(int id, String statut)
+    +escalader(int id, String niveau)
+    +cloturer(int id)
+}
+
+class NotificationService {
+    +envoyerNotification(Notification n)
+    +getNotifications(int destinataireId)
+    +marquerLu(int id)
+    +deleteNotification(int id)
+}
+
+class NLPService {
+    +classifierPlainte(String texte)
+    +extraireCategorie(String texte)
+    +evaluerGravite(String texte)
+    +routerVersPointFocal(int plainteId)
+}
+
+class UserService {
+    +addUser(Usager u)
+    +getUser(int id)
+    +getAllUsers()
+    +updateUser(Usager u)
+    +deleteUser(int id)
+    +authentifier(String email, String mdp)
+}
+
+class EtablissementService {
+    +addEtablissement(Etablissement e)
+    +getEtablissement(int id)
+    +getAllEtablissements()
+    +updateEtablissement(Etablissement e)
+    +deleteEtablissement(int id)
+}
+
+class StatistiqueService {
+    +getStatParNiveau(String niveau)
+    +getTauxResolution()
+    +getScoreNPS()
+    +genererRapport(String periode)
+    +exporterDonnees(String format)
+}
+
+class DocumentService {
+    +genererDocument(int plainteId, String type)
+    +getDocument(int id)
+    +archiverDocument(int id)
+    +signerDocument(int id, int agentId)
+}
+
+' ============================================================
+'  RELATIONS — ENTITÉS
+' ============================================================
+
+Usager        "1"  --  "1..*"  Plainte         : dépose >
+Plainte       "1"  --  "1"     Categorie       : classifiée par >
+Plainte       "1"  --  "1..*"  Notification    : génère >
+Plainte       "1"  --  "0..*"  Escalade        : fait l'objet de >
+Plainte       "1"  --  "0..*"  Instruction     : instruite par >
+Plainte       "1"  --  "0..*"  Document        : produit >
+Plainte       "0..*" -- "0..1" Arbitrage       : arbitrée par >
+Plainte       "1"  --  "0..1"  Satisfaction    : évaluée par >
+
+Etablissement "1"  --  "1..*"  Plainte         : concerne >
+Etablissement "1..*" -- "1"    ZoneSanitaire   : appartient à >
+ZoneSanitaire "1..*" -- "1"    Departement     : rattachée à >
+
+PointFocal    "1"  --  "1..*"  Plainte         : traite >
+PointFocal    "1"  --  "0..1"  Etablissement   : affecté à >
+PointFocal    "1"  --  "0..1"  ZoneSanitaire   : affecté à >
+PointFocal    "1"  --  "0..1"  Departement     : affecté à >
+
+PNUSS         "1"  --  "0..1"  Etablissement   : représenté dans >
+PNUSS         "1"  --  "0..1"  ZoneSanitaire   : représenté dans >
+PNUSS         "1"  --  "0..1"  Departement     : représenté dans >
+
+' ============================================================
+'  RELATIONS — SERVICES
+' ============================================================
+
+PlainteService      ..>  Plainte          : gère
+PlainteService      ..>  NLPService       : utilise
+NotificationService ..>  Notification     : gère
+UserService         ..>  Usager           : gère
+EtablissementService ..> Etablissement    : gère
+DocumentService     ..>  Document         : gère
+StatistiqueService  ..>  Plainte          : agrège
+StatistiqueService  ..>  Satisfaction     : agrège
+
+@enduml

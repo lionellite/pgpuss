@@ -63,12 +63,16 @@ export default function MainLayout() {
           justifyContent: 'space-between', height: 72,
         }}>
           {/* Logo and Branding */}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <img src="https://gouv.bj/assets/img/logo-benin.png" alt="République du Bénin" style={{ height: 44 }}
-                 onError={(e) => { e.target.style.display = 'none' }} />
-            <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111', letterSpacing: '-0.02em' }}>PGP-USS</div>
-              <div style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', fontWeight: 600 }}>Santé Bénin</div>
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <img src="https://gouv.bj/assets/img/logo-benin.png" alt="République du Bénin" style={{ height: 40 }}
+                   onError={(e) => { e.target.style.display = 'none' }} />
+              <div style={{ width: 1, height: 24, background: '#eee', margin: '0 0.25rem' }} className="hide-mobile" />
+              <img src="/logo.png" alt="PGP-USS Logo" style={{ height: 44 }} />
+            </div>
+            <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '0.75rem' }} className="hide-mobile">
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111', letterSpacing: '-0.02em', lineHeight: 1 }}>PGP-USS</div>
+              <div style={{ fontSize: '0.65rem', color: '#666', textTransform: 'uppercase', fontWeight: 600, marginTop: '2px' }}>Santé Bénin</div>
             </div>
           </Link>
 

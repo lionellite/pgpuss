@@ -53,6 +53,7 @@ class ComplaintChannel(models.TextChoices):
     SMS = 'SMS', 'SMS'
     CHATBOT = 'CHATBOT', 'Chatbot'
     GUICHET = 'GUICHET', 'Guichet Physique'
+    CALL_CENTER = 'CALL_CENTER', 'Call Center 136'
 
 
 def generate_ticket_number():
@@ -79,7 +80,7 @@ class Complaint(models.Model):
     )
     priority = models.CharField(max_length=5, choices=ComplaintPriority.choices, default=ComplaintPriority.P4_NORMAL)
     status = models.CharField(max_length=25, choices=ComplaintStatus.choices, default=ComplaintStatus.SOUMISE)
-    channel = models.CharField(max_length=10, choices=ComplaintChannel.choices, default=ComplaintChannel.WEB)
+    channel = models.CharField(max_length=12, choices=ComplaintChannel.choices, default=ComplaintChannel.WEB)
     
     # Identity
     is_anonymous = models.BooleanField(default=False)
@@ -105,6 +106,14 @@ class Complaint(models.Model):
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='assigned_complaints'
+    )
+
+    # Canal Call Center 136 : agent qui a transcrit la plainte par téléphone
+    call_center_agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='call_center_transcribed_complaints',
+        verbose_name='Agent Call Center',
+        help_text='Agent du call center ayant saisi la plainte au nom de l\'usager (canal 136).',
     )
     
     # Resolution

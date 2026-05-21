@@ -1,0 +1,73 @@
+@startuml PGPUSS_1_Depot_Classification
+
+title PGPUSS — (1/4) Dépôt & Classification
+
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam sequenceGroupBorderThickness 1.5
+skinparam participantBackgroundColor #EBF5FB
+skinparam participantBorderColor #2E75B6
+skinparam participantFontSize 11
+skinparam actorBackgroundColor #FEF9E7
+skinparam actorBorderColor #F39C12
+skinparam sequenceArrowColor #2E75B6
+skinparam sequenceLifeLineBorderColor #2E75B6
+skinparam sequenceLifeLineBackgroundColor #D6EAF8
+skinparam sequenceDividerBackgroundColor #1F4E79
+skinparam sequenceDividerFontColor #FFFFFF
+skinparam noteBorderColor #85929E
+skinparam noteBackgroundColor #FDFEFE
+
+actor       "Usager"            as USG
+participant "Call Center\n136"  as CC
+participant "PGPUSS\n(Système)" as SYS
+participant "Module NLP/IA"     as NLP
+participant "Notifications"     as NOTIF
+participant "PFE"               as PFE
+
+== 1. Dépôt de la plainte ==
+
+group Canal numérique (Web / Mobile / SMS / Chatbot / Guichet)
+    USG  -> SYS  : Soumettre plainte\n(objet, établissement, date,\npièces jointes, anonymat possible)
+    SYS  --> USG : Accusé réception + N° ticket unique
+end
+
+group Canal Call Center — Ligne verte 136
+    USG  -> CC   : Appel gratuit 136
+    CC   -> CC   : Écoute plainte verbale
+    CC   -> SYS  : Saisie plainte au nom de l'usager\n(canal = "Call Center 136")
+    SYS  --> CC  : Ticket généré
+    CC   --> USG : Communication verbale du N° ticket
+end
+
+note over SYS : État : SOUMISE
+
+== 2. Classification automatique IA ==
+
+SYS  -> NLP  : Envoi contenu plainte
+NLP  -> NLP  : Analyse NLP\nCatégorisation type + nature + gravité
+NLP  --> SYS : Catégorie (P1-P5) + niveau de gravité
+
+SYS  -> SYS  : Routage automatique\nvers PFE compétent
+SYS  -> NOTIF : Déclenchement notification PFE
+NOTIF --> PFE : Nouvelle plainte assignée\n(e-mail + in-app)
+
+== 3. Accusé de réception PFE ==
+
+PFE  -> SYS  : Accuser réception (moins de 48h)
+SYS  -> NOTIF : Notification usager
+NOTIF --> USG : Plainte prise en charge\n(SMS + e-mail + push)
+note over SYS : État : ACCUSÉE
+
+alt Informations insuffisantes
+    PFE  -> SYS  : Demander complément
+    SYS  --> USG : Notification complément requis
+    USG  -> SYS  : Soumettre complément
+    SYS  --> PFE : Complément reçu
+end
+
+PFE  -> SYS  : Qualifier / Catégoriser\n(confirmer NLP, fixer priorité P1-P5)
+note over SYS : État : INSTRUITE
+
+@enduml

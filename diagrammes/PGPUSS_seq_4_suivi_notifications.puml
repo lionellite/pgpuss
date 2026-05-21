@@ -1,0 +1,75 @@
+@startuml PGPUSS_4_Suivi_Notifications
+
+title PGPUSS — (4/4) Suivi Usager, Notifications & Traçabilité
+
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam sequenceGroupBorderThickness 1.5
+skinparam participantBackgroundColor #EBF5FB
+skinparam participantBorderColor #2E75B6
+skinparam participantFontSize 11
+skinparam actorBackgroundColor #FEF9E7
+skinparam actorBorderColor #F39C12
+skinparam sequenceArrowColor #2E75B6
+skinparam sequenceLifeLineBorderColor #2E75B6
+skinparam sequenceLifeLineBackgroundColor #D6EAF8
+skinparam sequenceDividerBackgroundColor #1F4E79
+skinparam sequenceDividerFontColor #FFFFFF
+skinparam noteBorderColor #85929E
+skinparam noteBackgroundColor #FDFEFE
+
+actor       "Usager"            as USG
+participant "PGPUSS\n(Système)" as SYS
+participant "PFE"               as PFE
+participant "PFZS"              as PFZS
+participant "DDS"               as DDS
+participant "DQSS /\nMinistère" as MIN
+participant "Notifications"     as NOTIF
+
+== 10. Suivi en temps réel — Usager ==
+
+USG  -> SYS  : Consulter espace personnel\n(statut plainte en temps réel)
+SYS  --> USG : Statut courant + historique des actions
+
+opt Retrait avant clôture
+    USG  -> SYS  : Retirer la plainte (motif obligatoire)
+    SYS  --> PFE : Notification retrait de plainte
+end
+
+== 11. Notifications automatiques transverses ==
+
+SYS  -> NOTIF : Changement d'état détecté
+NOTIF --> USG  : SMS + e-mail + push mobile\n(accusé / qualification / résolution / clôture)
+NOTIF --> PFE  : In-app : affectation, délai proche, contestation
+NOTIF --> PFZS : Alerte escalade (niveau zone)
+NOTIF --> DDS  : Dashboard alert\n(accumulation P1/P2, dépassements délais)
+NOTIF --> MIN  : Dashboard alert national
+
+== 12. Traçabilité — Documents officiels générés ==
+
+note over SYS
+  Chaque étape génère un document horodaté archivé
+  de façon immuable (audit trail complet) :
+
+  Soumission    -> Fiche de plainte
+                   (N° unique, canal, identité/anonymat)
+  Accusé        -> Récépissé automatique
+                   (ticket, délai prévu, contacts PFE)
+  Qualification -> Fiche de qualification
+                   (catégorie P1-P5, gravité, délai cible)
+  Affectation   -> Bon d'affectation
+                   (agent/service, date, délai imparti)
+  Investigation -> Journal d'instruction
+                   (chronologie actions, éléments recueillis)
+  Résolution    -> Rapport de résolution
+                   (faits, mesures, réponse signée Direction)
+  Escalade      -> Dossier d'escalade
+                   (historique + PV non-résolution)
+  Arbitrage     -> Décision d'arbitrage
+                   (document signé DDS/Ministère)
+  Clôture       -> Fiche de clôture
+                   (date, motif, NPS, archivage 10 ans)
+end note
+
+@enduml

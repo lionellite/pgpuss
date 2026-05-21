@@ -1,0 +1,287 @@
+@startuml Diagramme_Cas_Utilisation_PGPUSS
+
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam usecaseArrowColor #000000
+skinparam actorBorderColor #000000
+skinparam usecaseBorderColor #000000
+skinparam usecaseBackgroundColor #FFFFFF
+skinparam usecaseFontColor #000000
+skinparam packageBorderColor #000000
+skinparam packageFontColor #000000
+skinparam rectangleBorderColor #000000
+skinparam rectangleFontColor #000000
+skinparam linetype ortho
+
+left to right direction
+
+title Diagramme de Cas d'Utilisation - PGPUSS
+
+' ============================================================
+'  ACTEURS
+' ============================================================
+
+actor "Usager\n(Plaignant)" as Usager
+actor "PFE\n(Point Focal\nEtablissement)" as PFE
+actor "Agent Affecté" as Agent
+actor "Directeur\nd'Etablissement" as Directeur
+actor "PFZS\n(Zone Sanitaire)" as PFZS
+actor "PF-DDS\n(Departement)" as DDS
+actor "PF-DQSS\n(National)" as DQSS
+actor "Agent\nCall Center 136" as CallCenter
+actor "Representant\nPNUSS" as PNUSS
+actor "Auditeur" as Auditeur
+actor "Administrateur\nNational" as Admin
+
+' ============================================================
+'  SYSTEME PGPUSS
+' ============================================================
+
+rectangle "Plateforme PGPUSS" {
+
+    ' --- GESTION DES PLAINTES ---
+    package "Gestion des Plaintes" {
+        usecase "Deposer une plainte" as UC1
+        usecase "Consulter statut\nplainte" as UC2
+        usecase "Accuser reception\nresolution" as UC3
+        usecase "Contester cloture" as UC4
+        usecase "Retirer plainte" as UC5
+        usecase "Completer informations" as UC6
+    }
+
+    ' --- TRAITEMENT PFE ---
+    package "Traitement PFE" {
+        usecase "Accuser reception\nplainte" as UC7
+        usecase "Qualifier plainte" as UC8
+        usecase "Affecter plainte" as UC9
+        usecase "Traiter directement" as UC10
+        usecase "Escalader direction" as UC11
+        usecase "Proposer resolution" as UC12
+        usecase "Cloturer plainte" as UC13
+        usecase "Rouvrir plainte" as UC14
+    }
+
+    ' --- TRAITEMENT AGENT ---
+    package "Traitement Agent" {
+        usecase "Accepter affectation" as UC15
+        usecase "Refuser affectation" as UC16
+        usecase "Documenter actions" as UC17
+        usecase "Soumettre rapport" as UC18
+        usecase "Demander extension\ndelai" as UC19
+    }
+
+    ' --- DIRECTION ---
+    package "Direction Etablissement" {
+        usecase "Valider resolution" as UC20
+        usecase "Infirmer resolution" as UC21
+        usecase "Escalader DDS" as UC22
+        usecase "Decision disciplinaire" as UC23
+        usecase "Consulter tableau\nde bord" as UC24
+    }
+
+    ' --- ESCALADE ZONE ---
+    package "Escalade Zone Sanitaire" {
+        usecase "Superviser PFE" as UC25
+        usecase "Recevoir escalade" as UC26
+        usecase "Instruire enquete" as UC27
+        usecase "Escalader DDS" as UC28
+        usecase "Rendre compte" as UC29
+    }
+
+    ' --- DDS ---
+    package "Direction Departementale" {
+        usecase "Recevoir dossier\nescalade" as UC30
+        usecase "Diligenter enquete" as UC31
+        usecase "Affecter inspecteur" as UC32
+        usecase "Arbitrer" as UC33
+        usecase "Escalader Ministere" as UC34
+        usecase "Notifier parties" as UC35
+        usecase "Cloturer dossier" as UC36
+    }
+
+    ' --- NATIONAL ---
+    package "Niveau National" {
+        usecase "Superviser plaintes" as UC37
+        usecase "Declencher audit" as UC38
+        usecase "Emettre injonction" as UC39
+        usecase "Produire rapport\nnational" as UC40
+        usecase "Cloturer definitivement" as UC41
+    }
+
+    ' --- CALL CENTER ---
+    package "Call Center 136" {
+        usecase "Recevoir appel" as UC42
+        usecase "Saisir plainte" as UC43
+        usecase "Communiquer ticket" as UC44
+        usecase "Assister suivi" as UC45
+    }
+
+    ' --- PNUSS ---
+    package "PNUSS Mediation" {
+        usecase "Suivre plaintes" as UC46
+        usecase "Participer enquete" as UC47
+        usecase "Intervenir mediation" as UC48
+        usecase "Generer statistiques" as UC49
+        usecase "Alerter hierarchie" as UC50
+        usecase "Plaidoyer national" as UC51
+    }
+
+    ' --- ADMINISTRATION ---
+    package "Administration" {
+        usecase "Gerer utilisateurs" as UC52
+        usecase "Gerer referentiels" as UC53
+        usecase "Configurer taxonomie" as UC54
+        usecase "Superviser systeme" as UC55
+        usecase "Generer rapports" as UC56
+    }
+
+    ' --- NOTIFICATIONS ---
+    package "Notifications" {
+        usecase "Envoyer notification" as UC57
+        usecase "Relancer notification" as UC58
+        usecase "Marquer comme lue" as UC59
+    }
+
+    ' --- AUTHENTIFICATION ---
+    package "Authentification" {
+        usecase "S'authentifier" as UC60
+        usecase "Activer MFA" as UC61
+        usecase "Modifier profil" as UC62
+        usecase "Deconnecter" as UC63
+    }
+
+    ' --- ANALYTIQUE ---
+    package "Analytique" {
+        usecase "Generer tableau\nde bord" as UC64
+        usecase "Exporter donnees" as UC65
+        usecase "Detecter tendances" as UC66
+    }
+}
+
+' ============================================================
+'  RELATIONS ACTEURS - CAS D'UTILISATION
+' ============================================================
+
+' --- USAGER ---
+Usager --> UC1
+Usager --> UC2
+Usager --> UC3
+Usager --> UC4
+Usager --> UC5
+Usager --> UC6
+
+' --- PFE ---
+PFE --> UC7
+PFE --> UC8
+PFE --> UC9
+PFE --> UC10
+PFE --> UC11
+PFE --> UC12
+PFE --> UC13
+PFE --> UC14
+PFE --> UC24
+
+' --- AGENT ---
+Agent --> UC15
+Agent --> UC16
+Agent --> UC17
+Agent --> UC18
+Agent --> UC19
+
+' --- DIRECTEUR ---
+Directeur --> UC20
+Directeur --> UC21
+Directeur --> UC22
+Directeur --> UC23
+Directeur --> UC24
+
+' --- PFZS ---
+PFZS --> UC25
+PFZS --> UC26
+PFZS --> UC27
+PFZS --> UC28
+PFZS --> UC29
+
+' --- DDS ---
+DDS --> UC30
+DDS --> UC31
+DDS --> UC32
+DDS --> UC33
+DDS --> UC34
+DDS --> UC35
+DDS --> UC36
+
+' --- DQSS ---
+DQSS --> UC37
+DQSS --> UC38
+DQSS --> UC39
+DQSS --> UC40
+DQSS --> UC41
+
+' --- CALL CENTER ---
+CallCenter --> UC42
+CallCenter --> UC43
+CallCenter --> UC44
+CallCenter --> UC45
+
+' --- PNUSS ---
+PNUSS --> UC46
+PNUSS --> UC47
+PNUSS --> UC48
+PNUSS --> UC49
+PNUSS --> UC50
+PNUSS --> UC51
+
+' --- AUDITEUR ---
+Auditeur --> UC37
+Auditeur --> UC64
+Auditeur --> UC65
+
+' --- ADMIN ---
+Admin --> UC52
+Admin --> UC53
+Admin --> UC54
+Admin --> UC55
+Admin --> UC56
+
+' ============================================================
+'  RELATIONS <<INCLUDE>>
+' ============================================================
+
+UC1 ..> UC60 : <<include>>
+UC7 ..> UC60 : <<include>>
+UC15 ..> UC60 : <<include>>
+UC20 ..> UC60 : <<include>>
+UC25 ..> UC60 : <<include>>
+UC30 ..> UC60 : <<include>>
+UC37 ..> UC60 : <<include>>
+UC42 ..> UC60 : <<include>>
+UC46 ..> UC60 : <<include>>
+UC52 ..> UC60 : <<include>>
+
+UC1 ..> UC57 : <<include>>
+UC7 ..> UC57 : <<include>>
+UC12 ..> UC57 : <<include>>
+UC20 ..> UC57 : <<include>>
+UC33 ..> UC57 : <<include>>
+UC35 ..> UC57 : <<include>>
+UC41 ..> UC57 : <<include>>
+UC43 ..> UC57 : <<include>>
+
+UC8 ..> UC66 : <<include>>
+UC27 ..> UC66 : <<include>>
+UC31 ..> UC66 : <<include>>
+UC49 ..> UC66 : <<include>>
+
+' ============================================================
+'  RELATIONS <<EXTEND>>
+' ============================================================
+
+UC4 ..> UC33 : <<extend>>
+UC11 ..> UC22 : <<extend>>
+UC14 ..> UC7 : <<extend>>
+UC19 ..> UC12 : <<extend>>
+UC34 ..> UC38 : <<extend>>
+UC50 ..> UC39 : <<extend>>
+
+@enduml

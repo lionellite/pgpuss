@@ -54,7 +54,7 @@ class EscalationSerializer(serializers.ModelSerializer):
 
 
 class ComplaintCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour le dépôt de plainte (usager)"""
+    """Serializer pour le dépôt de plainte (usager ou agent call center)"""
     class Meta:
         model = Complaint
         fields = [
@@ -90,6 +90,8 @@ class ComplaintListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True, default=None)
     establishment_name = serializers.CharField(source='establishment.name', read_only=True, default=None)
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True, default=None)
+    call_center_agent_name = serializers.CharField(source='call_center_agent.full_name', read_only=True, default=None)
+    zone_sanitaire_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
@@ -102,9 +104,15 @@ class ComplaintListSerializer(serializers.ModelSerializer):
             'id', 'ticket_number', 'title', 'status', 'status_display',
             'priority', 'priority_display', 'channel', 'channel_display',
             'category_name', 'establishment_name', 'assigned_to_name',
+            'call_center_agent_name', 'zone_sanitaire_name',
             'is_anonymous', 'is_overdue', 'attachment_count',
             'created_at', 'updated_at', 'deadline'
         ]
+
+    def get_zone_sanitaire_name(self, obj):
+        if obj.establishment and obj.establishment.zone_sanitaire:
+            return obj.establishment.zone_sanitaire.name
+        return None
 
 
 class ComplaintDetailSerializer(serializers.ModelSerializer):
@@ -114,6 +122,8 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
     establishment_name = serializers.CharField(source='establishment.name', read_only=True, default=None)
     service_name = serializers.CharField(source='service.name', read_only=True, default=None)
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True, default=None)
+    call_center_agent_name = serializers.CharField(source='call_center_agent.full_name', read_only=True, default=None)
+    zone_sanitaire_name = serializers.SerializerMethodField()
     complainant_display = serializers.SerializerMethodField()
     voice_file_url = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -133,7 +143,9 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'is_anonymous', 'complainant', 'complainant_display',
             'complainant_name', 'complainant_phone', 'complainant_email',
             'establishment', 'establishment_name', 'service', 'service_name',
+            'zone_sanitaire_name',
             'assigned_to', 'assigned_to_name',
+            'call_center_agent', 'call_center_agent_name',
             'resolution_notes', 'corrective_actions',
             'resolution_accepted', 'resolution_ack_notes', 'resolution_ack_at',
             'resolution_validated', 'resolution_validated_at',
@@ -159,6 +171,11 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
         if obj.complainant:
             return obj.complainant.full_name
         return obj.complainant_name or 'Non identifié'
+
+    def get_zone_sanitaire_name(self, obj):
+        if obj.establishment and obj.establishment.zone_sanitaire:
+            return obj.establishment.zone_sanitaire.name
+        return None
 
 
 class ComplaintActionSerializer(serializers.Serializer):

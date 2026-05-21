@@ -97,11 +97,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Text(
-                        '🏥',
-                        style: TextStyle(fontSize: 36),
-                      ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Image.asset('assets/images/logo.png'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -161,13 +159,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               AutofillHints.email
                             ],
                             decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
+                              labelText: 'Email ou Téléphone',
+                              hintText: 'ex: 60123456',
+                              prefixIcon: Icon(Icons.person_outline),
                             ),
                             validator: (v) {
                               final s = (v ?? '').trim();
-                              if (s.isEmpty) return 'Email requis';
-                              if (!s.contains('@')) return 'Email invalide';
+                              if (s.isEmpty) return 'Identifiant requis';
                               return null;
                             },
                           ),

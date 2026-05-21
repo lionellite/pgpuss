@@ -6,8 +6,8 @@ export default function AuthLayout() {
     <div className="auth-shell">
       <aside className="auth-shell-brand hide-below-md" aria-hidden="false">
         <div className="auth-shell-brand-inner">
-          <div className="auth-logo-mark" aria-hidden="true">
-            P
+          <div className="auth-logo-mark" aria-hidden="true" style={{ background: 'none', border: 'none' }}>
+            <img src="/logo.png" alt="PGP-USS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h1 className="auth-shell-title">PGP-USS</h1>
           <p className="auth-shell-tagline">

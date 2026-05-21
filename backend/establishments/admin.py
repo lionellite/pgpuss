@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Region, Establishment, Service
+from .models import Region, ZoneSanitaire, Establishment, Service
+
+
+@admin.register(ZoneSanitaire)
+class ZoneSanitaireAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'region', 'is_active']
+    list_filter = ['region', 'is_active']
+    search_fields = ['name', 'communes']
+    ordering = ['region', 'name']
 
 
 @admin.register(Region)
@@ -10,8 +18,8 @@ class RegionAdmin(admin.ModelAdmin):
 
 @admin.register(Establishment)
 class EstablishmentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'type', 'region', 'phone', 'is_active']
-    list_filter = ['type', 'region', 'is_active']
+    list_display = ['name', 'type', 'region', 'zone_sanitaire', 'phone', 'is_active']
+    list_filter = ['type', 'region', 'zone_sanitaire', 'is_active']
     search_fields = ['name', 'address']
 
 

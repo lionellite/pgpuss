@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
+import { FiUser, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -29,8 +29,8 @@ export default function LoginPage() {
         'ADMIN_PLATEFORME',
       ].includes(user.role)
       navigate(isAgent ? '/dashboard' : '/espace/plaintes')
-    } catch {
-      toast.error('Email ou mot de passe incorrect.')
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Identifiants incorrects.')
     }
   }
 
@@ -47,19 +47,19 @@ export default function LoginPage() {
         <form className="login-form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="form-group">
             <label className="form-label" htmlFor="email">
-              Adresse email
+              Email ou Téléphone
             </label>
             <div className="login-input-wrap">
-              <FiMail aria-hidden className="login-input-icon" />
+              <FiUser aria-hidden className="login-input-icon" />
               <input
                 id="email"
                 className="form-input login-input"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
                 aria-invalid={errors.email ? 'true' : 'false'}
                 aria-describedby={errors.email ? 'email-err' : undefined}
-                placeholder="vous@exemple.bj"
-                {...register('email', { required: 'Email requis' })}
+                placeholder="votre.email@exemple.bj ou 60123456"
+                {...register('email', { required: 'Identifiant requis' })}
               />
             </div>
             {errors.email && (

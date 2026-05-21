@@ -34,11 +34,26 @@ def user_can_view_complaint_documents(user, complaint) -> bool:
         return False
     if user.role == UserRole.AGENT_INTERNE and complaint.assigned_to_id != user.id:
         return False
+    if user.role == UserRole.AGENT_CALL_CENTER and complaint.call_center_agent_id != user.id:
+        return False
+    if (
+        user.role == UserRole.PFZS
+        and complaint.establishment
+        and complaint.establishment.zone_sanitaire_id != user.zone_sanitaire_id
+    ):
+        return False
     if (
         user.role == UserRole.DDS
         and complaint.establishment
         and complaint.establishment.region
         and complaint.establishment.region.name != user.departement
+    ):
+        return False
+    if (
+        user.role == UserRole.PNUSS
+        and user.zone_sanitaire_id
+        and complaint.establishment
+        and complaint.establishment.zone_sanitaire_id != user.zone_sanitaire_id
     ):
         return False
     return True
@@ -63,11 +78,12 @@ class ComplaintCreateView(generics.CreateAPIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
-        # Bloquer les agents/staff connectés (réservé aux usagers)
-        if request.user.is_authenticated and request.user.role != UserRole.USAGER:
+        # Bloquer les agents/staff connectés — SAUF les agents call center
+        if request.user.is_authenticated and request.user.role not in [
+            UserRole.USAGER, UserRole.AGENT_CALL_CENTER
+        ]:
             return Response(
-                {'error': 'Le dépôt de plainte est réservé aux usagers. '
-                          'Les agents ne peuvent pas déposer de plainte.'},
+                {'error': 'Le dépôt de plainte est réservé aux usagers et aux agents call center.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -84,6 +100,12 @@ class ComplaintCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         complaint = serializer.save()
+
+        # Si l'agent call center est connecté, forcer le canal et enregistrer l'agent
+        if request.user.is_authenticated and request.user.role == UserRole.AGENT_CALL_CENTER:
+            complaint.channel = 'CALL_CENTER'
+            complaint.call_center_agent = request.user
+            complaint.save(update_fields=['channel', 'call_center_agent'])
 
         vf = request.FILES.get('voice_file')
         if vf:
@@ -173,6 +195,26 @@ class ComplaintListView(generics.ListAPIView):
 
         elif user.role == UserRole.AGENT_INTERNE:
             qs = qs.filter(assigned_to=user)
+
+        elif user.role == UserRole.AGENT_CALL_CENTER:
+            # L'agent call center ne voit que les plaintes qu'il a transcrites
+            qs = qs.filter(call_center_agent=user)
+
+        elif user.role == UserRole.PFZS:
+            # Point Focal Zone Sanitaire : plaintes des établissements de sa zone
+            if user.zone_sanitaire_id:
+                qs = qs.filter(establishment__zone_sanitaire=user.zone_sanitaire)
+            else:
+                qs = qs.none()
+            # Par défaut : toutes (pas de filtre sur le statut pour ce niveau)
+
+        elif user.role == UserRole.PNUSS:
+            # PNUSS : scope selon son niveau de rattachement
+            if user.zone_sanitaire_id:
+                qs = qs.filter(establishment__zone_sanitaire=user.zone_sanitaire)
+            elif user.departement:
+                qs = qs.filter(establishment__region__name=user.departement)
+            # Sinon : vision nationale (qs non filtré)
 
         elif user.role == UserRole.DDS:
             # Zone de compétence (département)

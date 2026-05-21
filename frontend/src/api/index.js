@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -26,7 +26,8 @@ api.interceptors.response.use(
       const refresh = localStorage.getItem('refresh_token')
       if (refresh) {
         try {
-          const { data } = await axios.post('/api/auth/refresh/', { refresh })
+          const baseUrl = import.meta.env.VITE_API_URL || '/api'
+          const { data } = await axios.post(`${baseUrl}/auth/refresh/`, { refresh })
           localStorage.setItem('access_token', data.access)
           original.headers.Authorization = `Bearer ${data.access}`
           return api(original)
@@ -43,7 +44,10 @@ api.interceptors.response.use(
 
 // Auth
 export const authAPI = {
-  login: (data) => api.post('/auth/login/', data),
+  login: (data) => api.post('/auth/login/phone/', {
+    username: data.email || data.username || data.phone,
+    password: data.password
+  }),
   register: (data) => api.post('/auth/register/', data),
   me: () => api.get('/auth/me/'),
   updateProfile: (data) => api.patch('/auth/me/', data),
@@ -101,6 +105,7 @@ export const establishmentsAPI = {
   list: (params) => api.get('/establishments/', { params }),
   detail: (id) => api.get(`/establishments/${id}/`),
   regions: () => api.get('/establishments/regions/'),
+  zones: () => api.get('/establishments/zones/'),
   services: (id) => api.get(`/establishments/${id}/services/`),
 }
 

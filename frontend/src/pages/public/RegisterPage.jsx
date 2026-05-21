@@ -18,6 +18,8 @@ export default function RegisterPage() {
     } catch (e) {
       const msg = e.response?.data
       if (msg?.email) toast.error('Cet email est déjà utilisé.')
+      else if (msg?.phone) toast.error('Ce numéro de téléphone est déjà utilisé.')
+      else if (msg?.non_field_errors) toast.error(msg.non_field_errors)
       else toast.error("Erreur lors de l'inscription. Vérifiez vos informations.")
     }
   }
@@ -55,17 +57,23 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Adresse email</label>
+            <label className="form-label">Adresse email (optionnel si téléphone rempli)</label>
             <div style={{ position: 'relative' }}>
               <FiMail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="email" placeholder="exemple@email.com"
-                {...register('email', { required: 'Email requis', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' } })} />
+                {...register('email', { 
+                  pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' },
+                  validate: (val) => {
+                    if (!val && !watch('phone')) return 'Veuillez fournir un email ou un téléphone'
+                    return true
+                  }
+                })} />
             </div>
             {errors.email && <span className="form-error">{errors.email.message}</span>}
           </div>
 
           <div className="form-group">
-            <label className="form-label">Téléphone (optionnel)</label>
+            <label className="form-label">Téléphone (optionnel si email rempli)</label>
             <div style={{ position: 'relative' }}>
               <FiPhone style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
               <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="tel" placeholder="+229 XX XX XX XX"

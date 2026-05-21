@@ -21,6 +21,7 @@ export default function DepotPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const isCallCenter = user?.role === 'AGENT_CALL_CENTER'
   const [step, setStep] = useState(0)
   const [categories, setCategories] = useState([])
   const [establishments, setEstablishments] = useState([])
@@ -45,10 +46,10 @@ export default function DepotPage() {
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       is_anonymous: false,
-      channel: 'WEB',
-      complainant_name: user ? `${user.first_name} ${user.last_name}` : '',
-      complainant_email: user?.email || '',
-      complainant_phone: user?.phone || '',
+      channel: user?.role === 'AGENT_CALL_CENTER' ? 'CALL_CENTER' : 'WEB',
+      complainant_name: user && user.role === 'USAGER' ? `${user.first_name} ${user.last_name}` : '',
+      complainant_email: user && user.role === 'USAGER' ? user?.email || '' : '',
+      complainant_phone: user && user.role === 'USAGER' ? user?.phone || '' : '',
     }
   })
 
@@ -149,7 +150,7 @@ export default function DepotPage() {
       fd.append('complainant_name', data.is_anonymous ? '' : (data.complainant_name || ''))
       fd.append('complainant_email', data.is_anonymous ? '' : (data.complainant_email || ''))
       fd.append('complainant_phone', data.is_anonymous ? '' : (data.complainant_phone || ''))
-      fd.append('channel', 'WEB')
+      fd.append('channel', data.channel || 'WEB')
       files.forEach((f) => fd.append('attachments', f))
       if (voiceBlob) {
         fd.append('voice_file', voiceBlob, 'message-vocal.webm')
@@ -226,11 +227,31 @@ export default function DepotPage() {
     <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
       <div className="page-container">
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          {/* Bannière Call Center 136 */}
+          {isCallCenter && (
+            <div style={{
+              marginBottom: '1.5rem', padding: '1rem 1.5rem', borderRadius: '8px',
+              background: 'linear-gradient(135deg, #008751 0%, #006B40 100%)',
+              color: 'white', display: 'flex', alignItems: 'center', gap: '1rem',
+            }}>
+              <span style={{ fontSize: '2rem' }}>📞</span>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '1rem' }}>Mode Call Center — Ligne Verte 136</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  Saisie de plainte au nom de l'usager. Le canal sera automatiquement enregistré comme « Call Center 136 ».
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom: '3rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h1 className="page-title">Déposer une plainte</h1>
+              <h1 className="page-title">{isCallCenter ? 'Saisie de plainte (136)' : 'Déposer une plainte'}</h1>
               <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.
+                {isCallCenter
+                  ? 'Transcrivez la plainte de l\'usager en remplissant le formulaire. Le numéro de ticket sera généré automatiquement.'
+                  : 'Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.'
+                }
               </p>
             </div>
             <button
@@ -399,17 +420,38 @@ export default function DepotPage() {
 
               {step === 3 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>4. Identité</h2>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <input type="checkbox" {...register('is_anonymous')} />
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Déposer de façon anonyme</span>
-                  </label>
-                  {!isAnonymous && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <input className="form-input" placeholder="Nom complet" {...register('complainant_name')} />
-                      <input className="form-input" placeholder="Email" {...register('complainant_email')} />
-                      <input className="form-input" placeholder="Téléphone" {...register('complainant_phone')} />
-                    </div>
+                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>
+                    {isCallCenter ? '4. Coordonnées de l\'usager' : '4. Identité'}
+                  </h2>
+                  {isCallCenter ? (
+                    <>
+                      <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
+                        Renseignez le nom et le numéro de téléphone de l'usager qui appelle. Ces informations permettront de le recontacter.
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <input className="form-input" placeholder="Nom complet de l'usager *"
+                          {...register('complainant_name', { required: 'Nom requis pour le call center' })} />
+                        {errors.complainant_name && <span className="form-error">{errors.complainant_name.message}</span>}
+                        <input className="form-input" placeholder="Téléphone de l'usager *"
+                          {...register('complainant_phone', { required: 'Téléphone requis pour le call center' })} />
+                        {errors.complainant_phone && <span className="form-error">{errors.complainant_phone.message}</span>}
+                        <input className="form-input" placeholder="Email (optionnel)" {...register('complainant_email')} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input type="checkbox" {...register('is_anonymous')} />
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Déposer de façon anonyme</span>
+                      </label>
+                      {!isAnonymous && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <input className="form-input" placeholder="Nom complet" {...register('complainant_name')} />
+                          <input className="form-input" placeholder="Email" {...register('complainant_email')} />
+                          <input className="form-input" placeholder="Téléphone" {...register('complainant_phone')} />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

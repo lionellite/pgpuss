@@ -1,0 +1,113 @@
+@startuml PGPUSS_2_Affectation_Traitement
+
+title PGPUSS — (2/4) Affectation, Traitement & Résolution
+
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam sequenceGroupBorderThickness 1.5
+skinparam participantBackgroundColor #EBF5FB
+skinparam participantBorderColor #2E75B6
+skinparam participantFontSize 11
+skinparam actorBackgroundColor #FEF9E7
+skinparam actorBorderColor #F39C12
+skinparam sequenceArrowColor #2E75B6
+skinparam sequenceLifeLineBorderColor #2E75B6
+skinparam sequenceLifeLineBackgroundColor #D6EAF8
+skinparam sequenceDividerBackgroundColor #1F4E79
+skinparam sequenceDividerFontColor #FFFFFF
+skinparam noteBorderColor #85929E
+skinparam noteBackgroundColor #FDFEFE
+
+actor       "Usager"            as USG
+participant "PGPUSS\n(Système)" as SYS
+participant "PFE"               as PFE
+participant "Agent\nAffecté"    as AGT
+participant "Direction\nÉtabl." as DIR
+participant "PNUSS"             as PNS
+participant "Notifications"     as NOTIF
+
+== 4. Affectation interne ==
+
+alt P4 / P5 — Traitement direct PFE
+    PFE  -> SYS  : Prendre en charge directement
+else P2 / P3 — Affectation agent interne
+    PFE  -> SYS  : Affecter à un agent
+    SYS  -> NOTIF : Notification agent
+    NOTIF --> AGT : Nouvelle affectation (in-app)
+    note over SYS : État : AFFECTÉE
+    alt Acceptation
+        AGT  -> SYS  : Accepter l'affectation
+    else Refus
+        AGT  -> SYS  : Refuser avec justification
+        SYS  --> PFE : Réorientation nécessaire
+        PFE  -> SYS  : Réaffecter
+    end
+else P1 — Escalade Direction
+    PFE  -> SYS  : Escalader à la Direction
+    SYS  --> DIR : Notification plainte critique
+end
+
+== 5. Investigation & Traitement ==
+
+note over SYS : État : EN TRAITEMENT
+
+AGT  -> SYS  : Documenter investigations\n(journal d'instruction horodaté)
+
+opt Délai insuffisant
+    AGT  -> SYS  : Demander extension de délai
+    PFE  -> SYS  : Valider / refuser extension
+end
+
+SYS  -> SYS  : Surveillance délais\n(P1:4h / P2:24h / P3:72h / P4:7j / P5:15j)
+
+opt Délai dépassé
+    SYS  -> NOTIF : Alerte escalade automatique
+    NOTIF --> PFE : Relance + alerte hiérarchique
+end
+
+PNS  -> SYS  : Consulter tableau de bord PNUSS
+
+opt Maltraitance / violation droits
+    PNS  -> SYS  : Participer à l'enquête
+    PNS  -> SYS  : Intervenir en médiation
+end
+
+AGT  -> SYS  : Soumettre rapport + recommandations
+SYS  --> PFE : Rapport soumis
+
+== 6. Résolution ==
+
+PFE  -> SYS  : Proposer résolution
+SYS  --> DIR : Résolution à valider
+
+alt Direction valide
+    DIR  -> SYS  : Valider résolution
+    SYS  -> NOTIF : Notification usager
+    NOTIF --> USG : Résolution proposée\n(SMS + e-mail + push)
+    note over SYS : État : RÉSOLUE
+
+    alt Usager accepte
+        USG  -> SYS  : Valider la résolution
+        SYS  -> NOTIF : Enquête NPS automatique
+        NOTIF --> USG : Questionnaire satisfaction
+        USG  -> SYS  : Soumettre NPS
+        PFE  -> SYS  : Clôturer la plainte
+        SYS  -> SYS  : Archivage légal (10 ans)
+        note over SYS : État : CLÔTURÉE
+        SYS  --> USG : Notification clôture définitive
+
+    else Usager conteste (moins de 15 jours)
+        USG  -> SYS  : Ouvrir recours 2nd niveau
+        SYS  --> PFE : Contestation reçue
+        PFE  -> SYS  : Escalader à la DDS
+        note over SYS : État : ESCALADÉE
+    end
+
+else Direction infirme
+    DIR  -> SYS  : Renvoyer au PFE pour correction
+    SYS  --> PFE : Correction requise
+    PFE  -> SYS  : Corriger et resoumettre
+end
+
+@enduml

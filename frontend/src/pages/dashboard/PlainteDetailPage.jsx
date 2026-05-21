@@ -63,7 +63,11 @@ export default function PlainteDetailPage() {
   const isAgent = user?.role === 'AGENT_INTERNE'
   const isRegulateur = ['DDS', 'DQSS', 'CABINET'].includes(user?.role)
   const isDDS = user?.role === 'DDS'
+  const isDQSS = ['DQSS', 'CABINET'].includes(user?.role)
   const isDirecteur = user?.role === 'DIRECTEUR_EST'
+  const isPFZS = user?.role === 'PFZS'
+  const isPNUSS = user?.role === 'PNUSS'
+  const isCallCenter = user?.role === 'AGENT_CALL_CENTER'
 
   return (
     <div style={{ padding: '1rem 0' }}>
@@ -91,7 +95,9 @@ export default function PlainteDetailPage() {
             { label: 'Catégorie', value: complaint.category_name },
             { label: 'Canal', value: complaint.channel_display },
             { label: 'Plaignant', value: complaint.complainant_display },
+            ...(complaint.call_center_agent_name ? [{ label: 'Agent 136', value: complaint.call_center_agent_name }] : []),
             { label: 'Affecté à', value: complaint.assigned_to_name || 'Non affecté' },
+            ...(complaint.zone_sanitaire_name ? [{ label: 'Zone Sanitaire', value: complaint.zone_sanitaire_name }] : []),
             { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
           ].map((item, i) => (
             <div key={i} style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
@@ -121,15 +127,15 @@ export default function PlainteDetailPage() {
             </button>
           )}
           {isPFE && complaint.status === 'INSTRUITE' && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
                 <FiUser /> Affecter
               </button>
               <button className="btn btn-secondary btn-sm" onClick={() => doAction('start')}>
-                Traiter directement (démarrer)
+                Traiter directement
               </button>
               <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
-                <FiArrowUp /> Escalader à la Direction
+                <FiArrowUp /> Escalader (Zone Sanitaire)
               </button>
             </div>
           )}
@@ -167,7 +173,7 @@ export default function PlainteDetailPage() {
             </div>
           )}
 
-          {/* Direction / Régulation Actions */}
+          {/* Direction Actions */}
           {isDirecteur && complaint.status === 'RESOLUE' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn btn-primary btn-sm" onClick={() => setModal('validateResolution')}>
@@ -178,6 +184,43 @@ export default function PlainteDetailPage() {
               </button>
             </div>
           )}
+          {isDirecteur && complaint.status === 'INSTRUITE' && (
+            <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+              <FiArrowUp /> Escalader à la DDS
+            </button>
+          )}
+
+          {/* PFZS — Zone Sanitaire Actions (diag: UC25-UC29) */}
+          {isPFZS && ['SOUMISE', 'ACCUSEE', 'INSTRUITE', 'AFFECTEE', 'EN_TRAITEMENT'].includes(complaint.status) && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setModal('investigationLog')}>
+                <FiBookOpen /> Superviser / Journal
+              </button>
+            </div>
+          )}
+          {isPFZS && complaint.status === 'ESCALADEE' && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
+                Accuser réception (PFZS)
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal('investigationLog')}>
+                <FiBookOpen /> Instruire enquête
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
+                <FiCheckCircle /> Proposer résolution
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+                <FiArrowUp /> Escalader à la DDS
+              </button>
+            </div>
+          )}
+          {isPFZS && complaint.status === 'RESOLUE' && (
+            <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+              <FiLock /> Clôturer
+            </button>
+          )}
+
+          {/* DDS Actions */}
           {isDDS && complaint.status === 'ESCALADEE' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => setModal('ddsAssignInspector')}>
@@ -186,15 +229,47 @@ export default function PlainteDetailPage() {
               <button className="btn btn-secondary btn-sm" onClick={() => setModal('ddsInvestigation')}>
                 Enquête DDS
               </button>
+              <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
+                <FiShield /> Arbitrer
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+                <FiArrowUp /> Escalader au Ministère
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+                <FiLock /> Clôturer dossier
+              </button>
             </div>
           )}
-          {isRegulateur && complaint.status === 'ESCALADEE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
-              <FiShield /> Arbitrer
-            </button>
+
+          {/* DQSS / National Actions (UC37-UC41) */}
+          {isDQSS && complaint.status === 'ESCALADEE' && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
+                <FiShield /> Arbitrer / Injonction
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+                <FiLock /> Clôturer définitivement
+              </button>
+            </div>
           )}
 
-          {(isRegulateur || isDirecteur || isPFE) && (
+          {/* PNUSS Actions (UC46-UC51) */}
+          {isPNUSS && ['EN_TRAITEMENT', 'ESCALADEE'].includes(complaint.status) && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal('investigationLog')}>
+                <FiBookOpen /> Participer à l'enquête
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal('notifyParties')}>
+                Médiation / Intervention
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+                <FiArrowUp /> Alerter hiérarchie
+              </button>
+            </div>
+          )}
+
+          {/* Notify parties — accessible à tous les acteurs hiérarchiques */}
+          {(isRegulateur || isDirecteur || isPFE || isPFZS || isPNUSS) && (
             <button className="btn btn-ghost btn-sm" onClick={() => setModal('notifyParties')}>
               Notifier parties
             </button>

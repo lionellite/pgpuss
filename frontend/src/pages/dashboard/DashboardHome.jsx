@@ -50,6 +50,24 @@ export default function DashboardHome() {
         <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
           Bienvenue, {user?.first_name} — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
+        {/* Contexte hiérarchique pyramide sanitaire */}
+        <div style={{
+          marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+          padding: '0.5rem 1rem', borderRadius: '8px',
+          background: 'rgba(0,135,81,0.06)', border: '1px solid rgba(0,135,81,0.15)',
+          fontSize: '0.8rem', color: '#008751', fontWeight: 600,
+        }}>
+          {user?.role === 'PFE' && `🏥 Niveau Périphérique — ${user.establishment_name || 'Établissement'}`}
+          {user?.role === 'DIRECTEUR_EST' && `🏥 Direction — ${user.establishment_name || 'Établissement'}`}
+          {user?.role === 'AGENT_INTERNE' && `👤 Agent Affecté — ${user.establishment_name || 'Établissement'}`}
+          {user?.role === 'PFZS' && `🗺️ Zone Sanitaire — ${user.zone_sanitaire_name || 'Zone'}`}
+          {user?.role === 'DDS' && `🏛️ Niveau Départemental — ${user.departement || 'Département'}`}
+          {user?.role === 'DQSS' && '🇧🇯 Niveau National — DQSS / Agence Qualité'}
+          {user?.role === 'CABINET' && '🇧🇯 Niveau National — Ministère de la Santé'}
+          {user?.role === 'AGENT_CALL_CENTER' && '📞 Call Center — Ligne Verte 136'}
+          {user?.role === 'PNUSS' && `🤝 PNUSS — ${user.zone_sanitaire_name || user.departement || 'National'}`}
+          {user?.role === 'ADMIN_PLATEFORME' && '⚙️ Administration Plateforme'}
+        </div>
       </div>
 
       {/* KPIs */}

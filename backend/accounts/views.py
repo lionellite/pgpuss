@@ -116,9 +116,22 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == UserRole.ADMIN_PLATEFORME:
-            return User.objects.select_related('establishment').all()
+            return User.objects.select_related('establishment', 'zone_sanitaire').all()
         elif user.role in [UserRole.DIRECTEUR_EST, UserRole.PFE]:
             return User.objects.filter(establishment=user.establishment)
+        elif user.role == UserRole.PFZS:
+            # PFZS : voit les agents des établissements de sa zone sanitaire
+            if user.zone_sanitaire_id:
+                return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
+            return User.objects.filter(id=user.id)
+        elif user.role == UserRole.PNUSS:
+            # PNUSS : scope selon son niveau de rattachement
+            if user.zone_sanitaire_id:
+                return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
+            elif user.departement:
+                return User.objects.filter(establishment__region__name=user.departement)
+            # Niveau national : tous
+            return User.objects.select_related('establishment', 'zone_sanitaire').all()
         return User.objects.filter(id=user.id)
 
 
@@ -140,9 +153,13 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == UserRole.ADMIN_PLATEFORME:
-            return User.objects.select_related('establishment').all()
+            return User.objects.select_related('establishment', 'zone_sanitaire').all()
         elif user.role in [UserRole.DIRECTEUR_EST, UserRole.PFE]:
             return User.objects.filter(establishment=user.establishment)
+        elif user.role == UserRole.PFZS:
+            if user.zone_sanitaire_id:
+                return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
+            return User.objects.filter(id=user.id)
         return User.objects.filter(id=user.id)
 
     def update(self, request, *args, **kwargs):

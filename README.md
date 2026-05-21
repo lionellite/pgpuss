@@ -64,6 +64,14 @@ npm run dev
 ```
 *Le frontend sera disponible sur : `http://localhost:5173`*
 
+### 🌍 Déploiement en Production (Vercel)
+L'application est configurée pour être déployée sur Vercel. 
+
+- **Backend** : Déployé sur Vercel avec une base de données PostgreSQL sur Supabase.
+- **Frontend** : Configuré pour utiliser l'API en ligne. Assurez-vous de définir la variable d'environnement `VITE_API_URL` dans les paramètres Vercel pour pointer vers votre backend.
+
+**URL Backend actuelle** : `https://pgpuss-git-master-lionels-projects-c5af5fda.vercel.app`
+
 ---
 
 ## 👤 Comptes de Test (Démo)
