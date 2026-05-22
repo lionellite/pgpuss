@@ -23,20 +23,18 @@ PASSWORD = 'Pgpuss2026!'
 
 
 def get_or_create_user(email, defaults):
-    """Crée ou met à jour un utilisateur test."""
+    """Crée ou met à jour un utilisateur test et force son mot de passe."""
     user, created = User.objects.update_or_create(
         email=email,
         defaults=defaults,
     )
+    # Forcer la mise à jour du mot de passe dans tous les cas
+    user.set_password(PASSWORD)
+    user.save()
+    
     if created:
-        user.set_password(PASSWORD)
-        user.save()
         print(f'  ✅ CRÉÉ  : {email} ({defaults["role"]})')
     else:
-        # Mise à jour des champs sans écraser le password
-        for k, v in defaults.items():
-            setattr(user, k, v)
-        user.save()
         print(f'  🔄 MàJ   : {email} ({defaults["role"]})')
     return user
 
