@@ -164,4 +164,4 @@
 | `pnuss.cotonou@pgpuss.bj` | PNUSS | Joël Ahossi | ZS Cotonou 1-2-3 |
 | `pnuss.parakou@pgpuss.bj` | PNUSS | Latifou Orou Guidou | ZS Parakou/N'Dali |
 
-> **Total : 34 utilisateurs** | **Mot de passe** : identique à celui de `admin@pgpuss.bj`
+> **Total : 34 utilisateurs** | **Mot de passe commun** : `Pgpuss2026!` (réinitialisé à chaque exécution de `create_test_users.py`)

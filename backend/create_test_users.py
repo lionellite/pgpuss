@@ -23,19 +23,18 @@ PASSWORD = 'Pgpuss2026!'
 
 
 def get_or_create_user(email, defaults):
-    """Crée ou met à jour un utilisateur test et force son mot de passe."""
+    """Crée ou met à jour un utilisateur test (mot de passe toujours synchronisé)."""
     user, created = User.objects.update_or_create(
         email=email,
         defaults=defaults,
     )
-    # Forcer la mise à jour du mot de passe dans tous les cas
     user.set_password(PASSWORD)
+    user.is_active = True
     user.save()
-    
     if created:
         print(f'  ✅ CRÉÉ  : {email} ({defaults["role"]})')
     else:
-        print(f'  🔄 MàJ   : {email} ({defaults["role"]})')
+        print(f'  🔄 MàJ   : {email} ({defaults["role"]}) — mot de passe réinitialisé')
     return user
 
 

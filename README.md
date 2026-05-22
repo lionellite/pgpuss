@@ -78,14 +78,21 @@ L'application est configurée pour être déployée sur Vercel.
 
 | Rôle | Email | Mot de passe |
 | :--- | :--- | :--- |
-| **Admin Plateforme** | admin@pgpuss.bj | `admin123` |
-| **PFE** | pfe@pgpuss.bj | `pfe123` |
-| **Agent interne** | agent.interne@pgpuss.bj | `agent123` |
-| **Direction établissement** | directeur@pgpuss.bj | `dir123` |
-| **DDS** | dds@pgpuss.bj | `dds123` |
-| **DQSS** | dqss@pgpuss.bj | `dqss123` |
-| **Cabinet Ministère** | cabinet@pgpuss.bj | `cab123` |
-| **Usager** | usager@pgpuss.bj | `usager123` |
+| **Admin Plateforme** | admin@pgpuss.bj | `Pgpuss2026!` |
+| **PFE CNHU** | pfe.cnhu@pgpuss.bj | `Pgpuss2026!` |
+| **Agent interne** | agent.cnhu@pgpuss.bj | `Pgpuss2026!` |
+| **Direction établissement** | dir.cnhu@pgpuss.bj | `Pgpuss2026!` |
+| **DDS Littoral** | dds.littoral@pgpuss.bj | `Pgpuss2026!` |
+| **DQSS** | dqss@pgpuss.bj | `Pgpuss2026!` |
+| **Usager** | usager@pgpuss.bj | `Pgpuss2026!` |
+
+Liste complète : voir `UTILISATEURS_TESTS.md`. Après modification des comptes tests, synchroniser Supabase :
+
+```bash
+cd backend
+export DATABASE_URL="postgresql://..."   # URL pooler Supabase (port 6543)
+python manage.py shell < create_test_users.py
+```
 
 ---
 

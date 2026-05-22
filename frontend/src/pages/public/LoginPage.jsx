@@ -111,10 +111,10 @@ export default function LoginPage() {
           <p className="login-demo-title">Comptes de démonstration</p>
           <ul className="login-demo-list">
             {[
-              { label: 'Usager', email: 'usager@pgpuss.bj', pwd: 'usager123' },
-              { label: 'PFE', email: 'pfe@pgpuss.bj', pwd: 'pfe123' },
-              { label: 'Agent interne', email: 'agent.interne@pgpuss.bj', pwd: 'agent123' },
-              { label: 'Administrateur', email: 'admin@pgpuss.bj', pwd: 'admin123' },
+              { label: 'Usager', email: 'usager@pgpuss.bj', pwd: 'Pgpuss2026!' },
+              { label: 'PFE CNHU', email: 'pfe.cnhu@pgpuss.bj', pwd: 'Pgpuss2026!' },
+              { label: 'Agent interne', email: 'agent.cnhu@pgpuss.bj', pwd: 'Pgpuss2026!' },
+              { label: 'Administrateur', email: 'admin@pgpuss.bj', pwd: 'Pgpuss2026!' },
             ].map((d) => (
               <li key={d.email}>
                 <strong>{d.label}</strong> — {d.email} · <span className="login-demo-pwd">{d.pwd}</span>
