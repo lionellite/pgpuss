@@ -114,6 +114,21 @@ Après un dépôt de plainte avec pièce jointe ou vocal :
 
 ---
 
+## 8. Erreur Vercel `collectstatic` / `STATICFILES_STORAGE`
+
+Si le build échoue avec :
+
+`AttributeError: 'Settings' object has no attribute 'STATICFILES_STORAGE'`
+
+C’est un conflit entre **Django 6** et une ancienne version de `django-cloudinary-storage`. Le projet définit explicitement :
+
+- `STORAGES['staticfiles']` → stockage local (admin Django)
+- `STORAGES['default']` → Cloudinary (pièces jointes / vocal)
+
+Mettez à jour le code depuis le dépôt et redéployez.
+
+---
+
 ## Résumé
 
 ```

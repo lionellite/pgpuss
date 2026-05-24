@@ -101,11 +101,27 @@ TIME_ZONE = 'Africa/Porto-Novo'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Django 4.2+ / 6.x : STORAGES remplace DEFAULT_FILE_STORAGE et STATICFILES_STORAGE
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {
+            'location': MEDIA_ROOT,
+            'base_url': MEDIA_URL,
+        },
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+# Compatibilité django-cloudinary-storage (collectstatic lit encore STATICFILES_STORAGE)
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -185,9 +201,11 @@ if CLOUDINARY_URL:
         ],
         'cloudinary',
     ]
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     CLOUDINARY_STORAGE = {'CLOUDINARY_URL': CLOUDINARY_URL}
+    # Médias sur Cloudinary ; fichiers statiques (admin) restent locaux pour collectstatic
+    STORAGES['default'] = {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     # Les FileField renvoient des URLs https://res.cloudinary.com/...
-else:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'

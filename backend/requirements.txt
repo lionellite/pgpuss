@@ -9,3 +9,4 @@ dj-database-url
 # Stockage fichiers médias en production (Cloudinary)
 cloudinary
 django-cloudinary-storage
+Pillow>=10.0
