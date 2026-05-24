@@ -14,9 +14,11 @@ import '../../../models/category.dart';
 import '../../../models/establishment.dart';
 import '../../../models/region.dart';
 import '../../../models/service_item.dart';
+import '../../../state/auth_controller.dart';
 import '../../../state/complaints_providers.dart';
 import '../../../state/extra_providers.dart';
 import '../../theme.dart';
+import '../../widgets/app_chrome.dart';
 
 class DepositScreen extends ConsumerStatefulWidget {
   const DepositScreen({super.key});
@@ -45,6 +47,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   // Step 3
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+  String _descriptionMode = 'text';
   List<PlatformFile> _files = [];
   // Voice
   String? _voicePath;
@@ -58,6 +61,23 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   bool _anonymous = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillIdentity());
+  }
+
+  void _prefillIdentity() {
+    final user = ref.read(authControllerProvider).session?.user;
+    if (user == null || user.role != 'USAGER') return;
+    if (_nameCtrl.text.isEmpty) _nameCtrl.text = user.fullName;
+    if (_emailCtrl.text.isEmpty) _emailCtrl.text = user.email;
+    if (_phoneCtrl.text.isEmpty && user.phone != null && user.phone!.isNotEmpty) {
+      _phoneCtrl.text = user.phone!;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
     _titleCtrl.dispose(); _descCtrl.dispose();
     _nameCtrl.dispose(); _emailCtrl.dispose(); _phoneCtrl.dispose();
@@ -67,8 +87,13 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   }
 
   Future<void> _loadEstablishments(String regionId) async {
-    final all = await ref.read(establishmentsApiProvider).list();
-    setState(() { _establishments = all.results; _selectedEstablishment = null; _services = []; _selectedService = null; });
+    final all = await ref.read(establishmentsApiProvider).list(regionId: regionId);
+    setState(() {
+      _establishments = all.results;
+      _selectedEstablishment = null;
+      _services = [];
+      _selectedService = null;
+    });
   }
 
   Future<void> _loadServices(String estId) async {
@@ -99,33 +124,91 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     setState(() => _voicePath = null);
   }
 
+  void _setDescriptionMode(String mode) {
+    setState(() {
+      _descriptionMode = mode;
+      if (mode == 'voice') {
+        _descCtrl.clear();
+      } else {
+        _removeVoice();
+      }
+    });
+  }
+
   Future<void> _submit() async {
     setState(() => _submitting = true);
     try {
-      final formData = dio.FormData.fromMap({
+      final isVoice = _descriptionMode == 'voice';
+      final body = <String, dynamic>{
         'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
-        if (!_manualEstablishment && _selectedEstablishment != null) 'establishment': _selectedEstablishment!.id,
+        'description_mode': isVoice ? 'voice' : 'text',
+        if (!isVoice) 'description': _descCtrl.text.trim(),
+        if (!_manualEstablishment && _selectedEstablishment != null)
+          'establishment': _selectedEstablishment!.id,
         if (_manualEstablishment) 'establishment_name_manual': _manualNameCtrl.text.trim(),
-        if (_manualEstablishment && _manualAddressCtrl.text.isNotEmpty) 'establishment_address_manual': _manualAddressCtrl.text.trim(),
+        if (_manualEstablishment && _manualAddressCtrl.text.isNotEmpty)
+          'establishment_address_manual': _manualAddressCtrl.text.trim(),
         if (_selectedService != null) 'service': _selectedService!.id,
         if (_selectedCategory != null) 'category': _selectedCategory!.id,
         'channel': 'MOBILE',
         'is_anonymous': _anonymous,
+        if (_anonymous) 'complainant_phone': _phoneCtrl.text.trim(),
         if (!_anonymous && _nameCtrl.text.isNotEmpty) 'complainant_name': _nameCtrl.text.trim(),
         if (!_anonymous && _emailCtrl.text.isNotEmpty) 'complainant_email': _emailCtrl.text.trim(),
         if (!_anonymous && _phoneCtrl.text.isNotEmpty) 'complainant_phone': _phoneCtrl.text.trim(),
-      });
-      for (final f in _files) {
-        if (f.path != null) {
-          formData.files.add(MapEntry('attachments', await dio.MultipartFile.fromFile(f.path!, filename: f.name)));
+      };
+
+      final api = ref.read(complaintsApiProvider);
+      final result = await api.createJson(body);
+      final complaintId = result['complaint_id'] as String?;
+      final uploadToken = result['upload_token'] as String?;
+      var mediaWarning = false;
+
+      if (complaintId != null && uploadToken != null) {
+        if (isVoice && _voicePath != null) {
+          try {
+            final vfd = dio.FormData.fromMap({
+              'voice_file': await dio.MultipartFile.fromFile(_voicePath!, filename: 'voice.m4a'),
+            });
+            await api.uploadDepositMedia(
+              complaintId: complaintId,
+              uploadToken: uploadToken,
+              formData: vfd,
+            );
+          } catch (_) {
+            mediaWarning = true;
+          }
+        }
+        for (final f in _files) {
+          if (f.path == null) continue;
+          try {
+            final afd = dio.FormData.fromMap({
+              'attachment': await dio.MultipartFile.fromFile(f.path!, filename: f.name),
+            });
+            await api.uploadDepositMedia(
+              complaintId: complaintId,
+              uploadToken: uploadToken,
+              formData: afd,
+            );
+          } catch (_) {
+            mediaWarning = true;
+          }
         }
       }
-      if (_voicePath != null) {
-        formData.files.add(MapEntry('voice_file', await dio.MultipartFile.fromFile(_voicePath!, filename: 'voice.m4a')));
+
+      if (!mounted) return;
+      setState(() {
+        _success = true;
+        _ticketNumber = (result['ticket_number'] as String?) ?? 'N/A';
+      });
+      if (mediaWarning) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Plainte enregistrée, mais un fichier n\'a pas pu être envoyé.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-      final result = await ref.read(complaintsApiProvider).create(formData);
-      setState(() { _success = true; _ticketNumber = (result['ticket_number'] as String?) ?? 'N/A'; });
     } catch (e) {
       if (!mounted) { return; }
       String msg = 'Erreur lors du dépôt. Veuillez réessayer.';
@@ -160,19 +243,28 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     if (_success) { return _buildSuccess(); }
     final regions = ref.watch(regionsProvider);
     final categories = ref.watch(categoriesProvider);
-    return Scaffold(
+    final inShell = GoRouterState.of(context).uri.path == '/deposit';
+    final fallback = inShell ? '/complaints' : '/';
+
+    return AppBackScope(
+      fallbackLocation: fallback,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Déposer une plainte'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          tooltip: 'Retour à l\'accueil',
+          tooltip: 'Retour',
           onPressed: () {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/');
+              context.go(fallback);
             }
           },
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(4),
+          child: GovFlagBar(),
         ),
       ),
       body: Column(children: [
@@ -180,6 +272,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(20), child: _buildStep(regions, categories))),
         _buildBottomNav(),
       ]),
+    ),
     );
   }
 
@@ -269,7 +362,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         error: (_, _) => const Text('Erreur de chargement'),
         data: (cats) => Wrap(spacing: 10, runSpacing: 10, children: cats.map((c) {
           final selected = _selectedCategory?.id == c.id;
-          return ChoiceChip(label: Text('${c.icon} ${c.name}'), selected: selected,
+          return ChoiceChip(label: Text(c.displayName), selected: selected,
             selectedColor: AppColors.primary.withValues(alpha: 0.12),
             side: BorderSide(color: selected ? AppColors.primary : AppColors.divider),
             onSelected: (_) => setState(() => _selectedCategory = c));
@@ -283,17 +376,34 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _sectionTitle('Décrivez votre problème'),
       const SizedBox(height: 8),
-      Text('Tapez votre description ou enregistrez un message vocal.',
-        style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+      Text(
+        'Choisissez une seule option : texte au clavier ou message vocal.',
+        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+      ),
+      const SizedBox(height: 16),
+      SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(value: 'text', label: Text('Texte'), icon: Icon(Icons.keyboard_outlined)),
+          ButtonSegment(value: 'voice', label: Text('Vocal'), icon: Icon(Icons.mic_outlined)),
+        ],
+        selected: {_descriptionMode},
+        onSelectionChanged: (s) => _setDescriptionMode(s.first),
+      ),
       const SizedBox(height: 20),
       TextField(controller: _titleCtrl,
         decoration: const InputDecoration(labelText: 'Titre de la plainte', prefixIcon: Icon(Icons.title))),
       const SizedBox(height: 14),
-      TextField(controller: _descCtrl, maxLines: 5,
-        decoration: const InputDecoration(labelText: 'Description détaillée (optionnel si note vocale)', alignLabelWithHint: true)),
-      const SizedBox(height: 20),
+      if (_descriptionMode == 'text') ...[
+        TextField(controller: _descCtrl, maxLines: 5,
+          decoration: const InputDecoration(labelText: 'Description détaillée *', alignLabelWithHint: true)),
+        const SizedBox(height: 20),
+      ] else ...[
+        Text('Enregistrez votre message vocal (obligatoire dans ce mode).',
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+        const SizedBox(height: 12),
+      ],
 
-      // Voice recorder
+      if (_descriptionMode == 'voice')
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -334,10 +444,9 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           ]),
         ]),
       ),
-      const SizedBox(height: 20),
+      if (_descriptionMode == 'voice') const SizedBox(height: 20),
 
-      // File attachments
-      OutlinedButton.icon(onPressed: _pickFiles, icon: const Icon(Icons.attach_file), label: const Text('Joindre des fichiers')),
+      OutlinedButton.icon(onPressed: _pickFiles, icon: const Icon(Icons.attach_file), label: const Text('Joindre des fichiers (optionnel)')),
       if (_files.isNotEmpty) ...[
         const SizedBox(height: 8),
         ..._files.map((f) => Padding(padding: const EdgeInsets.only(bottom: 4), child: Row(children: [
@@ -360,14 +469,36 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         subtitle: const Text('Votre identité ne sera pas enregistrée', style: TextStyle(fontSize: 12)),
         contentPadding: EdgeInsets.zero, activeThumbColor: AppColors.primary),
       const SizedBox(height: 16),
-      if (!_anonymous) ...[
-        TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nom complet', prefixIcon: Icon(Icons.person_outline))),
+      if (_anonymous) ...[
+        Text(
+          'Votre identité reste confidentielle. Indiquez un numéro pour vous recontacter si nécessaire.',
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _phoneCtrl,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Téléphone *',
+            prefixIcon: Icon(Icons.phone_outlined),
+            hintText: '+229 XX XX XX XX',
+          ),
+        ),
+      ] else ...[
+        if (ref.watch(authControllerProvider).session?.user?.role == 'USAGER') ...[
+          Text(
+            'Vos coordonnées sont préremplies depuis votre compte. Vous pouvez les modifier.',
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 14),
+        ],
+        TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nom complet *', prefixIcon: Icon(Icons.person_outline))),
         const SizedBox(height: 14),
         TextField(controller: _emailCtrl, keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined))),
+          decoration: const InputDecoration(labelText: 'Email (optionnel)', prefixIcon: Icon(Icons.email_outlined))),
         const SizedBox(height: 14),
         TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(labelText: 'Téléphone', prefixIcon: Icon(Icons.phone_outlined), hintText: '+229 XX XX XX XX')),
+          decoration: const InputDecoration(labelText: 'Téléphone (optionnel)', prefixIcon: Icon(Icons.phone_outlined), hintText: '+229 XX XX XX XX')),
       ],
     ]);
   }
@@ -380,13 +511,20 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       _confirmItem('Établissement', _manualEstablishment ? _manualNameCtrl.text : (_selectedEstablishment?.name ?? '—')),
       if (_manualEstablishment && _manualAddressCtrl.text.isNotEmpty) _confirmItem('Adresse', _manualAddressCtrl.text),
       if (!_manualEstablishment && _selectedService != null) _confirmItem('Service', _selectedService!.name),
-      _confirmItem('Catégorie', _selectedCategory?.name ?? '—'),
+      _confirmItem('Catégorie', _selectedCategory?.displayName ?? '—'),
       _confirmItem('Titre', _titleCtrl.text),
-      _confirmItem('Description', _descCtrl.text.length > 80 ? '${_descCtrl.text.substring(0, 80)}...' : _descCtrl.text),
-      _confirmItem('Note vocale', _voicePath != null ? '✓ Enregistrée' : 'Aucune'),
+      _confirmItem('Mode', _descriptionMode == 'voice' ? 'Message vocal' : 'Texte'),
+      _confirmItem(
+        'Description',
+        _descriptionMode == 'voice'
+            ? (_voicePath != null ? 'Message vocal enregistré' : '—')
+            : (_descCtrl.text.length > 80 ? '${_descCtrl.text.substring(0, 80)}...' : _descCtrl.text),
+      ),
       _confirmItem('Fichiers joints', '${_files.length} fichier(s)'),
       _confirmItem('Identité', _anonymous ? 'Anonyme' : _nameCtrl.text),
+      if (_anonymous && _phoneCtrl.text.isNotEmpty) _confirmItem('Téléphone', _phoneCtrl.text),
       if (!_anonymous && _emailCtrl.text.isNotEmpty) _confirmItem('Email', _emailCtrl.text),
+      if (!_anonymous && _phoneCtrl.text.isNotEmpty) _confirmItem('Téléphone', _phoneCtrl.text),
     ]);
   }
 
@@ -418,8 +556,13 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     return switch (_step) {
       0 => _manualEstablishment ? _manualNameCtrl.text.trim().isNotEmpty : _selectedEstablishment != null,
       1 => _selectedCategory != null,
-      2 => _titleCtrl.text.trim().isNotEmpty && (_descCtrl.text.trim().isNotEmpty || _voicePath != null),
-      3 => _anonymous || (_nameCtrl.text.trim().isNotEmpty && _emailCtrl.text.trim().isNotEmpty),
+      2 => _titleCtrl.text.trim().isNotEmpty &&
+          (_descriptionMode == 'voice'
+              ? _voicePath != null
+              : _descCtrl.text.trim().isNotEmpty),
+      3 => _anonymous
+          ? _phoneCtrl.text.trim().isNotEmpty
+          : _nameCtrl.text.trim().isNotEmpty,
       _ => true,
     };
   }

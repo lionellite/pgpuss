@@ -43,15 +43,12 @@ export default function ProfilPage() {
         <h1 className="page-title" style={{ marginBottom: '2rem' }}>Mon profil</h1>
 
         {/* Profile card */}
-        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1rem',
-            background: 'linear-gradient(135deg, #0077B6, #06D6A0)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem', color: 'white', fontFamily: 'Outfit', fontWeight: 800,
-          }}>{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
-          <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.25rem' }}>{user?.full_name}</h2>
-          <p style={{ color: '#8FA3BF', fontSize: '0.875rem', marginTop: '0.25rem' }}>{user?.email}</p>
+        <div className="card card--padding" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <div className="profile-avatar" aria-hidden>
+            {user?.first_name?.[0]}{user?.last_name?.[0]}
+          </div>
+          <h2 style={{ fontSize: '1.25rem' }}>{user?.full_name}</h2>
+          <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>{user?.email}</p>
           <span className="badge badge-info" style={{ marginTop: '0.75rem' }}>
             {ROLE_LABELS[user?.role] || user?.role}
           </span>
@@ -61,7 +58,7 @@ export default function ProfilPage() {
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
           {['profile', 'password'].map(t => (
             <button key={t} onClick={() => setTab(t)} className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'} btn-sm`}>
-              {t === 'profile' ? '👤 Informations' : '🔒 Mot de passe'}
+              {t === 'profile' ? 'Informations' : 'Mot de passe'}
             </button>
           ))}
         </div>

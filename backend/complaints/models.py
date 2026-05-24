@@ -101,7 +101,15 @@ class Complaint(models.Model):
         'establishments.Service', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='complaints'
     )
-    
+    establishment_name_manual = models.CharField(
+        max_length=300, blank=True,
+        help_text="Nom de l'établissement si non présent dans le référentiel",
+    )
+    establishment_address_manual = models.CharField(
+        max_length=500, blank=True,
+        help_text="Adresse ou localisation si établissement saisi manuellement",
+    )
+
     # Assignment
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
@@ -152,6 +160,9 @@ class Complaint(models.Model):
 
     # Plainte vocale (analphabétisme / accessibilité) — fichier audio déposé par l’usager
     voice_file = models.FileField(upload_to='complaints/voice/%Y/%m/', blank=True, null=True)
+    media_upload_token = models.CharField(max_length=64, blank=True, editable=False)
+
+    VOICE_DESCRIPTION_PLACEHOLDER = 'Message vocal joint à la plainte.'
     
     # Deadline
     deadline = models.DateTimeField(null=True, blank=True)
@@ -183,10 +194,17 @@ class Complaint(models.Model):
         """
         Simulate NLP analysis to categorize and prioritize the complaint.
         """
+        if self.category_id:
+            if not self.deadline:
+                self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
+            return
+
         text = (self.title + " " + self.description).lower()
+        if self.description.strip() == self.VOICE_DESCRIPTION_PLACEHOLDER:
+            text = self.title.lower()
 
         # 1. Category Detection (Simulated)
-        categories = Category.objects.filter(parent=None)
+        categories = Category.objects.filter(parent=None).only('id', 'name')
         keywords = {
             'soin': 'Qualité des soins',
             'erreur': 'Qualité des soins',

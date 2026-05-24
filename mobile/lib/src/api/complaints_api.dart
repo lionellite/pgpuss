@@ -71,14 +71,26 @@ class ComplaintsApi {
         .toList(growable: false);
   }
 
-  /// Create a complaint. [formData] should be a Dio FormData with multipart.
-  Future<Map<String, dynamic>> create(FormData formData) async {
+  /// Création JSON (rapide, compatible Vercel).
+  Future<Map<String, dynamic>> createJson(Map<String, dynamic> body) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/complaints/create/',
-      data: formData,
-      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      data: body,
     );
     return res.data ?? {};
+  }
+
+  /// Envoi d'un média après création (vocal ou pièce jointe, un fichier par appel).
+  Future<void> uploadDepositMedia({
+    required String complaintId,
+    required String uploadToken,
+    required FormData formData,
+  }) async {
+    await _dio.post<void>(
+      '/api/complaints/$complaintId/deposit-media/',
+      data: formData,
+      options: Options(headers: {'X-Upload-Token': uploadToken}),
+    );
   }
 
   // ── Workflow actions ──────────────────────────────────────

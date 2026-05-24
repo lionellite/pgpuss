@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/token_pair.dart';
+import '../models/login_result.dart';
 import '../models/user.dart';
 import 'dio_provider.dart';
 
@@ -14,15 +14,19 @@ class AuthApi {
 
   final Dio _dio;
 
-  Future<TokenPair> login({
-    required String email,
+  /// Connexion email ou téléphone — aligné sur `/api/auth/login/phone/`.
+  Future<LoginResult> loginWithCredentials({
+    required String username,
     required String password,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/login/',
-      data: {'email': email, 'password': password},
+      '/api/auth/login/phone/',
+      data: {
+        'username': username.trim(),
+        'password': password,
+      },
     );
-    return TokenPair.fromJson(res.data ?? const {});
+    return LoginResult.fromJson(res.data ?? const {});
   }
 
   Future<void> register({
@@ -64,27 +68,5 @@ class AuthApi {
       'old_password': oldPassword,
       'new_password': newPassword,
     });
-  }
-
-  Future<List<AppUser>> listUsers({
-    String? search,
-    String? role,
-  }) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/auth/users/',
-      queryParameters: {
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (role != null && role.isNotEmpty) 'role': role,
-      },
-    );
-    final results = (res.data?['results'] as List?) ?? [];
-    return results
-        .whereType<Map<String, dynamic>>()
-        .map(AppUser.fromJson)
-        .toList(growable: false);
-  }
-
-  Future<void> updateUser(String userId, Map<String, dynamic> data) async {
-    await _dio.patch('/api/auth/users/$userId/', data: data);
   }
 }

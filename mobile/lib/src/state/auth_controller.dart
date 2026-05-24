@@ -20,25 +20,31 @@ class AuthSession {
 
 class AuthState {
   const AuthState({
-    required this.isLoading,
+    required this.isBootstrapping,
     this.session,
   });
 
-  final bool isLoading;
+  /// Chargement initial des tokens stockés uniquement.
+  final bool isBootstrapping;
   final AuthSession? session;
 
-  /// Préserve la session existante si non explicitement fournie.
-  /// Utiliser `clearSession: true` pour effacer la session.
+  bool get isLoggedIn => session != null;
+
   AuthState copyWith({
-    bool? isLoading,
+    bool? isBootstrapping,
     AuthSession? session,
     bool clearSession = false,
   }) {
     return AuthState(
-      isLoading: isLoading ?? this.isLoading,
+      isBootstrapping: isBootstrapping ?? this.isBootstrapping,
       session: clearSession ? null : (session ?? this.session),
     );
   }
+}
+
+/// Compte agent/admin : application mobile réservée aux usagers.
+class NotUsagerException implements Exception {
+  const NotUsagerException();
 }
 
 final authControllerProvider =
@@ -48,22 +54,27 @@ class AuthController extends Notifier<AuthState> {
   @override
   AuthState build() {
     unawaited(_bootstrap());
-    return const AuthState(isLoading: true, session: null);
+    return const AuthState(isBootstrapping: true, session: null);
   }
 
   Future<void> _bootstrap() async {
     final storage = ref.read(tokenStorageProvider);
     final pair = await storage.read();
     if (pair == null) {
-      state = state.copyWith(isLoading: false, clearSession: true);
+      state = const AuthState(isBootstrapping: false, session: null);
       return;
     }
 
     try {
       final authApi = ref.read(authApiProvider);
       final user = await authApi.me(accessToken: pair.accessToken);
+      if (user.role != 'USAGER') {
+        await storage.clear();
+        state = const AuthState(isBootstrapping: false, session: null);
+        return;
+      }
       state = AuthState(
-        isLoading: false,
+        isBootstrapping: false,
         session: AuthSession(
           accessToken: pair.accessToken,
           refreshToken: pair.refreshToken,
@@ -72,32 +83,34 @@ class AuthController extends Notifier<AuthState> {
       );
     } catch (_) {
       await storage.clear();
-      state = state.copyWith(isLoading: false, clearSession: true);
+      state = const AuthState(isBootstrapping: false, session: null);
     }
   }
 
-  Future<void> login({
-    required String email,
+  Future<AppUser> login({
+    required String username,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true);
-    try {
-      final authApi = ref.read(authApiProvider);
-      final tokens = await authApi.login(email: email, password: password);
-      final user = await authApi.me(accessToken: tokens.accessToken);
-      await ref.read(tokenStorageProvider).write(tokens);
-      state = AuthState(
-        isLoading: false,
-        session: AuthSession(
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          user: user,
-        ),
-      );
-    } catch (_) {
-      state = state.copyWith(isLoading: false);
-      rethrow;
+    final authApi = ref.read(authApiProvider);
+    final result = await authApi.loginWithCredentials(
+      username: username,
+      password: password,
+    );
+
+    if (result.user.role != 'USAGER') {
+      throw const NotUsagerException();
     }
+
+    await ref.read(tokenStorageProvider).write(result.tokens);
+    state = AuthState(
+      isBootstrapping: false,
+      session: AuthSession(
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        user: result.user,
+      ),
+    );
+    return result.user;
   }
 
   Future<void> register({
@@ -107,30 +120,23 @@ class AuthController extends Notifier<AuthState> {
     required String password,
     String? phone,
   }) async {
-    state = state.copyWith(isLoading: true);
-    try {
-      final authApi = ref.read(authApiProvider);
-      await authApi.register(
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: password,
-        phone: phone,
-      );
-      state = state.copyWith(isLoading: false);
-    } catch (_) {
-      state = state.copyWith(isLoading: false);
-      rethrow;
-    }
+    final authApi = ref.read(authApiProvider);
+    await authApi.register(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: password,
+      phone: phone,
+    );
   }
 
   Future<void> logout() async {
     await ref.read(tokenStorageProvider).clear();
-    state = const AuthState(isLoading: false, session: null);
+    state = const AuthState(isBootstrapping: false, session: null);
   }
 
   void forceLogout() {
-    state = const AuthState(isLoading: false, session: null);
+    state = const AuthState(isBootstrapping: false, session: null);
   }
 
   Future<void> refreshUser() async {
@@ -140,7 +146,7 @@ class AuthController extends Notifier<AuthState> {
       final user =
           await authApi.me(accessToken: state.session!.accessToken);
       state = AuthState(
-        isLoading: false,
+        isBootstrapping: false,
         session: AuthSession(
           accessToken: state.session!.accessToken,
           refreshToken: state.session!.refreshToken,

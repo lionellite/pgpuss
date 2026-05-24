@@ -85,7 +85,7 @@ export default function UsersPage() {
   }
 
   if (currentUser?.role !== 'ADMIN_PLATEFORME') {
-    return <div className="loading-center" style={{ color: '#8FA3BF' }}>Accès réservé à l'administrateur de la plateforme.</div>
+    return <div className="loading-center text-muted">Accès réservé à l&apos;administrateur de la plateforme.</div>
   }
 
   return (
@@ -98,7 +98,7 @@ export default function UsersPage() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+          <FiSearch aria-hidden style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="form-input" style={{ paddingLeft: '2.5rem' }}
             placeholder="Nom, email..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
@@ -141,12 +141,12 @@ export default function UsersPage() {
                         fontSize: '0.8rem', fontWeight: 700, color: 'white',
                       }}>{u.first_name?.[0]}{u.last_name?.[0]}</div>
                       <div>
-                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#F0F4FF' }}>{u.full_name}</div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{u.full_name}</div>
                         <div style={{ fontSize: '0.7rem', color: '#4A6080' }}>#{u.id?.slice(0, 8)}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>{u.email}</td>
+                  <td className="text-muted" style={{ fontSize: '0.8rem' }}>{u.email}</td>
                   <td>
                     {editing === u.id ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -177,8 +177,8 @@ export default function UsersPage() {
                       <span className="badge badge-info">{ROLE_LABELS[u.role] || u.role}</span>
                     )}
                   </td>
-                  <td style={{ fontSize: '0.75rem', color: '#8FA3BF' }}>
-                    {u.establishment_name && <div>🏥 {u.establishment_name}</div>}
+                  <td className="text-muted" style={{ fontSize: '0.75rem' }}>
+                    {u.establishment_name && <div>{u.establishment_name}</div>}
                     {u.zone_sanitaire_name && <div>🗺️ {u.zone_sanitaire_name}</div>}
                     {u.departement && <div>🏛️ {u.departement}</div>}
                     {!u.establishment_name && !u.zone_sanitaire_name && !u.departement && '—'}

@@ -16,8 +16,13 @@ class EstablishmentsApi {
 
   final Dio _dio;
 
-  Future<Paginated<EstablishmentItem>> list() async {
-    final res = await _dio.get<Map<String, dynamic>>('/api/establishments/');
+  Future<Paginated<EstablishmentItem>> list({String? regionId}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/establishments/',
+      queryParameters: regionId != null && regionId.isNotEmpty
+          ? {'region': regionId}
+          : null,
+    );
     return Paginated.fromJson(
       res.data ?? const {},
       decode: EstablishmentItem.fromJson,

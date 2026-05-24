@@ -148,7 +148,7 @@ export default function PlaintesListPage() {
                     <td><StatusBadge status={c.status} /></td>
                     <td><PriorityBadge priority={c.priority} /></td>
                     <td>
-                      <span style={{ fontSize: '0.75rem', color: '#8FA3BF', background: 'rgba(0,119,182,0.07)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,119,182,0.07)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
                         {c.channel_display}
                       </span>
                     </td>
@@ -170,7 +170,7 @@ export default function PlaintesListPage() {
           {count > PAGE_SIZE && (
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1.5rem', alignItems: 'center' }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>←</button>
-              <span style={{ fontSize: '0.875rem', color: '#8FA3BF' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                 Page {page} / {Math.ceil(count / PAGE_SIZE)}
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(count / PAGE_SIZE)}>→</button>

@@ -4,10 +4,19 @@ import { useForm } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { FiUpload, FiX, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX, FiCopy, FiCheck, FiMic, FiTrash2 } from 'react-icons/fi'
+import { FiUpload, FiX, FiChevronRight, FiChevronLeft, FiVolume2, FiVolumeX, FiCopy, FiCheck, FiMic, FiTrash2, FiCheckCircle } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
+
+function cleanCategoryLabel(name) {
+  if (!name) return ''
+  return name
+    .replace(/[\u{1F300}-\u{1F9FF}\u2600-\u27BF]/gu, '')
+    .replace(/\bP[1-5]\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
 const VOCAL_GUIDES = [
   "Étape 1 : Choisissez l'établissement de santé concerné par votre plainte. Vous pouvez filtrer par région.",
@@ -29,11 +38,15 @@ export default function DepotPage() {
   const [services, setServices] = useState([])
   const [selectedRegion, setSelectedRegion] = useState('')
   const [selectedEst, setSelectedEst] = useState(null)
+  const [manualEstablishment, setManualEstablishment] = useState(false)
+  const [manualEstName, setManualEstName] = useState('')
+  const [manualEstAddress, setManualEstAddress] = useState('')
   const [submitted, setSubmitted] = useState(null)
   const [files, setFiles] = useState([])
   const [vocalEnabled, setVocalEnabled] = useState(false)
   const [copied, setCopied] = useState(false)
   const [voiceBlob, setVoiceBlob] = useState(null)
+  const [descriptionMode, setDescriptionMode] = useState('text')
   const [recording, setRecording] = useState(false)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
@@ -43,7 +56,7 @@ export default function DepotPage() {
     if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl)
   }, [voicePreviewUrl])
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, getValues, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       is_anonymous: false,
       channel: user?.role === 'AGENT_CALL_CENTER' ? 'CALL_CENTER' : 'WEB',
@@ -64,6 +77,15 @@ export default function DepotPage() {
       setRegions(regs.data.results || regs.data)
     }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (user?.role === 'USAGER') {
+      const name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim()
+      if (name) setValue('complainant_name', name)
+      if (user.email) setValue('complainant_email', user.email)
+      if (user.phone) setValue('complainant_phone', user.phone)
+    }
+  }, [user, setValue])
 
   useEffect(() => {
     if (selectedEst) {
@@ -130,6 +152,16 @@ export default function DepotPage() {
 
   const clearVoice = () => setVoiceBlob(null)
 
+  const switchDescriptionMode = (mode) => {
+    setDescriptionMode(mode)
+    if (mode === 'voice') {
+      setValue('description', '')
+    } else {
+      clearVoice()
+      if (recording) stopRecording()
+    }
+  }
+
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
@@ -137,29 +169,103 @@ export default function DepotPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const canAdvanceStep = () => {
+    const data = getValues()
+    switch (step) {
+      case 0:
+        return manualEstablishment
+          ? manualEstName.trim().length > 0
+          : Boolean(data.establishment)
+      case 1:
+        return Boolean(data.category)
+      case 2:
+        if (!data.title?.trim()) return false
+        if (descriptionMode === 'voice') return Boolean(voiceBlob)
+        return Boolean(data.description?.trim())
+      case 3:
+        if (isCallCenter) {
+          return Boolean(data.complainant_name?.trim()) && Boolean(data.complainant_phone?.trim())
+        }
+        if (data.is_anonymous) {
+          return Boolean(data.complainant_phone?.trim())
+        }
+        return Boolean(data.complainant_name?.trim())
+      default:
+        return true
+    }
+  }
+
+  const goNextStep = () => {
+    if (!canAdvanceStep()) {
+      toast.error('Veuillez compléter les champs obligatoires de cette étape.')
+      return
+    }
+    setStep((s) => s + 1)
+  }
+
   const onSubmit = async (data) => {
     try {
-      const fd = new FormData()
-      fd.append('title', data.title)
-      fd.append('description', data.description)
-      fd.append('category', data.category)
-      if (data.subcategory) fd.append('subcategory', data.subcategory)
-      fd.append('establishment', data.establishment)
-      if (data.service) fd.append('service', data.service)
-      fd.append('is_anonymous', data.is_anonymous ? 'true' : 'false')
-      fd.append('complainant_name', data.is_anonymous ? '' : (data.complainant_name || ''))
-      fd.append('complainant_email', data.is_anonymous ? '' : (data.complainant_email || ''))
-      fd.append('complainant_phone', data.is_anonymous ? '' : (data.complainant_phone || ''))
-      fd.append('channel', data.channel || 'WEB')
-      files.forEach((f) => fd.append('attachments', f))
-      if (voiceBlob) {
-        fd.append('voice_file', voiceBlob, 'message-vocal.webm')
+      const isVoice = descriptionMode === 'voice'
+      const payload = {
+        title: data.title,
+        description_mode: isVoice ? 'voice' : 'text',
+        description: isVoice ? undefined : data.description,
+        category: data.category,
+        is_anonymous: Boolean(data.is_anonymous),
+        channel: data.channel || 'WEB',
       }
-      const { data: result } = await complaintsAPI.create(fd)
+      if (data.subcategory) payload.subcategory = data.subcategory
+      if (manualEstablishment) {
+        payload.establishment_name_manual = manualEstName.trim()
+        if (manualEstAddress.trim()) payload.establishment_address_manual = manualEstAddress.trim()
+      } else {
+        payload.establishment = data.establishment
+      }
+      if (data.service) payload.service = data.service
+      if (data.is_anonymous) {
+        payload.complainant_phone = data.complainant_phone || ''
+      } else {
+        if (data.complainant_name) payload.complainant_name = data.complainant_name
+        if (data.complainant_email) payload.complainant_email = data.complainant_email
+        if (data.complainant_phone) payload.complainant_phone = data.complainant_phone
+      }
+
+      const { data: result } = await complaintsAPI.createJson(payload)
+      const complaintId = result.complaint_id
+      const uploadToken = result.upload_token
+
+      let mediaWarning = false
+      if (complaintId && uploadToken) {
+        if (isVoice && voiceBlob) {
+          try {
+            const vfd = new FormData()
+            vfd.append('voice_file', voiceBlob, 'message-vocal.webm')
+            await complaintsAPI.uploadDepositMedia(complaintId, vfd, uploadToken)
+          } catch {
+            mediaWarning = true
+          }
+        }
+        for (const file of files) {
+          try {
+            const afd = new FormData()
+            afd.append('attachment', file)
+            await complaintsAPI.uploadDepositMedia(complaintId, afd, uploadToken)
+          } catch {
+            mediaWarning = true
+          }
+        }
+      }
+
       setSubmitted(result)
       toast.success('Plainte déposée avec succès!')
+      if (mediaWarning) {
+        toast('Plainte enregistrée, mais un ou plusieurs fichiers n\'ont pas pu être envoyés.', { icon: '⚠️' })
+      }
     } catch (e) {
-      toast.error("Erreur lors du dépôt. Vérifiez tous les champs.")
+      const msg = e.response?.data?.error
+        || Object.values(e.response?.data || {}).flat().join(', ')
+        || "Erreur lors du dépôt. Vérifiez tous les champs."
+      toast.error(msg)
     }
   }
 
@@ -177,7 +283,7 @@ export default function DepotPage() {
               background: 'rgba(6,214,160,0.1)', border: '3px solid #06D6A0',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '2.5rem',
-            }}>✅</div>
+            }}><FiCheckCircle aria-hidden style={{ fontSize: '2.5rem', color: 'var(--color-primary)' }} /></div>
             <h1 style={{ fontFamily: 'Inter', fontWeight: 800, fontSize: '2rem', color: '#111', marginBottom: '0.75rem' }}>
               Plainte déposée !
             </h1>
@@ -291,36 +397,73 @@ export default function DepotPage() {
               {step === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#111' }}>1. Établissement concerné</h2>
-                  <div className="form-group">
-                    <label className="form-label">Région</label>
-                    <select className="form-select" value={selectedRegion} onChange={e => {
-                      setSelectedRegion(e.target.value)
-                      setValue('establishment', '')
-                    }}>
-                      <option value="">Toutes les régions</option>
-                      {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Établissement *</label>
-                    <select className="form-select" {...register('establishment', { required: 'Requis' })}>
-                      <option value="">Sélectionnez un établissement</option>
-                      {establishments
-                        .filter(e => !selectedRegion || e.region === selectedRegion)
-                        .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
-                      }
-                    </select>
-                    {errors.establishment && <span className="form-error">{errors.establishment.message}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="depot-service">Service concerné (optionnel)</label>
-                    <select id="depot-service" className="form-select" disabled={!selectedEst} {...register('service')}>
-                      <option value="">— Tout l&apos;établissement —</option>
-                      {services.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={manualEstablishment}
+                      onChange={(e) => {
+                        setManualEstablishment(e.target.checked)
+                        if (e.target.checked) setValue('establishment', '')
+                        else { setManualEstName(''); setManualEstAddress('') }
+                      }}
+                    />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Mon établissement n&apos;est pas dans la liste</span>
+                  </label>
+                  {manualEstablishment ? (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Nom de l&apos;établissement *</label>
+                        <input
+                          className="form-input"
+                          value={manualEstName}
+                          onChange={(e) => setManualEstName(e.target.value)}
+                          placeholder="Ex. Centre de santé de..."
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Adresse / localisation (optionnel)</label>
+                        <input
+                          className="form-input"
+                          value={manualEstAddress}
+                          onChange={(e) => setManualEstAddress(e.target.value)}
+                          placeholder="Quartier, commune..."
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Région</label>
+                        <select className="form-select" value={selectedRegion} onChange={e => {
+                          setSelectedRegion(e.target.value)
+                          setValue('establishment', '')
+                          setSelectedEst(null)
+                        }}>
+                          <option value="">Toutes les régions</option>
+                          {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Établissement *</label>
+                        <select className="form-select" {...register('establishment')}>
+                          <option value="">Sélectionnez un établissement</option>
+                          {establishments
+                            .filter(e => !selectedRegion || e.region === selectedRegion)
+                            .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
+                          }
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="depot-service">Service concerné (optionnel)</label>
+                        <select id="depot-service" className="form-select" disabled={!selectedEst} {...register('service')}>
+                          <option value="">— Tout l&apos;établissement —</option>
+                          {services.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -337,8 +480,7 @@ export default function DepotPage() {
                         textAlign: 'center',
                       }}>
                         <input type="radio" value={cat.id} {...register('category', { required: 'Requis' })} style={{ display: 'none' }} />
-                        <span style={{ fontSize: '2rem' }}>{cat.icon}</span>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cat.name}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cleanCategoryLabel(cat.name)}</span>
                       </label>
                     ))}
                   </div>
@@ -349,17 +491,67 @@ export default function DepotPage() {
               {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description</h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Choisissez <strong>une seule</strong> option : texte au clavier ou message vocal.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} role="group" aria-label="Mode de description">
+                    <button
+                      type="button"
+                      className={`btn ${descriptionMode === 'text' ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => switchDescriptionMode('text')}
+                    >
+                      Texte au clavier
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${descriptionMode === 'voice' ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => switchDescriptionMode('voice')}
+                    >
+                      Message vocal
+                    </button>
+                  </div>
                   <div className="form-group">
                     <label className="form-label">Titre de la plainte *</label>
                     <input className="form-input" placeholder="Résumez votre plainte"
                       {...register('title', { required: 'Titre requis' })} />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Détails *</label>
-                    <textarea className="form-textarea" style={{ minHeight: 150 }}
-                      placeholder="Expliquez ce qui s'est passé..."
-                      {...register('description', { required: 'Description requise' })} />
-                  </div>
+                  {descriptionMode === 'text' ? (
+                    <div className="form-group">
+                      <label className="form-label">Détails *</label>
+                      <textarea className="form-textarea" style={{ minHeight: 150 }}
+                        placeholder="Expliquez ce qui s'est passé..."
+                        {...register('description', { required: descriptionMode === 'text' ? 'Description requise' : false })} />
+                      {errors.description && <span className="form-error">{errors.description.message}</span>}
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <span className="form-label" id="vocal-record-label">Enregistrement vocal *</span>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                        Décrivez oralement votre plainte. Le texte détaillé n&apos;est pas nécessaire dans ce mode.
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                        {!recording ? (
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={startRecording} aria-labelledby="vocal-record-label">
+                            <FiMic aria-hidden /> Enregistrer
+                          </button>
+                        ) : (
+                          <button type="button" className="btn btn-danger btn-sm" onClick={stopRecording}>
+                            Arrêter l&apos;enregistrement
+                          </button>
+                        )}
+                        {voiceBlob && (
+                          <>
+                            <audio controls src={voicePreviewUrl || undefined} style={{ maxWidth: '100%', flex: '1 1 200px' }}>
+                              <track kind="captions" />
+                            </audio>
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={clearVoice} aria-label="Supprimer le message vocal">
+                              <FiTrash2 aria-hidden /> Supprimer
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="form-group">
                     <label className="form-label" htmlFor="depot-files">Pièces jointes (photos, PDF…)</label>
                     <input
@@ -372,7 +564,7 @@ export default function DepotPage() {
                       aria-describedby="depot-files-hint"
                     />
                     <p id="depot-files-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                      Jusqu&apos;à 5 fichiers. Formats courants acceptés.
+                      Jusqu&apos;à 5 fichiers, 4 Mo max chacun. Envoyés après validation de la plainte.
                     </p>
                     {files.length > 0 && (
                       <ul style={{ marginTop: '0.75rem', fontSize: '0.8rem', listStyle: 'none', padding: 0 }}>
@@ -387,33 +579,6 @@ export default function DepotPage() {
                         ))}
                       </ul>
                     )}
-                  </div>
-                  <div className="form-group">
-                    <span className="form-label" id="vocal-record-label">Message vocal (optionnel)</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                      Utile si vous ne pouvez pas taper un long texte. Les fichiers audio sont traités comme une pièce du dossier.
-                    </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                      {!recording ? (
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={startRecording} aria-labelledby="vocal-record-label">
-                          <FiMic aria-hidden /> Enregistrer
-                        </button>
-                      ) : (
-                        <button type="button" className="btn btn-danger btn-sm" onClick={stopRecording}>
-                          Arrêter l&apos;enregistrement
-                        </button>
-                      )}
-                      {voiceBlob && (
-                        <>
-                          <audio controls src={voicePreviewUrl || undefined} style={{ maxWidth: '100%', flex: '1 1 200px' }}>
-                            <track kind="captions" />
-                          </audio>
-                          <button type="button" className="btn btn-ghost btn-sm" onClick={clearVoice} aria-label="Supprimer le message vocal">
-                            <FiTrash2 aria-hidden /> Supprimer l&apos;audio
-                          </button>
-                        </>
-                      )}
-                    </div>
                   </div>
                 </div>
               )}
@@ -444,11 +609,29 @@ export default function DepotPage() {
                         <input type="checkbox" {...register('is_anonymous')} />
                         <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Déposer de façon anonyme</span>
                       </label>
-                      {!isAnonymous && (
+                      {isAnonymous ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          <input className="form-input" placeholder="Nom complet" {...register('complainant_name')} />
-                          <input className="form-input" placeholder="Email" {...register('complainant_email')} />
-                          <input className="form-input" placeholder="Téléphone" {...register('complainant_phone')} />
+                          <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                            Votre identité reste confidentielle. Indiquez un numéro de téléphone pour vous recontacter si nécessaire.
+                          </p>
+                          <input
+                            className="form-input"
+                            placeholder="Téléphone *"
+                            {...register('complainant_phone', { required: isAnonymous ? 'Téléphone requis pour le dépôt anonyme' : false })}
+                          />
+                          {errors.complainant_phone && <span className="form-error">{errors.complainant_phone.message}</span>}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {user?.role === 'USAGER' && (
+                            <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                              Vos coordonnées sont préremplies depuis votre compte. Vous pouvez les modifier avant validation.
+                            </p>
+                          )}
+                          <input className="form-input" placeholder="Nom complet *" {...register('complainant_name', { required: !isAnonymous ? 'Nom requis' : false })} />
+                          {errors.complainant_name && <span className="form-error">{errors.complainant_name.message}</span>}
+                          <input className="form-input" placeholder="Email (optionnel)" {...register('complainant_email')} />
+                          <input className="form-input" placeholder="Téléphone (optionnel)" {...register('complainant_phone')} />
                         </div>
                       )}
                     </>
@@ -479,7 +662,7 @@ export default function DepotPage() {
                   </button>
                 )}
                 {step < 4 && (
-                  <button type="button" className="btn btn-primary" onClick={() => setStep(s => s + 1)} style={{ marginLeft: 'auto' }}>
+                  <button type="button" className="btn btn-primary" onClick={goNextStep} style={{ marginLeft: 'auto' }} disabled={!canAdvanceStep()}>
                     Suivant <FiChevronRight />
                   </button>
                 )}

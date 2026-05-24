@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../api/complaints_api.dart';
 import '../../../models/track_result.dart';
 import '../../theme.dart';
+import '../../widgets/app_chrome.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/timeline_widget.dart';
 
@@ -48,8 +49,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Suivre ma plainte')),
+    return AppPageScaffold(
+      title: 'Suivre ma plainte',
+      fallbackLocation: '/',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -155,14 +157,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                               ),
                             ],
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              StatusBadge(status: _result!.status),
-                              const SizedBox(height: 6),
-                              PriorityBadge(priority: _result!.priority),
-                            ],
-                          ),
+                          StatusBadge(status: _result!.status),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -173,9 +168,28 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                      if (_result!.categoryName != null &&
+                          _result!.categoryName!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Catégorie : ${_result!.categoryName}',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        ),
+                      ],
+                      if (_result!.description != null &&
+                          _result!.description!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _result!.description!,
+                          style: TextStyle(fontSize: 14, color: Colors.grey[800], height: 1.4),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       _infoRow('Établissement',
                           _result!.establishmentName ?? 'Non spécifié'),
+                      if (_result!.establishmentAddress != null &&
+                          _result!.establishmentAddress!.isNotEmpty)
+                        _infoRow('Adresse', _result!.establishmentAddress!),
                       if (_result!.createdAt != null)
                         _infoRow(
                           'Date de dépôt',
@@ -223,7 +237,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "Vous n'avez pas de numéro de ticket ? Connectez-vous pour accéder à vos plaintes.",
+                        "Le suivi par numéro de ticket est public : aucune connexion n'est requise. Conservez le numéro reçu lors du dépôt.",
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[700],

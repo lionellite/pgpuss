@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../api/complaints_api.dart';
 import '../../../models/complaint.dart';
 import '../../theme.dart';
+import '../../widgets/app_chrome.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/timeline_widget.dart';
 
@@ -44,21 +45,21 @@ class _UserComplaintDetailScreenState
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Détail')),
-        body: const Center(child: CircularProgressIndicator()),
+      return const AppPageScaffold(
+        title: 'Détail de la plainte',
+        fallbackLocation: '/complaints',
+        body: Center(child: CircularProgressIndicator()),
       );
     }
     final c = _complaint;
     if (c == null) return const SizedBox.shrink();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(c.ticketNumber),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        ],
-      ),
+    return AppPageScaffold(
+      title: c.ticketNumber,
+      fallbackLocation: '/complaints',
+      actions: [
+        IconButton(icon: const Icon(Icons.refresh), onPressed: _load, tooltip: 'Actualiser'),
+      ],
       body: RefreshIndicator(
         onRefresh: _load,
         child: SingleChildScrollView(

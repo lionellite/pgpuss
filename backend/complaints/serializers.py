@@ -60,8 +60,64 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'description', 'category', 'subcategory',
             'is_anonymous', 'complainant_name', 'complainant_phone',
-            'complainant_email', 'establishment', 'service', 'channel'
+            'complainant_email', 'establishment', 'establishment_name_manual',
+            'establishment_address_manual', 'service', 'channel',
         ]
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        raw = getattr(request, 'data', {}) if request else {}
+        manual_name = (raw.get('establishment_name_manual') or attrs.get('establishment_name_manual') or '').strip()
+        manual_address = (raw.get('establishment_address_manual') or attrs.get('establishment_address_manual') or '').strip()
+        establishment = attrs.get('establishment')
+        if establishment == '':
+            attrs['establishment'] = None
+            establishment = None
+
+        if establishment and manual_name:
+            raise serializers.ValidationError(
+                'Indiquez soit un établissement de la liste, soit un nom manuel, pas les deux.'
+            )
+        if not establishment and not manual_name:
+            raise serializers.ValidationError(
+                {'establishment': 'Sélectionnez un établissement ou saisissez son nom.'}
+            )
+
+        attrs['establishment_name_manual'] = manual_name
+        attrs['establishment_address_manual'] = manual_address
+        if manual_name:
+            attrs['establishment'] = None
+
+        is_anonymous = attrs.get('is_anonymous', False)
+        if is_anonymous in (True, 'true', '1', 'True'):
+            phone = (attrs.get('complainant_phone') or '').strip()
+            if not phone:
+                raise serializers.ValidationError(
+                    {'complainant_phone': 'Le numéro de téléphone est obligatoire pour un dépôt anonyme.'}
+                )
+
+        mode = (raw.get('description_mode') or 'text').strip().lower()
+        desc = (attrs.get('description') or '').strip()
+        has_voice_in_request = bool(request and request.FILES.get('voice_file'))
+
+        if mode == 'voice':
+            if has_voice_in_request and desc and desc != Complaint.VOICE_DESCRIPTION_PLACEHOLDER:
+                raise serializers.ValidationError(
+                    {'description': 'En mode vocal, ne saisissez pas de description textuelle.'}
+                )
+            attrs['description'] = Complaint.VOICE_DESCRIPTION_PLACEHOLDER
+        else:
+            if has_voice_in_request:
+                raise serializers.ValidationError(
+                    {'description': 'Choisissez soit une description texte, soit un message vocal.'}
+                )
+            if not desc:
+                raise serializers.ValidationError(
+                    {'description': 'La description est obligatoire en mode texte.'}
+                )
+            attrs['description'] = desc
+
+        return attrs
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -70,7 +126,11 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         validated_data['status'] = ComplaintStatus.SOUMISE
         complaint = super().create(validated_data)
 
-        # Perform NLP Analysis (Simulated)
+        import secrets
+        complaint.media_upload_token = secrets.token_urlsafe(32)
+        complaint.save(update_fields=['media_upload_token'])
+
+        # NLP léger : saute si catégorie déjà choisie
         complaint.perform_nlp_analysis()
         complaint.save()
 

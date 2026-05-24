@@ -9,7 +9,11 @@ class TrackResult {
     required this.priority,
     required this.priorityDisplay,
     this.establishmentName,
+    this.establishmentAddress,
+    this.categoryName,
+    this.description,
     this.createdAt,
+    this.updatedAt,
     this.timeline,
   });
 
@@ -20,7 +24,11 @@ class TrackResult {
   final String priority;
   final String priorityDisplay;
   final String? establishmentName;
+  final String? establishmentAddress;
+  final String? categoryName;
+  final String? description;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
   final List<HistoryEntry>? timeline;
 
   factory TrackResult.fromJson(Map<String, dynamic> json) {
@@ -32,7 +40,11 @@ class TrackResult {
       priority: (json['priority'] as String?) ?? '',
       priorityDisplay: (json['priority_display'] as String?) ?? '',
       establishmentName: json['establishment_name'] as String?,
+      establishmentAddress: json['establishment_address'] as String?,
+      categoryName: json['category_name'] as String?,
+      description: json['description'] as String?,
       createdAt: DateTime.tryParse((json['created_at'] as String?) ?? ''),
+      updatedAt: DateTime.tryParse((json['updated_at'] as String?) ?? ''),
       timeline: (json['timeline'] as List?)
           ?.whereType<Map<String, dynamic>>()
           .map(HistoryEntry.fromJson)

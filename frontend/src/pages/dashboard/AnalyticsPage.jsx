@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
   }, [])
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>
-  if (!stats) return <div className="loading-center" style={{ color: '#8FA3BF' }}>Données indisponibles</div>
+  if (!stats) return <div className="loading-center text-muted">Données indisponibles</div>
 
   // Prepare data
   const monthlyData = (stats.complaints_by_month || []).map(m => ({

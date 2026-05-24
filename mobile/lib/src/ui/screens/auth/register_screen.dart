@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../state/auth_controller.dart';
+import '../../../utils/api_errors.dart';
+import '../../theme.dart';
+import '../../widgets/app_chrome.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -48,22 +51,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             phone: _phoneCtrl.text.trim(),
           );
       if (!mounted) return;
-      // Afficher un dialogue de confirmation avant de rediriger
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
-              Icon(Icons.check_circle, color: Color(0xFF008751), size: 28),
+              Icon(Icons.check_circle, color: AppColors.primary),
               SizedBox(width: 8),
-              Text('Compte créé !'),
+              Text('Compte créé'),
             ],
           ),
           content: Text(
-            'Votre compte a été créé avec succès.\n'
-            'Vous pouvez maintenant vous connecter avec\n${_emailCtrl.text.trim()}',
+            'Votre compte usager a été créé.\n'
+            'Connectez-vous avec ${_emailCtrl.text.trim()}',
           ),
           actions: [
             FilledButton(
@@ -78,37 +79,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
     } on DioException catch (e) {
       if (!mounted) return;
-      final data = e.response?.data;
-      String msg = "Erreur lors de l'inscription.";
-      if (data is Map) {
-        // Extraire tous les messages d'erreur du backend
-        final errors = data.entries
-            .map((entry) {
-              final val = entry.value;
-              if (val is List) return val.join(', ');
-              return val.toString();
-            })
-            .join('\n');
-        if (errors.isNotEmpty) msg = errors;
-      }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(msg),
-          backgroundColor: const Color(0xFFE8112D),
-          duration: const Duration(seconds: 6),
-          behavior: SnackBarBehavior.floating,
-        ));
+      showErrorSnackBar(
+        ScaffoldMessenger.of(context),
+        messageFromDio(e, fallback: "Erreur lors de l'inscription."),
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text("Erreur lors de l'inscription. Vérifiez votre connexion."),
-          backgroundColor: Color(0xFFE8112D),
-          duration: Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-        ));
+      showErrorSnackBar(
+        ScaffoldMessenger.of(context),
+        "Erreur lors de l'inscription. Vérifiez votre connexion.",
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -116,186 +96,132 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF008751), Color(0xFF005F3A)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Créer un compte',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Rejoignez la plateforme PGP-USS',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _firstNameCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Prénom',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (v) =>
-                                      (v ?? '').trim().isEmpty ? 'Requis' : null,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _lastNameCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nom',
-                                  ),
-                                  validator: (v) =>
-                                      (v ?? '').trim().isEmpty ? 'Requis' : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                            validator: (v) {
-                              final s = (v ?? '').trim();
-                              if (s.isEmpty) return 'Email requis';
-                              if (!s.contains('@')) return 'Email invalide';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneCtrl,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'Téléphone (optionnel)',
-                              prefixIcon: Icon(Icons.phone_outlined),
-                              hintText: '+229 XX XX XX XX',
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordCtrl,
-                            obscureText: _obscure,
-                            decoration: InputDecoration(
-                              labelText: 'Mot de passe',
-                              prefixIcon: const Icon(Icons.lock_outlined),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscure
-                                    ? Icons.visibility_off
-                                    : Icons.visibility),
-                                onPressed: () =>
-                                    setState(() => _obscure = !_obscure),
-                              ),
-                            ),
-                            validator: (v) {
-                              if ((v ?? '').length < 8) {
-                                return 'Min. 8 caractères';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmCtrl,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Confirmer le mot de passe',
-                              prefixIcon: Icon(Icons.lock_outlined),
-                            ),
-                            validator: (v) {
-                              if (v != _passwordCtrl.text) {
-                                return 'Les mots de passe ne correspondent pas';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: _loading ? null : _submit,
-                            child: _loading
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Créer mon compte'),
-                          ),
-                        ],
+    return PublicAuthLayout(
+      title: 'Créer un compte',
+      subtitle: 'Compte usager pour déposer et suivre vos plaintes.',
+      showLogo: false,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _firstNameCtrl,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(labelText: 'Prénom'),
+                        validator: (v) =>
+                            (v ?? '').trim().isEmpty ? 'Requis' : null,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () => context.go('/login'),
-                    child: Text(
-                      'Déjà un compte ? Se connecter',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lastNameCtrl,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(labelText: 'Nom'),
+                        validator: (v) =>
+                            (v ?? '').trim().isEmpty ? 'Requis' : null,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    child: Text(
-                      '← Retour à l\'accueil',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 13,
+                  validator: (v) {
+                    final s = (v ?? '').trim();
+                    if (s.isEmpty) return 'Email requis';
+                    if (!s.contains('@')) return 'Email invalide';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Téléphone (optionnel)',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    hintText: '+229 XX XX XX XX',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordCtrl,
+                  obscureText: _obscure,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe',
+                    prefixIcon: const Icon(Icons.lock_outlined),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility,
                       ),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                ],
-              ),
+                  validator: (v) {
+                    if ((v ?? '').length < 8) return 'Minimum 8 caractères';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _confirmCtrl,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirmer le mot de passe',
+                    prefixIcon: Icon(Icons.lock_outlined),
+                  ),
+                  validator: (v) {
+                    if (v != _passwordCtrl.text) {
+                      return 'Les mots de passe ne correspondent pas';
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _loading ? null : _submit,
+                  child: _loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Créer mon compte'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Déjà un compte ? Se connecter'),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/'),
+                  child: Text(
+                    'Retour à l\'accueil',
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

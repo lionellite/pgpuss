@@ -4,7 +4,9 @@ import { analyticsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
-import { FiFileText, FiAlertCircle, FiCheckCircle, FiClock, FiTrendingUp, FiArrowRight } from 'react-icons/fi'
+import {
+  FiFileText, FiAlertCircle, FiCheckCircle, FiClock, FiTrendingUp, FiArrowRight, FiStar,
+} from 'react-icons/fi'
 
 export default function DashboardHome() {
   const { user } = useAuth()
@@ -26,7 +28,7 @@ export default function DashboardHome() {
     { label: 'Résolues', value: stats?.resolved_complaints ?? 0, icon: <FiCheckCircle />, color: 'var(--color-primary)' },
     { label: 'En retard', value: stats?.overdue_complaints ?? 0, icon: <FiAlertCircle />, color: '#dc2626' },
     { label: 'Temps moy. résolution', value: stats?.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', icon: <FiTrendingUp />, color: '#4f46e5' },
-    { label: 'Satisfaction moyenne', value: stats?.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', icon: '⭐', color: '#d97706' },
+    { label: 'Satisfaction moyenne', value: stats?.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', icon: <FiStar />, color: '#d97706' },
   ]
 
   const STATUS_COLORS = {
@@ -51,34 +53,29 @@ export default function DashboardHome() {
           Bienvenue, {user?.first_name} — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
         {/* Contexte hiérarchique pyramide sanitaire */}
-        <div style={{
-          marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.5rem 1rem', borderRadius: '8px',
-          background: 'rgba(0,135,81,0.06)', border: '1px solid rgba(0,135,81,0.15)',
-          fontSize: '0.8rem', color: '#008751', fontWeight: 600,
-        }}>
-          {user?.role === 'PFE' && `🏥 Niveau Périphérique — ${user.establishment_name || 'Établissement'}`}
-          {user?.role === 'DIRECTEUR_EST' && `🏥 Direction — ${user.establishment_name || 'Établissement'}`}
-          {user?.role === 'AGENT_INTERNE' && `👤 Agent Affecté — ${user.establishment_name || 'Établissement'}`}
-          {user?.role === 'PFZS' && `🗺️ Zone Sanitaire — ${user.zone_sanitaire_name || 'Zone'}`}
-          {user?.role === 'DDS' && `🏛️ Niveau Départemental — ${user.departement || 'Département'}`}
-          {user?.role === 'DQSS' && '🇧🇯 Niveau National — DQSS / Agence Qualité'}
-          {user?.role === 'CABINET' && '🇧🇯 Niveau National — Ministère de la Santé'}
-          {user?.role === 'AGENT_CALL_CENTER' && '📞 Call Center — Ligne Verte 136'}
-          {user?.role === 'PNUSS' && `🤝 PNUSS — ${user.zone_sanitaire_name || user.departement || 'National'}`}
-          {user?.role === 'ADMIN_PLATEFORME' && '⚙️ Administration Plateforme'}
-        </div>
+        <p className="context-badge">
+          {user?.role === 'PFE' && <>Niveau périphérique — {user.establishment_name || 'Établissement'}</>}
+          {user?.role === 'DIRECTEUR_EST' && <>Direction — {user.establishment_name || 'Établissement'}</>}
+          {user?.role === 'AGENT_INTERNE' && <>Agent affecté — {user.establishment_name || 'Établissement'}</>}
+          {user?.role === 'PFZS' && <>Zone sanitaire — {user.zone_sanitaire_name || 'Zone'}</>}
+          {user?.role === 'DDS' && <>Niveau départemental — {user.departement || 'Département'}</>}
+          {user?.role === 'DQSS' && 'Niveau national — DQSS'}
+          {user?.role === 'CABINET' && 'Niveau national — Ministère de la Santé'}
+          {user?.role === 'AGENT_CALL_CENTER' && 'Call center — Ligne verte 136'}
+          {user?.role === 'PNUSS' && <>PNUSS — {user.zone_sanitaire_name || user.departement || 'National'}</>}
+          {user?.role === 'ADMIN_PLATEFORME' && 'Administration plateforme'}
+        </p>
       </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
         {kpis.map((kpi, i) => (
-          <div key={i} className="stat-card" style={{ borderLeftColor: kpi.color }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '1.25rem', color: kpi.color }}>{kpi.icon}</div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>{kpi.label}</div>
+          <div key={i} className="kpi-card" style={{ borderLeftColor: kpi.color }}>
+            <div className="kpi-card__head">
+              <span className="kpi-card__icon" style={{ color: kpi.color }}>{kpi.icon}</span>
+              <span className="kpi-card__label">{kpi.label}</span>
             </div>
-            <div className="stat-value" style={{ fontSize: '2rem', color: '#111' }}>{kpi.value}</div>
+            <div className="kpi-card__value">{kpi.value}</div>
           </div>
         ))}
       </div>
@@ -86,7 +83,7 @@ export default function DashboardHome() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         {/* By Status */}
         <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '1.5rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
             Répartition par statut
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
@@ -96,11 +93,11 @@ export default function DashboardHome() {
               return (
                 <div key={status}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>{STATUS_LABELS[status] || status}</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: STATUS_COLORS[status] || '#8FA3BF' }}>{count}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{STATUS_LABELS[status] || status}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: STATUS_COLORS[status] || 'var(--text-muted)' }}>{count}</span>
                   </div>
-                  <div style={{ height: 6, borderRadius: '3px', background: 'rgba(0,119,182,0.1)' }}>
-                    <div style={{ height: '100%', borderRadius: '3px', width: `${pct}%`, background: STATUS_COLORS[status] || '#8FA3BF', transition: 'width 0.8s ease' }} />
+                  <div style={{ height: 6, borderRadius: '2px', background: 'var(--bg-muted)' }}>
+                    <div style={{ height: '100%', borderRadius: '2px', width: `${pct}%`, background: STATUS_COLORS[status] || 'var(--text-muted)' }} />
                   </div>
                 </div>
               )
@@ -110,7 +107,7 @@ export default function DashboardHome() {
 
         {/* By Priority */}
         <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '1.5rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
             Répartition par priorité
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -127,11 +124,11 @@ export default function DashboardHome() {
               return (
                 <div key={key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#8FA3BF' }}>{label}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</span>
                     <span style={{ fontSize: '0.8rem', fontWeight: 600, color }}>{count} ({pct}%)</span>
                   </div>
-                  <div style={{ height: 6, borderRadius: '3px', background: 'rgba(0,119,182,0.1)' }}>
-                    <div style={{ height: '100%', borderRadius: '3px', width: `${pct}%`, background: color, transition: 'width 0.8s ease' }} />
+                  <div style={{ height: 6, borderRadius: '2px', background: 'var(--bg-muted)' }}>
+                    <div style={{ height: '100%', borderRadius: '2px', width: `${pct}%`, background: color }} />
                   </div>
                 </div>
               )
@@ -143,7 +140,7 @@ export default function DashboardHome() {
       {/* By Category */}
       {stats?.complaints_by_category?.length > 0 && (
         <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '1.5rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
             Catégories récurrentes
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
@@ -165,11 +162,11 @@ export default function DashboardHome() {
       {stats?.recent_complaints?.length > 0 && (
         <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.9rem', color: '#111', textTransform: 'uppercase', fontWeight: 800 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>
               Dossiers récents
             </h3>
             <Link to="/dashboard/plaintes" className="btn btn-ghost btn-sm">
-              TOUT AFFICHER <FiArrowRight />
+              Tout afficher <FiArrowRight aria-hidden />
             </Link>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -192,7 +189,7 @@ export default function DashboardHome() {
                     <StatusBadge status={c.status} />
                     <PriorityBadge priority={c.priority} />
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#4A6080', flexShrink: 0 }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                     {new Date(c.created_at).toLocaleDateString('fr-FR')}
                   </div>
                 </div>

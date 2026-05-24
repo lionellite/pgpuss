@@ -30,7 +30,9 @@ export default function LoginPage() {
       ].includes(user.role)
       navigate(isAgent ? '/dashboard' : '/espace/plaintes')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Identifiants incorrects.')
+      const detail = err.response?.data?.detail
+      const msg = Array.isArray(detail) ? detail[0] : detail
+      toast.error(msg || 'Identifiants incorrects.')
     }
   }
 

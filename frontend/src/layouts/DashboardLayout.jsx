@@ -4,27 +4,28 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   FiFileText, FiUsers, FiLogOut, FiMenu,
   FiHome, FiTrendingUp, FiBell, FiChevronRight,
-  FiLayers, FiMapPin, FiPhone, FiShield,
+  FiLayers, FiMapPin, FiPhone,
 } from 'react-icons/fi'
+import GovFlagBar from '../components/GovFlagBar'
 
 const getNavItems = (role) => {
   const items = [
-    { to: '/dashboard', icon: <FiHome />, label: 'Tableau de bord', exact: true },
-    { to: '/dashboard/plaintes', icon: <FiFileText />, label: 'Plaintes' },
+    { to: '/dashboard', icon: <FiHome aria-hidden />, label: 'Tableau de bord', exact: true },
+    { to: '/dashboard/plaintes', icon: <FiFileText aria-hidden />, label: 'Plaintes' },
   ]
 
-  // Call Center 136 : accès rapide au formulaire de saisie
   if (role === 'AGENT_CALL_CENTER') {
-    items.push({ to: '/deposer', icon: <FiPhone />, label: 'Saisie plainte 136' })
+    items.push({ to: '/deposer', icon: <FiPhone aria-hidden />, label: 'Saisie plainte 136' })
   }
 
-  items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp />, label: 'Analytique' })
+  items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp aria-hidden />, label: 'Analytique' })
 
-  // Admin : gestion utilisateurs, établissements, référentiels
   if (role === 'ADMIN_PLATEFORME') {
-    items.push({ to: '/dashboard/utilisateurs', icon: <FiUsers />, label: 'Utilisateurs' })
-    items.push({ to: '/dashboard/etablissements', icon: <FiMapPin />, label: 'Établissements' })
-    items.push({ to: '/dashboard/referentiels', icon: <FiLayers />, label: 'Référentiels' })
+    items.push(
+      { to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' },
+      { to: '/dashboard/etablissements', icon: <FiMapPin aria-hidden />, label: 'Établissements' },
+      { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
+    )
   }
 
   return items
@@ -36,134 +37,99 @@ export default function DashboardLayout() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const handleLogout = () => { logout(); navigate('/') }
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
-  const isActive = (item) => item.exact
-    ? location.pathname === item.to
-    : location.pathname.startsWith(item.to)
+  const isActive = (item) =>
+    item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to)
 
   const visibleItems = getNavItems(user?.role)
+  const currentPage = visibleItems.find((i) => isActive(i))?.label || 'Tableau de bord'
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: collapsed ? 64 : 240, flexShrink: 0,
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border-color)',
-        display: 'flex', flexDirection: 'column',
-        transition: 'width 0.3s ease', overflow: 'hidden',
-        position: 'sticky', top: 0, height: '100vh',
-      }}>
-        {/* Logo */}
-        <div style={{
-          padding: collapsed ? '1.25rem 0' : '1.25rem 1.25rem',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          gap: '0.75rem',
-        }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '8px',
-              background: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '2px',
-            }}>
-              <img src="/logo.png" alt="PGP-USS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
+    <div className="dashboard-shell">
+      <a href="#contenu-dashboard" className="skip-link">
+        Aller au contenu
+      </a>
+      <GovFlagBar />
+
+      <div className="dashboard-body">
+      <aside
+        className={`dashboard-sidebar${collapsed ? ' is-collapsed' : ''}`}
+        aria-label="Navigation du tableau de bord"
+      >
+        <div className="dashboard-sidebar__head">
+          <Link to="/" className="site-brand" style={{ textDecoration: 'none' }}>
+            <img src="/logo.png" alt="PGP-USS" width={36} height={36} />
             {!collapsed && (
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>PGP-USS</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Dashboard</div>
+                <div className="site-brand__title" style={{ fontSize: '0.875rem' }}>PGP-USS</div>
+                <div className="site-brand__subtitle">Gestion</div>
               </div>
             )}
           </Link>
-          <button onClick={() => setCollapsed(!collapsed)} style={{
-            background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-            borderRadius: '8px', padding: '0.4rem', cursor: 'pointer',
-            color: 'var(--text-muted)', display: 'flex', transition: 'all 0.2s',
-          }}>
-            {collapsed ? <FiChevronRight /> : <FiMenu />}
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Déplier le menu' : 'Réduire le menu'}
+          >
+            {collapsed ? <FiChevronRight aria-hidden /> : <FiMenu aria-hidden />}
           </button>
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '1rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {visibleItems.map(item => (
-            <Link key={item.to} to={item.to} title={collapsed ? item.label : ''} style={{
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: collapsed ? '0.75rem' : '0.65rem 0.875rem',
-              borderRadius: '10px', textDecoration: 'none',
-              fontSize: '0.875rem', fontWeight: 500,
-              background: isActive(item) ? 'rgba(0,135,81,0.08)' : 'transparent',
-              color: isActive(item) ? 'var(--color-primary)' : 'var(--text-secondary)',
-              border: isActive(item) ? '1px solid rgba(0,135,81,0.2)' : '1px solid transparent',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              transition: 'all 0.2s',
-            }}>
-              <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+        <nav className="dashboard-nav">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={collapsed ? item.label : undefined}
+              className={`dashboard-nav__link${isActive(item) ? ' is-active' : ''}`}
+            >
+              {item.icon}
               {!collapsed && item.label}
             </Link>
           ))}
         </nav>
 
-        {/* User + Logout */}
-        <div style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border-color)' }}>
+        <div className="dashboard-sidebar__foot">
           {!collapsed && user && (
-            <div style={{
-              padding: '0.75rem', borderRadius: '10px',
-              background: '#f4f7f6',
-              border: '1px solid var(--border-color)',
-              marginBottom: '0.5rem',
-            }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{user.full_name}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{user.role?.replace('_', ' ')}</div>
+            <div className="dashboard-user-card">
+              <div className="dashboard-user-card__name">{user.full_name}</div>
+              <div className="dashboard-user-card__role">{user.role?.replace(/_/g, ' ')}</div>
             </div>
           )}
-          <button onClick={handleLogout} style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            padding: collapsed ? '0.75rem' : '0.65rem 0.875rem',
-            borderRadius: '10px', background: 'rgba(239,71,111,0.05)',
-            border: '1px solid rgba(239,71,111,0.1)',
-            color: '#EF476F', cursor: 'pointer', width: '100%',
-            fontSize: '0.875rem', fontWeight: 500,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            transition: 'all 0.2s',
-          }}>
-            <FiLogOut style={{ flexShrink: 0 }} />
+          <button
+            type="button"
+            className="dashboard-nav__link user-menu__item--danger"
+            style={{ width: '100%', border: '1px solid rgba(232,17,45,0.2)', background: '#fef2f2' }}
+            onClick={handleLogout}
+          >
+            <FiLogOut aria-hidden />
             {!collapsed && 'Déconnexion'}
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Top bar */}
-        <header style={{
-          padding: '0 1.5rem', height: 56,
-          background: 'var(--bg-card)',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 50,
-        }}>
-          <h1 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-            {visibleItems.find(i => i.exact ? location.pathname === i.to : location.pathname.startsWith(i.to))?.label || 'Dashboard'}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link to="/espace/notifications" style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
-              <FiBell />
+      <div className="dashboard-main">
+        <header className="dashboard-topbar">
+          <span className="dashboard-topbar__title">{currentPage}</span>
+          <div className="site-header__actions">
+            <Link to="/espace/notifications" className="notif-link" aria-label="Notifications">
+              <FiBell aria-hidden />
             </Link>
-            <Link to="/" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
-              ← Site public
+            <Link to="/" className="text-muted" style={{ fontSize: '0.8rem' }}>
+              Retour au site public
             </Link>
           </div>
         </header>
 
-        {/* Page content */}
-        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+        <main id="contenu-dashboard" className="dashboard-content" tabIndex={-1}>
           <Outlet />
         </main>
+      </div>
       </div>
     </div>
   )

@@ -37,7 +37,7 @@ export default function MesPlaintesPage() {
         {/* Filters */}
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
+            <FiSearch aria-hidden style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input className="form-input" style={{ paddingLeft: '2.5rem' }}
               placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -57,9 +57,9 @@ export default function MesPlaintesPage() {
           <div className="loading-center"><div className="spinner" /></div>
         ) : complaints.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
-            <h3 style={{ color: '#8FA3BF', marginBottom: '0.5rem' }}>Aucune plainte trouvée</h3>
-            <p style={{ color: '#4A6080', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            <FiFileText aria-hidden style={{ fontSize: '2.5rem', color: 'var(--text-muted)', marginBottom: '1rem' }} />
+            <h3 className="text-muted" style={{ marginBottom: '0.5rem' }}>Aucune plainte trouvée</h3>
+            <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>
               Vous n'avez pas encore déposé de plainte.
             </p>
             <Link to="/deposer" className="btn btn-primary"><FiPlusCircle /> Déposer une plainte</Link>
@@ -68,27 +68,22 @@ export default function MesPlaintesPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {complaints.map(c => (
               <Link key={c.id} to={`/espace/plaintes/${c.id}`} style={{ textDecoration: 'none' }}>
-                <div className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '10px', flexShrink: 0,
-                    background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#00B4D8', fontSize: '1.1rem',
-                  }}><FiFileText /></div>
+                <div className="card card--padding-sm" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div className="list-row-icon"><FiFileText aria-hidden /></div>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontWeight: 600, color: '#F0F4FF', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.2rem', fontSize: '0.9rem' }}>
                       {c.title}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#8FA3BF' }}>
+                    <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                       {c.ticket_number} • {c.establishment_name || 'Établissement non spécifié'} • {c.category_name || '—'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
                     <StatusBadge status={c.status} />
                     <PriorityBadge priority={c.priority} />
-                    {c.is_overdue && <span className="badge badge-escaladee">⚠ En retard</span>}
+                    {c.is_overdue && <span className="badge badge-escaladee">En retard</span>}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#4A6080', flexShrink: 0 }}>
+                  <div className="text-muted" style={{ fontSize: '0.75rem', flexShrink: 0 }}>
                     {new Date(c.created_at).toLocaleDateString('fr-FR')}
                   </div>
                 </div>

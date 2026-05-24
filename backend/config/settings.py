@@ -149,9 +149,14 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# File upload limits
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # pièces jointes multiples + audio
+# File upload limits (Vercel serverless : corps de requête ~4,5 Mo max)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 4 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 4 * 1024 * 1024
+VERCEL_MAX_UPLOAD_BYTES = int(os.environ.get('VERCEL_MAX_UPLOAD_BYTES', str(4 * 1024 * 1024)))
+# Création plainte sans génération de document ni gros multipart (recommandé sur Vercel)
+FAST_COMPLAINT_CREATE = os.environ.get('FAST_COMPLAINT_CREATE', '').lower() in (
+    '1', 'true', 'yes',
+) or os.environ.get('VERCEL', '').lower() in ('1', 'true')
 
 # Notifications email (alertes)
 EMAIL_ALERTS_ENABLED = os.environ.get("EMAIL_ALERTS_ENABLED", "True").lower() == "true"
@@ -168,14 +173,21 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PGP-USS <noreply@pgpu
 SITE_NAME = os.environ.get("SITE_NAME", "PGP-USS Santé Bénin")
 
 # Stockage des fichiers médias
-# En production (si CLOUDINARY_URL est défini), utiliser Cloudinary
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+# Production / Vercel : définir CLOUDINARY_URL (voir docs/CLOUDINARY.md)
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
 if CLOUDINARY_URL:
-    import cloudinary
-    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+    # cloudinary_storage doit être avant django.contrib.staticfiles
+    INSTALLED_APPS = [
+        'cloudinary_storage',
+        *[
+            app for app in INSTALLED_APPS
+            if app not in ('cloudinary_storage', 'cloudinary')
+        ],
+        'cloudinary',
+    ]
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     CLOUDINARY_STORAGE = {'CLOUDINARY_URL': CLOUDINARY_URL}
+    # Les FileField renvoient des URLs https://res.cloudinary.com/...
 else:
-    # Développement local : stockage fichiers local
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'

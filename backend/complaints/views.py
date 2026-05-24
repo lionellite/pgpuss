@@ -4,11 +4,15 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
+from django.conf import settings
 from django.utils import timezone
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 from accounts.models import UserRole
+from .media_upload import save_attachment, save_voice_file
 from .models import (
     Category, Complaint, Attachment, ComplaintHistory,
     Escalation, ComplaintStatus, ComplaintDocumentType, ComplaintDocument
@@ -59,9 +63,10 @@ def user_can_view_complaint_documents(user, complaint) -> bool:
     return True
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class CategoryListView(generics.ListAPIView):
     """Liste des catégories de plaintes"""
-    queryset = Category.objects.filter(parent=None)
+    queryset = Category.objects.filter(parent=None).prefetch_related('subcategories')
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
 
@@ -107,58 +112,91 @@ class ComplaintCreateView(generics.CreateAPIView):
             complaint.call_center_agent = request.user
             complaint.save(update_fields=['channel', 'call_center_agent'])
 
-        vf = request.FILES.get('voice_file')
-        if vf:
-            # Validation type audio
-            allowed_audio = ['audio/', 'video/']
-            ct = getattr(vf, 'content_type', '') or ''
-            if not any(ct.startswith(a) for a in allowed_audio):
-                return Response(
-                    {'error': 'Le fichier vocal doit être un fichier audio (mp3, m4a, wav, ogg...).'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if vf.size > 50 * 1024 * 1024:  # 50 MB max
-                return Response({'error': 'Le fichier vocal ne doit pas dépasser 50 MB.'}, status=400)
-            complaint.voice_file = vf
-            complaint.save(update_fields=['voice_file'])
+        # Médias : en production serverless, envoyer via POST .../deposit-media/ (un fichier à la fois)
+        is_json = request.content_type and 'application/json' in request.content_type
+        if not is_json and not getattr(settings, 'FAST_COMPLAINT_CREATE', False):
+            vf = request.FILES.get('voice_file')
+            if vf:
+                err = save_voice_file(complaint, vf)
+                if err:
+                    return err
+            for f in request.FILES.getlist('attachments'):
+                err = save_attachment(complaint, f)
+                if err:
+                    return err
 
-        for f in request.FILES.getlist('attachments'):
-            # Validation taille (10 MB max par pièce jointe)
-            if f.size > 10 * 1024 * 1024:
-                return Response(
-                    {'error': f'La pièce jointe "{f.name}" dépasse la taille maximale de 10 MB.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # Types autorisés
-            allowed_types = ['image/', 'application/pdf', 'audio/', 'video/',
-                             'application/msword', 'application/vnd.openxmlformats']
-            ct = getattr(f, 'content_type', '') or ''
-            if not any(ct.startswith(a) for a in allowed_types):
-                return Response(
-                    {'error': f'Type de fichier non autorisé pour "{f.name}". '
-                              f'Formats acceptés : images, PDF, audio, vidéo, Word.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            Attachment.objects.create(
+        if not getattr(settings, 'FAST_COMPLAINT_CREATE', False):
+            ensure_singleton_document(
                 complaint=complaint,
-                file=f,
-                file_name=getattr(f, 'name', '') or 'piece_jointe',
-                file_type=getattr(f, 'content_type', '') or '',
-                file_size=getattr(f, 'size', 0) or 0,
+                doc_type=ComplaintDocumentType.FICHE_PLAINTE,
+                actor=request.user if request.user.is_authenticated else None,
+                extra={"document": {"title": "Fiche de plainte"}},
             )
 
-        # Document: Fiche de plainte
-        ensure_singleton_document(
-            complaint=complaint,
-            doc_type=ComplaintDocumentType.FICHE_PLAINTE,
-            actor=request.user if request.user.is_authenticated else None,
-            extra={"document": {"title": "Fiche de plainte"}},
-        )
         return Response({
             'message': 'Votre plainte a été enregistrée avec succès.',
             'ticket_number': complaint.ticket_number,
-            'complaint': ComplaintListSerializer(complaint).data
+            'complaint_id': str(complaint.id),
+            'upload_token': complaint.media_upload_token,
+            'complaint': ComplaintListSerializer(complaint).data,
         }, status=status.HTTP_201_CREATED)
+
+
+class ComplaintDepositMediaView(APIView):
+    """
+    Envoi des médias après création JSON (contourne la limite Vercel ~4,5 Mo).
+    Header : X-Upload-Token: <upload_token> renvoyé à la création.
+    Un seul fichier par requête : voice_file OU attachment.
+    """
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        token = (request.headers.get('X-Upload-Token') or request.data.get('upload_token') or '').strip()
+        if not token or token != complaint.media_upload_token:
+            return Response(
+                {'error': 'Jeton de téléversement invalide ou expiré.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        vf = request.FILES.get('voice_file')
+        att = request.FILES.get('attachment')
+        if vf and att:
+            return Response(
+                {'error': 'Envoyez un seul fichier par requête (vocal ou pièce jointe).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not vf and not att:
+            return Response(
+                {'error': 'Fichier manquant (voice_file ou attachment).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            if vf:
+                err = save_voice_file(complaint, vf)
+            else:
+                err = save_attachment(complaint, att)
+            if err:
+                return err
+        except Exception as exc:
+            return Response(
+                {
+                    'error': (
+                        'Impossible d\'enregistrer le fichier. '
+                        'Vérifiez que CLOUDINARY_URL est configuré sur le serveur.'
+                    ),
+                    'detail': str(exc) if settings.DEBUG else None,
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response({
+            'message': 'Fichier enregistré.',
+            'has_voice': bool(complaint.voice_file),
+            'attachment_count': complaint.attachments.count(),
+        })
 
 
 class ComplaintListView(generics.ListAPIView):
@@ -264,17 +302,29 @@ class ComplaintTrackView(APIView):
 
     def get(self, request, ticket_number):
         complaint = get_object_or_404(Complaint, ticket_number=ticket_number.upper())
+        if complaint.establishment:
+            establishment_name = complaint.establishment.name
+        elif complaint.establishment_name_manual:
+            establishment_name = complaint.establishment_name_manual
+        else:
+            establishment_name = None
         # Return limited info for public tracking
         data = {
             'ticket_number': complaint.ticket_number,
             'title': complaint.title,
+            'description': complaint.description,
             'status': complaint.status,
             'status_display': complaint.get_status_display(),
             'priority': complaint.priority,
             'priority_display': complaint.get_priority_display(),
+            'category_name': complaint.category.name if complaint.category else None,
             'created_at': complaint.created_at,
             'updated_at': complaint.updated_at,
-            'establishment_name': complaint.establishment.name if complaint.establishment else None,
+            'establishment_name': establishment_name,
+            'establishment_address': (
+                complaint.establishment.address if complaint.establishment
+                else complaint.establishment_address_manual or None
+            ),
             'timeline': [
                 {
                     'action': h.action,

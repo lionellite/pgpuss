@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   FiMenu, FiX, FiBell, FiUser, FiLogOut, FiLogIn,
-  FiHome, FiFileText, FiSearch, FiPlusCircle, FiChevronDown, FiGlobe
+  FiHome, FiFileText, FiSearch, FiPlusCircle, FiChevronDown,
 } from 'react-icons/fi'
 import { notificationsAPI } from '../api'
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import GovFlagBar from '../components/GovFlagBar'
 
 export default function MainLayout() {
   const { t, i18n } = useTranslation()
@@ -26,141 +26,132 @@ export default function MainLayout() {
     }
   }, [user, location.pathname])
 
+  useEffect(() => {
+    setMenuOpen(false)
+    setDropOpen(false)
+  }, [location.pathname])
+
   const handleLogout = () => {
     logout()
     navigate('/')
-    setDropOpen(false)
   }
 
   const navLinks = [
-    { to: '/', label: t('home'), icon: <FiHome /> },
-    { to: '/deposer', label: t('submit_complaint'), icon: <FiPlusCircle /> },
-    { to: '/suivi', label: t('track_complaint'), icon: <FiSearch /> },
+    { to: '/', label: t('home'), icon: <FiHome aria-hidden /> },
+    { to: '/deposer', label: t('submit_complaint'), icon: <FiPlusCircle aria-hidden /> },
+    { to: '/suivi', label: t('track_complaint'), icon: <FiSearch aria-hidden /> },
   ]
 
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng)
-  }
+  const isActive = (path) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-      {/* Top Banner (Bénin Flag Colors) */}
-      <div style={{ height: 4, display: 'flex' }}>
-        <div style={{ flex: 1, background: '#008751' }} />
-        <div style={{ flex: 1, background: '#fcd116' }} />
-        <div style={{ flex: 1, background: '#e8112d' }} />
-      </div>
+    <div className="site-shell">
+      <a href="#contenu-principal" className="skip-link">
+        Aller au contenu principal
+      </a>
+      <GovFlagBar />
 
-      {/* Navbar */}
-      <nav style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #eee',
-        position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-      }}>
-        <div className="page-container" style={{
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', height: 72,
-        }}>
-          {/* Logo and Branding */}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <img src="https://gouv.bj/assets/img/logo-benin.png" alt="République du Bénin" style={{ height: 40 }}
-                   onError={(e) => { e.target.style.display = 'none' }} />
-              <div style={{ width: 1, height: 24, background: '#eee', margin: '0 0.25rem' }} className="hide-mobile" />
-              <img src="/logo.png" alt="PGP-USS Logo" style={{ height: 44 }} />
+      <header className="site-header" role="banner">
+        <div className="site-header__inner">
+          <Link to="/" className="site-brand">
+            <div className="site-brand__logos">
+              <img
+                src="https://gouv.bj/assets/img/logo-benin.png"
+                alt="République du Bénin"
+                height={40}
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+              <span className="site-brand__divider hide-mobile" aria-hidden />
+              <img src="/logo.png" alt="" className="brand-app-logo" />
             </div>
-            <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '0.75rem' }} className="hide-mobile">
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111', letterSpacing: '-0.02em', lineHeight: 1 }}>PGP-USS</div>
-              <div style={{ fontSize: '0.65rem', color: '#666', textTransform: 'uppercase', fontWeight: 600, marginTop: '2px' }}>Santé Bénin</div>
+            <div className="site-brand__text hide-mobile">
+              <div className="site-brand__title">PGP-USS</div>
+              <div className="site-brand__subtitle">Santé — République du Bénin</div>
             </div>
           </Link>
 
-          {/* Desktop Nav - Max 7 items */}
-          <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {navLinks.map(link => (
-              <Link key={link.to} to={link.to} style={{
-                padding: '0.5rem 1rem', fontSize: '0.9rem',
-                fontWeight: 600, color: location.pathname === link.to ? 'var(--color-primary)' : '#444',
-                borderBottom: location.pathname === link.to ? '2px solid var(--color-primary)' : '2px solid transparent',
-                textDecoration: 'none',
-              }}>{link.label}</Link>
+          <nav className="site-nav hide-mobile" aria-label="Navigation principale">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`site-nav__link${isActive(link.to) ? ' is-active' : ''}`}
+              >
+                {link.label}
+              </Link>
             ))}
             {isAgent && (
-              <Link to="/dashboard" style={{
-                padding: '0.5rem 1rem', fontSize: '0.9rem',
-                fontWeight: 600, color: '#444', textDecoration: 'none',
-              }}>Dashboard</Link>
-            )}
-          </div>
-
-          {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* Language Selector */}
-            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', marginRight: '0.5rem' }}>
-              <FiGlobe style={{ color: '#666', fontSize: '0.9rem' }} />
-              <select
-                value={i18n.language}
-                onChange={(e) => changeLanguage(e.target.value)}
-                style={{
-                  border: 'none', background: 'none', fontSize: '0.75rem',
-                  fontWeight: 600, color: '#333', cursor: 'pointer', outline: 'none'
-                }}
+              <Link
+                to="/dashboard"
+                className={`site-nav__link${location.pathname.startsWith('/dashboard') ? ' is-active' : ''}`}
               >
-                <option value="fr">FR</option>
-                <option value="fon">FON</option>
-                <option value="yo">YOR</option>
-              </select>
-            </div>
+                Espace gestion
+              </Link>
+            )}
+          </nav>
+
+          <div className="site-header__actions">
+            <label className="sr-only" htmlFor="lang-select">Langue</label>
+            <select
+              id="lang-select"
+              className="lang-select hide-mobile"
+              value={i18n.language}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              aria-label="Choisir la langue"
+            >
+              <option value="fr">Français</option>
+              <option value="fon">Fon</option>
+              <option value="yo">Yoruba</option>
+            </select>
 
             {user ? (
               <>
-                {/* Notifications bell */}
-                <Link to="/espace/notifications" style={{ position: 'relative', color: '#8FA3BF', fontSize: '1.25rem' }}>
-                  <FiBell />
+                <Link
+                  to="/espace/notifications"
+                  className="notif-link"
+                  aria-label={unread > 0 ? `${unread} notifications non lues` : 'Notifications'}
+                >
+                  <FiBell aria-hidden />
                   {unread > 0 && (
-                    <span style={{
-                      position: 'absolute', top: -6, right: -6,
-                      background: '#EF476F', color: 'white',
-                      borderRadius: '50%', width: 18, height: 18,
-                      fontSize: '0.65rem', fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>{unread > 9 ? '9+' : unread}</span>
+                    <span className="notif-badge" aria-hidden>
+                      {unread > 9 ? '9+' : unread}
+                    </span>
                   )}
                 </Link>
-                {/* User dropdown */}
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setDropOpen(!dropOpen)} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    background: 'rgba(0,119,182,0.1)', border: '1px solid rgba(0,119,182,0.2)',
-                    borderRadius: '10px', padding: '0.4rem 0.75rem',
-                    color: '#F0F4FF', cursor: 'pointer', fontSize: '0.875rem',
-                  }}>
-                    <FiUser style={{ color: '#00B4D8' }} />
+                <div className="user-menu">
+                  <button
+                    type="button"
+                    className="user-menu__trigger"
+                    onClick={() => setDropOpen(!dropOpen)}
+                    aria-expanded={dropOpen}
+                    aria-haspopup="true"
+                  >
+                    <FiUser aria-hidden />
                     <span className="hide-mobile">{user.first_name}</span>
-                    <FiChevronDown style={{ fontSize: '0.75rem', color: '#8FA3BF' }} />
+                    <FiChevronDown aria-hidden />
                   </button>
                   {dropOpen && (
-                    <div style={{
-                      position: 'absolute', right: 0, top: '110%',
-                      background: '#0F1E35', border: '1px solid rgba(0,119,182,0.2)',
-                      borderRadius: '12px', padding: '0.5rem', minWidth: 180,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200,
-                    }}>
-                      <Link to="/espace/plaintes" onClick={() => setDropOpen(false)} style={dropItemStyle}>
-                        <FiFileText /> Mes plaintes
+                    <div className="user-menu__dropdown" role="menu">
+                      <Link to="/espace/plaintes" className="user-menu__item" role="menuitem">
+                        <FiFileText aria-hidden /> Mes plaintes
                       </Link>
-                      <Link to="/espace/profil" onClick={() => setDropOpen(false)} style={dropItemStyle}>
-                        <FiUser /> Mon profil
+                      <Link to="/espace/profil" className="user-menu__item" role="menuitem">
+                        <FiUser aria-hidden /> Mon profil
                       </Link>
                       {isAgent && (
-                        <Link to="/dashboard" onClick={() => setDropOpen(false)} style={dropItemStyle}>
-                          <FiHome /> Dashboard
+                        <Link to="/dashboard" className="user-menu__item" role="menuitem">
+                          <FiHome aria-hidden /> Tableau de bord
                         </Link>
                       )}
-                      <hr style={{ border: 'none', borderTop: '1px solid rgba(0,119,182,0.1)', margin: '0.25rem 0' }} />
-                      <button onClick={handleLogout} style={{ ...dropItemStyle, width: '100%', background: 'none', cursor: 'pointer', color: '#EF476F', border: 'none', textAlign: 'left' }}>
-                        <FiLogOut /> Déconnexion
+                      <hr className="user-menu__sep" />
+                      <button
+                        type="button"
+                        className="user-menu__item user-menu__item--danger"
+                        onClick={handleLogout}
+                        role="menuitem"
+                      >
+                        <FiLogOut aria-hidden /> Déconnexion
                       </button>
                     </div>
                   )}
@@ -168,73 +159,86 @@ export default function MainLayout() {
               </>
             ) : (
               <>
-                <Link to="/connexion" className="btn btn-ghost btn-sm"><FiLogIn /> Connexion</Link>
-                <Link to="/inscription" className="btn btn-primary btn-sm">S'inscrire</Link>
+                <Link to="/connexion" className="btn btn-ghost btn-sm hide-mobile">
+                  <FiLogIn aria-hidden /> Connexion
+                </Link>
+                <Link to="/inscription" className="btn btn-primary btn-sm">
+                  S&apos;inscrire
+                </Link>
               </>
             )}
-            {/* Mobile menu */}
-            <button className="hide-desktop" style={{ background: 'none', border: 'none', color: '#8FA3BF', fontSize: '1.5rem', cursor: 'pointer' }}
-              onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <FiX /> : <FiMenu />}
+
+            <button
+              type="button"
+              className="mobile-nav-toggle hide-desktop"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav"
+              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            >
+              {menuOpen ? <FiX aria-hidden /> : <FiMenu aria-hidden />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
-          <div style={{ background: '#081220', borderTop: '1px solid rgba(0,119,182,0.1)', padding: '1rem' }}>
-            {navLinks.map(link => (
-              <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', color: '#F0F4FF', borderRadius: '8px', marginBottom: '0.25rem', textDecoration: 'none' }}>
-                {link.icon}{link.label}
+          <nav id="mobile-nav" className="mobile-nav-panel hide-desktop" aria-label="Navigation mobile">
+            {navLinks.map((link) => (
+              <Link key={link.to} to={link.to}>
+                {link.icon}
+                {link.label}
               </Link>
             ))}
-          </div>
+            {isAgent && (
+              <Link to="/dashboard">
+                <FiHome aria-hidden /> Espace gestion
+              </Link>
+            )}
+            {!user && (
+              <Link to="/connexion">
+                <FiLogIn aria-hidden /> Connexion
+              </Link>
+            )}
+          </nav>
         )}
-      </nav>
+      </header>
 
-      {/* Content */}
-      <main style={{ flex: 1 }}>
+      <main id="contenu-principal" className="site-main" tabIndex={-1}>
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        background: '#f8f9fa', borderTop: '1px solid #eee',
-        padding: '3rem 0', marginTop: 'auto',
-      }}>
+      <footer className="site-footer" role="contentinfo">
         <div className="page-container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+          <div className="site-footer__grid">
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>À propos</h4>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Plateforme officielle de gestion des plaintes des services de santé au Bénin.</p>
+              <h2 className="site-footer__title">À propos</h2>
+              <p className="site-footer__text">
+                Plateforme officielle de gestion des plaintes des usagers des services de santé au Bénin.
+              </p>
             </div>
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Liens utiles</h4>
-              <ul style={{ listStyle: 'none', fontSize: '0.8rem', color: '#666' }}>
+              <h2 className="site-footer__title">Liens utiles</h2>
+              <ul className="site-footer__links">
                 <li><Link to="/deposer">Déposer une plainte</Link></li>
                 <li><Link to="/suivi">Suivre une plainte</Link></li>
-                <li><a href="https://sante.gouv.bj" target="_blank" rel="noreferrer">Ministère de la Santé</a></li>
+                <li>
+                  <a href="https://sante.gouv.bj" target="_blank" rel="noopener noreferrer">
+                    Ministère de la Santé
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#111' }}>Contact</h4>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Numéro vert : 136</p>
-              <p style={{ fontSize: '0.8rem', color: '#666' }}>Email : contact@sante.gouv.bj</p>
+              <h2 className="site-footer__title">Contact</h2>
+              <p className="site-footer__text">Ligne verte : 136</p>
+              <p className="site-footer__text">Courriel : contact@sante.gouv.bj</p>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid #ddd', paddingTop: '1.5rem', textAlign: 'center', color: '#777', fontSize: '0.75rem' }}>
-            <p>© 2025 République du Bénin — Ministère de la Santé. Tous droits réservés.</p>
+          <div className="site-footer__bottom">
+            <p>© {new Date().getFullYear()} République du Bénin — Ministère de la Santé. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
     </div>
   )
-}
-
-const dropItemStyle = {
-  display: 'flex', alignItems: 'center', gap: '0.5rem',
-  padding: '0.5rem 0.75rem', borderRadius: '8px',
-  fontSize: '0.875rem', color: '#F0F4FF', textDecoration: 'none',
-  transition: 'background 0.15s', marginBottom: '0.1rem',
 }

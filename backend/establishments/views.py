@@ -1,4 +1,6 @@
 from rest_framework import generics, permissions
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from .models import Region, ZoneSanitaire, Establishment, Service, EstablishmentOperationalStatus
 from .serializers import (
     RegionSerializer, ZoneSanitaireSerializer, EstablishmentSerializer,
@@ -6,6 +8,7 @@ from .serializers import (
 )
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class RegionListView(generics.ListAPIView):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
@@ -23,11 +26,12 @@ class ZoneSanitaireListView(generics.ListAPIView):
         return ZoneSanitaire.objects.filter(is_active=True).select_related('region')
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class EstablishmentListView(generics.ListAPIView):
     queryset = Establishment.objects.filter(
         is_active=True,
         operational_status=EstablishmentOperationalStatus.OPERATIONAL,
-    )
+    ).select_related('region', 'zone_sanitaire')
     serializer_class = EstablishmentListSerializer
     permission_classes = [permissions.AllowAny]
     filterset_fields = ['type', 'region']

@@ -13,7 +13,7 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     try {
       await authAPI.register(data)
-      toast.success('Compte créé avec succès ! Vous pouvez vous connecter.')
+      toast.success('Compte créé. Vous pouvez vous connecter.')
       navigate('/connexion')
     } catch (e) {
       const msg = e.response?.data
@@ -26,101 +26,122 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.75rem', color: '#F0F4FF' }}>Créer un compte</h2>
-        <p style={{ color: '#8FA3BF', fontSize: '0.875rem', marginTop: '0.3rem' }}>
-          Rejoignez la plateforme pour suivre vos plaintes
+      <header className="login-page-header">
+        <h1 className="login-page-title">Créer un compte</h1>
+        <p className="login-page-subtitle">
+          Rejoignez la plateforme pour suivre vos plaintes en toute sécurité
         </p>
-      </div>
+      </header>
 
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <section className="glass-card login-card">
+        <form className="login-form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label">Prénom</label>
-              <div style={{ position: 'relative' }}>
-                <FiUser style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-                <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="text" placeholder="Prénom"
-                  {...register('first_name', { required: 'Requis' })} />
-              </div>
-              {errors.first_name && <span className="form-error">{errors.first_name.message}</span>}
+              <label className="form-label" htmlFor="first_name">Prénom</label>
+              <input
+                id="first_name"
+                className="form-input"
+                type="text"
+                autoComplete="given-name"
+                {...register('first_name', { required: 'Requis' })}
+              />
+              {errors.first_name && <span className="form-error" role="alert">{errors.first_name.message}</span>}
             </div>
             <div className="form-group">
-              <label className="form-label">Nom</label>
-              <div style={{ position: 'relative' }}>
-                <FiUser style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-                <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="text" placeholder="Nom"
-                  {...register('last_name', { required: 'Requis' })} />
-              </div>
-              {errors.last_name && <span className="form-error">{errors.last_name.message}</span>}
+              <label className="form-label" htmlFor="last_name">Nom</label>
+              <input
+                id="last_name"
+                className="form-input"
+                type="text"
+                autoComplete="family-name"
+                {...register('last_name', { required: 'Requis' })}
+              />
+              {errors.last_name && <span className="form-error" role="alert">{errors.last_name.message}</span>}
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Adresse email (optionnel si téléphone rempli)</label>
-            <div style={{ position: 'relative' }}>
-              <FiMail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-              <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="email" placeholder="exemple@email.com"
-                {...register('email', { 
-                  pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' },
-                  validate: (val) => {
-                    if (!val && !watch('phone')) return 'Veuillez fournir un email ou un téléphone'
-                    return true
-                  }
-                })} />
-            </div>
-            {errors.email && <span className="form-error">{errors.email.message}</span>}
+            <label className="form-label" htmlFor="email">Adresse email</label>
+            <input
+              id="email"
+              className="form-input"
+              type="email"
+              autoComplete="email"
+              placeholder="exemple@email.bj"
+              {...register('email', {
+                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email invalide' },
+                validate: (val) => {
+                  if (!val && !watch('phone')) return 'Indiquez un email ou un téléphone'
+                  return true
+                },
+              })}
+            />
+            {errors.email && <span className="form-error" role="alert">{errors.email.message}</span>}
           </div>
 
           <div className="form-group">
-            <label className="form-label">Téléphone (optionnel si email rempli)</label>
-            <div style={{ position: 'relative' }}>
-              <FiPhone style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-              <input className="form-input" style={{ paddingLeft: '2.5rem' }} type="tel" placeholder="+229 XX XX XX XX"
-                {...register('phone')} />
-            </div>
+            <label className="form-label" htmlFor="phone">Téléphone</label>
+            <input
+              id="phone"
+              className="form-input"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+229 XX XX XX XX"
+              {...register('phone')}
+            />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mot de passe</label>
-            <div style={{ position: 'relative' }}>
-              <FiLock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-              <input className="form-input" style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
-                type={showPwd ? 'text' : 'password'} placeholder="Min. 8 caractères"
-                {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Min. 8 caractères' } })} />
-              <button type="button" onClick={() => setShowPwd(!showPwd)} style={{
-                position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', color: '#8FA3BF', cursor: 'pointer',
-              }}>{showPwd ? <FiEyeOff /> : <FiEye />}</button>
+            <label className="form-label" htmlFor="password">Mot de passe</label>
+            <div className="login-input-wrap">
+              <input
+                id="password"
+                className="form-input"
+                type={showPwd ? 'text' : 'password'}
+                autoComplete="new-password"
+                {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Minimum 8 caractères' } })}
+              />
+              <button
+                type="button"
+                className="login-toggle-pwd"
+                onClick={() => setShowPwd(!showPwd)}
+                aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                {showPwd ? <FiEyeOff aria-hidden /> : <FiEye aria-hidden />}
+              </button>
             </div>
-            {errors.password && <span className="form-error">{errors.password.message}</span>}
+            {errors.password && <span className="form-error" role="alert">{errors.password.message}</span>}
           </div>
 
           <div className="form-group">
-            <label className="form-label">Confirmer le mot de passe</label>
-            <div style={{ position: 'relative' }}>
-              <FiLock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8FA3BF' }} />
-              <input className="form-input" style={{ paddingLeft: '2.5rem' }}
-                type="password" placeholder="Répétez le mot de passe"
-                {...register('password_confirm', {
-                  required: 'Requis',
-                  validate: v => v === watch('password') || 'Les mots de passe ne correspondent pas'
-                })} />
-            </div>
-            {errors.password_confirm && <span className="form-error">{errors.password_confirm.message}</span>}
+            <label className="form-label" htmlFor="password_confirm">Confirmer le mot de passe</label>
+            <input
+              id="password_confirm"
+              className="form-input"
+              type="password"
+              autoComplete="new-password"
+              {...register('password_confirm', {
+                required: 'Requis',
+                validate: (v) => v === watch('password') || 'Les mots de passe ne correspondent pas',
+              })}
+            />
+            {errors.password_confirm && (
+              <span className="form-error" role="alert">{errors.password_confirm.message}</span>
+            )}
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}
-            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}>
-            {isSubmitting ? 'Création...' : "Créer mon compte"}
+          <button type="submit" className="btn btn-primary login-submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Création en cours…' : 'Créer mon compte'}
           </button>
         </form>
-      </div>
+      </section>
 
-      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: '#8FA3BF' }}>
-        Déjà un compte ?{' '}
-        <Link to="/connexion" style={{ color: '#00B4D8', fontWeight: 600 }}>Se connecter</Link>
-      </p>
+      <footer className="login-footer">
+        <p>
+          Déjà un compte ?{' '}
+          <Link to="/connexion" className="login-footer-link">Se connecter</Link>
+        </p>
+      </footer>
     </div>
   )
 }

@@ -60,8 +60,15 @@ export const authAPI = {
 // Complaints (Bénin Workflow)
 export const complaintsAPI = {
   list: (params) => api.get('/complaints/', { params }),
-  /** JSON ou FormData (pièces jointes `attachments`, message vocal `voice_file`) */
+  /** Création JSON (recommandé — rapide, compatible Vercel) */
+  createJson: (data) => api.post('/complaints/create/', data),
+  /** Ancien envoi multipart (déconseillé en production serverless) */
   create: (data) => api.post('/complaints/create/', data),
+  /** Médias après création : un fichier par appel, header X-Upload-Token */
+  uploadDepositMedia: (complaintId, formData, uploadToken) =>
+    api.post(`/complaints/${complaintId}/deposit-media/`, formData, {
+      headers: { 'X-Upload-Token': uploadToken },
+    }),
   detail: (id) => api.get(`/complaints/${id}/`),
   track: (ticket) => api.get(`/complaints/track/${ticket}/`),
 

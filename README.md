@@ -69,6 +69,8 @@ L'application est configurée pour être déployée sur Vercel.
 
 - **Backend** : Déployé sur Vercel avec une base de données PostgreSQL sur Supabase.
 - **Frontend** : Configuré pour utiliser l'API en ligne. Assurez-vous de définir la variable d'environnement `VITE_API_URL` dans les paramètres Vercel pour pointer vers votre backend.
+- **Fichiers (pièces jointes, vocal)** : sur Vercel, définir **`CLOUDINARY_URL`** sur le backend. Guide détaillé : **[docs/CLOUDINARY.md](docs/CLOUDINARY.md)**. Le dépôt envoie d'abord le JSON, puis les fichiers via `/api/complaints/<id>/deposit-media/`.
+- **Performance** : la variable `VERCEL=1` (automatique sur Vercel) active le mode création rapide (sans génération de document PDF à la soumission). Les catégories sont mises en cache 5 minutes côté API.
 
 **URL Backend actuelle** : `https://pgpuss-git-master-lionels-projects-c5af5fda.vercel.app`
 
