@@ -237,15 +237,19 @@ export default function DepotPage() {
       const complaintId = result.complaint_id
       const uploadToken = result.upload_token
 
-      let mediaWarning = false
+      let mediaError = ''
       if (complaintId && uploadToken) {
+        const reportMediaError = (e) => {
+          const d = e.response?.data
+          mediaError = d?.error || d?.detail || mediaError
+        }
         if (isVoice && voiceBlob) {
           try {
             const vfd = new FormData()
             vfd.append('voice_file', voiceBlob, 'message-vocal.webm')
             await complaintsAPI.uploadDepositMedia(complaintId, vfd, uploadToken)
-          } catch {
-            mediaWarning = true
+          } catch (e) {
+            reportMediaError(e)
           }
         }
         for (const file of files) {
@@ -253,16 +257,19 @@ export default function DepotPage() {
             const afd = new FormData()
             afd.append('attachment', file)
             await complaintsAPI.uploadDepositMedia(complaintId, afd, uploadToken)
-          } catch {
-            mediaWarning = true
+          } catch (e) {
+            reportMediaError(e)
           }
         }
       }
 
       setSubmitted(result)
       toast.success('Plainte déposée avec succès!')
-      if (mediaWarning) {
-        toast('Plainte enregistrée, mais un ou plusieurs fichiers n\'ont pas pu être envoyés.')
+      if (mediaError) {
+        toast.error(
+          `Plainte enregistrée, mais le fichier n'a pas pu être envoyé : ${mediaError}`,
+          { duration: 10000 },
+        )
       }
     } catch (e) {
       const d = e.response?.data

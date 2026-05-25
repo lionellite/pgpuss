@@ -72,7 +72,26 @@ Déposez une plainte avec une petite image (< 4 Mo) depuis le frontend ou l’ap
 
 ---
 
-## 5. Vérifier que ça fonctionne
+## 5. Erreur HTTP 503 sur `/deposit-media/`
+
+Si la plainte est créée mais l’upload du fichier renvoie **503** :
+
+1. Ouvrez l’onglet **Réseau** du navigateur → requête `deposit-media` → corps JSON de la réponse.
+2. Si `error_code` vaut **`CLOUDINARY_NOT_CONFIGURED`** : `CLOUDINARY_URL` est absente sur le projet **backend** Vercel → ajoutez-la et **redéployez**.
+3. Si `error_code` vaut **`CLOUDINARY_UPLOAD_FAILED`** : l’URL est présente mais invalide (mauvais secret, cloud name, compte suspendu). Recopiez l’URL depuis le dashboard Cloudinary → **Settings → API Keys**.
+4. Vérifiez que la variable est sur le bon projet Vercel (**backend Django**, pas seulement le frontend `pgpuss-q5sw`).
+
+Format exact de la valeur :
+
+```
+cloudinary://123456789012345:abcdefghijklmnopqrstuvwxyz@dnxxxxxxxx
+```
+
+Sans guillemets, sans préfixe `CLOUDINARY_URL=` dans le champ « Value » de Vercel.
+
+---
+
+## 6. Vérifier que ça fonctionne
 
 ### A. Dans Cloudinary
 
@@ -98,7 +117,7 @@ Après un dépôt de plainte avec pièce jointe ou vocal :
 
 ---
 
-## 6. Limites utiles (plan gratuit)
+## 7. Limites utiles (plan gratuit)
 
 - Taille max par fichier côté **PGP-USS** : **4 Mo** (limite Vercel + réglage app)
 - Cloudinary gratuit : stockage et bande passante limités — surveillez l’usage dans **Dashboard → Usage**
@@ -106,7 +125,7 @@ Après un dépôt de plainte avec pièce jointe ou vocal :
 
 ---
 
-## 7. Sécurité
+## 8. Sécurité
 
 - Ne commitez **jamais** `CLOUDINARY_URL` dans Git
 - En cas de fuite : Cloudinary → **Settings → Security** → régénérer l’**API Secret**, puis mettre à jour Vercel
@@ -114,7 +133,7 @@ Après un dépôt de plainte avec pièce jointe ou vocal :
 
 ---
 
-## 8. Erreur Vercel `collectstatic` / `STATICFILES_STORAGE`
+## 9. Erreur Vercel `collectstatic` / `STATICFILES_STORAGE`
 
 Si le build échoue avec :
 

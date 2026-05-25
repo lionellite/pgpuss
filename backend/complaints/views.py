@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from accounts.models import UserRole
-from .media_upload import save_attachment, save_voice_file
+from .media_upload import save_attachment, save_voice_file, storage_error_response
 from .models import (
     Category, Complaint, Attachment, ComplaintHistory,
     Escalation, ComplaintStatus, ComplaintDocumentType, ComplaintDocument
@@ -181,16 +181,7 @@ class ComplaintDepositMediaView(APIView):
             if err:
                 return err
         except Exception as exc:
-            return Response(
-                {
-                    'error': (
-                        'Impossible d\'enregistrer le fichier. '
-                        'Vérifiez que CLOUDINARY_URL est configuré sur le serveur.'
-                    ),
-                    'detail': str(exc) if settings.DEBUG else None,
-                },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+            return storage_error_response(exc)
 
         return Response({
             'message': 'Fichier enregistré.',
