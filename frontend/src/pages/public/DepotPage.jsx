@@ -9,11 +9,14 @@ import { useTranslation } from 'react-i18next'
 
 const STEPS = ['Établissement', 'Catégorie', 'Description', 'Identité', 'Confirmation']
 
-function cleanCategoryLabel(name) {
+function cleanCategoryLabel(cat) {
+  const name = typeof cat === 'string' ? cat : (cat?.display_name || cat?.name || '')
   if (!name) return ''
   return name
     .replace(/[\u{1F300}-\u{1F9FF}\u2600-\u27BF]/gu, '')
-    .replace(/\bP[1-5]\b/gi, '')
+    .replace(/^\s*P\d+\s*[—–\-:]\s*/i, '')
+    .replace(/\bP[1-5]\b\s*[—–\-:]?\s*/gi, ' ')
+    .replace(/\s*[—–\-]+\s*/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
@@ -259,13 +262,20 @@ export default function DepotPage() {
       setSubmitted(result)
       toast.success('Plainte déposée avec succès!')
       if (mediaWarning) {
-        toast('Plainte enregistrée, mais un ou plusieurs fichiers n\'ont pas pu être envoyés.', { icon: '⚠️' })
+        toast('Plainte enregistrée, mais un ou plusieurs fichiers n\'ont pas pu être envoyés.')
       }
     } catch (e) {
-      const msg = e.response?.data?.error
-        || Object.values(e.response?.data || {}).flat().join(', ')
-        || "Erreur lors du dépôt. Vérifiez tous les champs."
-      toast.error(msg)
+      const d = e.response?.data
+      let msg = d?.error
+      if (!msg && d && typeof d === 'object') {
+        msg = Object.entries(d)
+          .map(([k, v]) => {
+            const val = Array.isArray(v) ? v.join(', ') : String(v)
+            return `${k}: ${val}`
+          })
+          .join(' · ')
+      }
+      toast.error(msg || "Erreur lors du dépôt. Vérifiez tous les champs.")
     }
   }
 
@@ -480,7 +490,7 @@ export default function DepotPage() {
                         textAlign: 'center',
                       }}>
                         <input type="radio" value={cat.id} {...register('category', { required: 'Requis' })} style={{ display: 'none' }} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cleanCategoryLabel(cat.name)}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cleanCategoryLabel(cat)}</span>
                       </label>
                     ))}
                   </div>

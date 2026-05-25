@@ -107,22 +107,24 @@ class Command(BaseCommand):
 
         # ── 4) Catégories de plaintes ──
         categories_data = [
-            ("P1 — Qualité des soins", "🏥", ["Erreur médicale", "Mauvais diagnostic", "Suivi"]),
-            ("P2 — Accueil & comportement", "🧑‍⚕️", ["Discrimination", "Mauvais traitement", "Incivilité"]),
-            ("P3 — Accès aux soins", "🚑", ["Refus de soin", "Liste d'attente abusive", "Orientation"]),
-            ("P4 — Facturation & frais", "💰", ["Surfacturation", "Paiement informel", "Reçu absent"]),
-            ("P5 — Infrastructure & hygiène", "🧼", ["Insalubrité", "Manque de matériel", "Sécurité"]),
-            ("P6 — Médicaments", "💊", ["Rupture de stock", "Périmé", "Substitution"]),
-            ("P7 — Urgence / cas critique", "🚨", ["Décès suspect", "Incident grave", "Risque vital"]),
+            ("Qualité des soins", "", ["Erreur médicale", "Mauvais diagnostic", "Suivi"]),
+            ("Accueil et comportement", "", ["Discrimination", "Mauvais traitement", "Incivilité"]),
+            ("Accès aux soins", "", ["Refus de soin", "Liste d'attente abusive", "Orientation"]),
+            ("Facturation et frais", "", ["Surfacturation", "Paiement informel", "Reçu absent"]),
+            ("Infrastructure et hygiène", "", ["Insalubrité", "Manque de matériel", "Sécurité"]),
+            ("Médicaments", "", ["Rupture de stock", "Périmé", "Substitution"]),
+            ("Urgence et cas critique", "", ["Décès suspect", "Incident grave", "Risque vital"]),
         ]
         top_categories = []
         for idx, (name, icon, subcats) in enumerate(categories_data):
             cat, _ = Category.objects.get_or_create(
-                name=name, parent=None, defaults={"icon": icon, "order": idx},
+                name=name, parent=None, defaults={"icon": icon or "", "order": idx},
             )
             top_categories.append(cat)
             for sub_name in subcats:
-                Category.objects.get_or_create(name=sub_name, parent=cat, defaults={"icon": icon})
+                Category.objects.get_or_create(
+                    name=sub_name, parent=cat, defaults={"icon": ""},
+                )
         self.stdout.write(f"  ✓ {len(top_categories)} catégories")
 
         # ── 5) Comptes institutionnels ──

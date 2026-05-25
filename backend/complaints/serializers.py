@@ -5,14 +5,31 @@ from .models import (
     Escalation,     ComplaintStatus, ComplaintDocument,
     PriorityLevel, RoleWorkflowPermission,
 )
+from establishments.models import Establishment
+from .category_labels import clean_category_label
+
+
+def _parse_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in ('true', '1', 'yes', 'on')
 
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent', 'icon', 'description', 'order', 'subcategories']
+        fields = [
+            'id', 'name', 'display_name', 'parent', 'description', 'order',
+            'subcategories',
+        ]
+
+    def get_display_name(self, obj):
+        return clean_category_label(obj.name)
 
     def get_subcategories(self, obj):
         if obj.parent is None:
@@ -55,10 +72,24 @@ class EscalationSerializer(serializers.ModelSerializer):
 
 class ComplaintCreateSerializer(serializers.ModelSerializer):
     """Serializer pour le dépôt de plainte (usager ou agent call center)"""
+    description_mode = serializers.ChoiceField(
+        choices=['text', 'voice'],
+        write_only=True,
+        required=False,
+        default='text',
+    )
+    description = serializers.CharField(required=False, allow_blank=True)
+    is_anonymous = serializers.BooleanField(required=False, default=False)
+    establishment = serializers.PrimaryKeyRelatedField(
+        queryset=Establishment.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = Complaint
         fields = [
-            'title', 'description', 'category', 'subcategory',
+            'title', 'description', 'description_mode', 'category', 'subcategory',
             'is_anonymous', 'complainant_name', 'complainant_phone',
             'complainant_email', 'establishment', 'establishment_name_manual',
             'establishment_address_manual', 'service', 'channel',
@@ -67,6 +98,11 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get('request')
         raw = getattr(request, 'data', {}) if request else {}
+        if hasattr(raw, 'get'):
+            mode = (raw.get('description_mode') or attrs.get('description_mode') or 'text')
+            mode = str(mode).strip().lower()
+        else:
+            mode = str(attrs.get('description_mode') or 'text').strip().lower()
         manual_name = (raw.get('establishment_name_manual') or attrs.get('establishment_name_manual') or '').strip()
         manual_address = (raw.get('establishment_address_manual') or attrs.get('establishment_address_manual') or '').strip()
         establishment = attrs.get('establishment')
@@ -83,20 +119,25 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                 {'establishment': 'Sélectionnez un établissement ou saisissez son nom.'}
             )
 
+        if not attrs.get('category'):
+            raise serializers.ValidationError(
+                {'category': 'Sélectionnez un type de plainte.'}
+            )
+
         attrs['establishment_name_manual'] = manual_name
         attrs['establishment_address_manual'] = manual_address
         if manual_name:
             attrs['establishment'] = None
 
-        is_anonymous = attrs.get('is_anonymous', False)
-        if is_anonymous in (True, 'true', '1', 'True'):
+        is_anonymous = _parse_bool(attrs.get('is_anonymous'))
+        attrs['is_anonymous'] = is_anonymous
+        if is_anonymous:
             phone = (attrs.get('complainant_phone') or '').strip()
             if not phone:
                 raise serializers.ValidationError(
                     {'complainant_phone': 'Le numéro de téléphone est obligatoire pour un dépôt anonyme.'}
                 )
 
-        mode = (raw.get('description_mode') or 'text').strip().lower()
         desc = (attrs.get('description') or '').strip()
         has_voice_in_request = bool(request and request.FILES.get('voice_file'))
 
@@ -117,6 +158,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                 )
             attrs['description'] = desc
 
+        attrs.pop('description_mode', None)
         return attrs
 
     def create(self, validated_data):
