@@ -64,11 +64,13 @@ export const complaintsAPI = {
   createJson: (data) => api.post('/complaints/create/', data),
   /** Ancien envoi multipart (déconseillé en production serverless) */
   create: (data) => api.post('/complaints/create/', data),
-  /** Médias après création : un fichier par appel, header X-Upload-Token */
-  uploadDepositMedia: (complaintId, formData, uploadToken) =>
-    api.post(`/complaints/${complaintId}/deposit-media/`, formData, {
-      headers: { 'X-Upload-Token': uploadToken },
-    }),
+  /** Médias après création : un fichier par appel (+ upload_token dans le corps) */
+  uploadDepositMedia: (complaintId, formData, uploadToken) => {
+    if (uploadToken) {
+      formData.append('upload_token', uploadToken)
+    }
+    return api.post(`/complaints/${complaintId}/deposit-media/`, formData)
+  },
   detail: (id) => api.get(`/complaints/${id}/`),
   track: (ticket) => api.get(`/complaints/track/${ticket}/`),
 

@@ -7,6 +7,7 @@ from datetime import timedelta
 import os
 import dj_database_url
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 load_dotenv()
 
@@ -161,9 +162,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
     'http://localhost:3000',
 ]
-# Pour les appels depuis l'app mobile Flutter, autoriser toutes les origines
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+# En-têtes personnalisés (ex. jeton d'upload médias après dépôt de plainte)
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-upload-token',
+]
 
 # File upload limits (Vercel serverless : corps de requête ~4,5 Mo max)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 4 * 1024 * 1024

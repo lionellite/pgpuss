@@ -86,10 +86,10 @@ class ComplaintsApi {
     required String uploadToken,
     required FormData formData,
   }) async {
+    formData.fields.add(MapEntry('upload_token', uploadToken));
     await _dio.post<void>(
       '/api/complaints/$complaintId/deposit-media/',
       data: formData,
-      options: Options(headers: {'X-Upload-Token': uploadToken}),
     );
   }
 
