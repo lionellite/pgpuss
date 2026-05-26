@@ -104,10 +104,38 @@ export default function DepotPage() {
   // Accessibility: Vocal Guide
   useEffect(() => {
     if (vocalEnabled && !submitted) {
-      const msg = new SpeechSynthesisUtterance(VOCAL_GUIDES[step])
-      msg.lang = 'fr-FR'
-      window.speechSynthesis.cancel()
-      window.speechSynthesis.speak(msg)
+      const speak = () => {
+        const msg = new SpeechSynthesisUtterance(VOCAL_GUIDES[step])
+        msg.lang = 'fr-FR'
+        try {
+          const voices = window.speechSynthesis?.getVoices?.() || []
+          const frVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('fr'))
+          if (frVoice) msg.voice = frVoice
+        } catch {}
+        window.speechSynthesis.cancel()
+        window.speechSynthesis.speak(msg)
+      }
+
+      // Certains navigateurs ne chargent les voix qu'après l'événement voiceschanged.
+      const voices = window.speechSynthesis?.getVoices?.() || []
+      if (voices.length > 0) {
+        speak()
+        return
+      }
+      const onVoicesChanged = () => {
+        window.speechSynthesis?.removeEventListener?.('voiceschanged', onVoicesChanged)
+        speak()
+      }
+      window.speechSynthesis?.addEventListener?.('voiceschanged', onVoicesChanged)
+      // Fallback si l'événement ne vient pas
+      const t = setTimeout(() => {
+        window.speechSynthesis?.removeEventListener?.('voiceschanged', onVoicesChanged)
+        speak()
+      }, 400)
+      return () => {
+        clearTimeout(t)
+        window.speechSynthesis?.removeEventListener?.('voiceschanged', onVoicesChanged)
+      }
     }
   }, [step, vocalEnabled, submitted])
 
@@ -173,26 +201,25 @@ export default function DepotPage() {
   }
 
   const canAdvanceStep = () => {
-    const data = getValues()
     switch (step) {
       case 0:
         return manualEstablishment
           ? manualEstName.trim().length > 0
-          : Boolean(data.establishment)
+          : Boolean(watch('establishment'))
       case 1:
-        return Boolean(data.category)
+        return Boolean(watch('category'))
       case 2:
-        if (!data.title?.trim()) return false
+        if (!watch('title')?.trim()) return false
         if (descriptionMode === 'voice') return Boolean(voiceBlob)
-        return Boolean(data.description?.trim())
+        return Boolean(watch('description')?.trim())
       case 3:
         if (isCallCenter) {
-          return Boolean(data.complainant_name?.trim()) && Boolean(data.complainant_phone?.trim())
+          return Boolean(watch('complainant_name')?.trim()) && Boolean(watch('complainant_phone')?.trim())
         }
-        if (data.is_anonymous) {
-          return Boolean(data.complainant_phone?.trim())
+        if (watch('is_anonymous')) {
+          return Boolean(watch('complainant_phone')?.trim())
         }
-        return Boolean(data.complainant_name?.trim())
+        return Boolean(watch('complainant_name')?.trim())
       default:
         return true
     }

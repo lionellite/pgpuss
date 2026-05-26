@@ -190,6 +190,24 @@ class ComplaintDepositMediaView(APIView):
         })
 
 
+class StorageHealthView(APIView):
+    """
+    Diagnostic simple de stockage (utile pour vérifier Cloudinary sur Vercel).
+    Ne fait aucun upload, retourne seulement la présence de la configuration.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        import os
+        from django.conf import settings
+        configured = bool(getattr(settings, 'CLOUDINARY_URL', '').strip() or os.environ.get('CLOUDINARY_URL', '').strip())
+        return Response({
+            'cloudinary_configured': configured,
+            'fast_complaint_create': bool(getattr(settings, 'FAST_COMPLAINT_CREATE', False)),
+            'max_upload_bytes': int(getattr(settings, 'VERCEL_MAX_UPLOAD_BYTES', 4 * 1024 * 1024)),
+        })
+
+
 class ComplaintListView(generics.ListAPIView):
     """
     Liste des plaintes filtrée selon le rôle :

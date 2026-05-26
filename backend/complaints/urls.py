@@ -10,6 +10,7 @@ urlpatterns = [
     path('', views.ComplaintListView.as_view(), name='complaint_list'),
     path('create/', views.ComplaintCreateView.as_view(), name='complaint_create'),
     path('<uuid:pk>/deposit-media/', views.ComplaintDepositMediaView.as_view(), name='complaint_deposit_media'),
+    path('storage-health/', views.StorageHealthView.as_view(), name='storage_health'),
     path('<uuid:pk>/', views.ComplaintDetailView.as_view(), name='complaint_detail'),
     # Public tracking
     path('track/<str:ticket_number>/', views.ComplaintTrackView.as_view(), name='complaint_track'),

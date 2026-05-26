@@ -68,22 +68,36 @@ class PhoneLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        username = attrs.get('username', '').strip()
-        password = attrs.get('password', '')
+        username = (attrs.get('username') or '').strip()
+        password = attrs.get('password') or ''
 
-        user = authenticate(
-            request=self.context.get('request'),
-            username=username,
-            password=password,
-        )
+        # On veut distinguer : "compte introuvable" vs "mot de passe erroné".
+        # Le backend authenticate() retourne None dans les deux cas, donc on fait le lookup ici.
+        normalized_phone = None
+        try:
+            if '@' in username:
+                user = User.objects.filter(email=username, is_active=True).first()
+            else:
+                normalized_phone = username.replace(' ', '').replace('-', '').replace('.', '')
+                user = User.objects.filter(phone=normalized_phone, is_active=True).first()
+        except Exception:
+            user = None
+
         if not user:
             raise serializers.ValidationError(
                 {"detail": "Aucun compte actif n'a été trouvé avec ces identifiants."}
             )
+
+        if not user.check_password(password):
+            raise serializers.ValidationError(
+                {"detail": "Mot de passe erroné."}
+            )
+
         if not user.is_active:
             raise serializers.ValidationError(
                 {"detail": "Ce compte a été désactivé."}
             )
+
         attrs['user'] = user
         return attrs
 

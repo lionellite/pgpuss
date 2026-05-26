@@ -30,6 +30,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   int _step = 0;
   bool _submitting = false, _success = false;
   String? _ticketNumber;
+  late final VoidCallback _formListener;
 
   // Step 1
   Region? _selectedRegion;
@@ -63,6 +64,18 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   @override
   void initState() {
     super.initState();
+    // Recalculer automatiquement la condition de "Suivant" quand les champs changent.
+    // Sans listener, la UI ne rebuild pas quand on modifie uniquement les TextControllers.
+    _formListener = () {
+      if (!mounted) return;
+      setState(() {});
+    };
+    _manualNameCtrl.addListener(_formListener);
+    _titleCtrl.addListener(_formListener);
+    _descCtrl.addListener(_formListener);
+    _nameCtrl.addListener(_formListener);
+    _emailCtrl.addListener(_formListener);
+    _phoneCtrl.addListener(_formListener);
     WidgetsBinding.instance.addPostFrameCallback((_) => _prefillIdentity());
   }
 
@@ -79,6 +92,12 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
 
   @override
   void dispose() {
+    _manualNameCtrl.removeListener(_formListener);
+    _titleCtrl.removeListener(_formListener);
+    _descCtrl.removeListener(_formListener);
+    _nameCtrl.removeListener(_formListener);
+    _emailCtrl.removeListener(_formListener);
+    _phoneCtrl.removeListener(_formListener);
     _titleCtrl.dispose(); _descCtrl.dispose();
     _nameCtrl.dispose(); _emailCtrl.dispose(); _phoneCtrl.dispose();
     _manualNameCtrl.dispose(); _manualAddressCtrl.dispose();
@@ -485,7 +504,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           ),
         ),
       ] else ...[
-        if (ref.watch(authControllerProvider).session?.user?.role == 'USAGER') ...[
+        if (ref.watch(authControllerProvider).session?.user.role == 'USAGER') ...[
           Text(
             'Vos coordonnées sont préremplies depuis votre compte. Vous pouvez les modifier.',
             style: TextStyle(fontSize: 13, color: AppColors.textMuted),
