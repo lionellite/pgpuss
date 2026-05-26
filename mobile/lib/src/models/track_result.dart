@@ -12,6 +12,8 @@ class TrackResult {
     this.establishmentAddress,
     this.categoryName,
     this.description,
+    this.infoRequestOpen = false,
+    this.infoRequestNotes,
     this.createdAt,
     this.updatedAt,
     this.timeline,
@@ -27,6 +29,8 @@ class TrackResult {
   final String? establishmentAddress;
   final String? categoryName;
   final String? description;
+  final bool infoRequestOpen;
+  final String? infoRequestNotes;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<HistoryEntry>? timeline;
@@ -43,6 +47,8 @@ class TrackResult {
       establishmentAddress: json['establishment_address'] as String?,
       categoryName: json['category_name'] as String?,
       description: json['description'] as String?,
+      infoRequestOpen: (json['info_request_open'] as bool?) ?? false,
+      infoRequestNotes: json['info_request_notes'] as String?,
       createdAt: DateTime.tryParse((json['created_at'] as String?) ?? ''),
       updatedAt: DateTime.tryParse((json['updated_at'] as String?) ?? ''),
       timeline: (json['timeline'] as List?)

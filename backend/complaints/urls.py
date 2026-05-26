@@ -14,6 +14,9 @@ urlpatterns = [
     path('<uuid:pk>/', views.ComplaintDetailView.as_view(), name='complaint_detail'),
     # Public tracking
     path('track/<str:ticket_number>/', views.ComplaintTrackView.as_view(), name='complaint_track'),
+    path('track/<str:ticket_number>/request-access-code/', views.ComplaintPublicRequestAccessCodeView.as_view(), name='complaint_public_request_access_code'),
+    path('track/<str:ticket_number>/verify-access-code/', views.ComplaintPublicVerifyAccessCodeView.as_view(), name='complaint_public_verify_access_code'),
+    path('track/<str:ticket_number>/provide-info/', views.ComplaintPublicProvideInfoView.as_view(), name='complaint_public_provide_info'),
 
     # Workflow Actions (Bénin)
     path('<uuid:pk>/acknowledge/', views.ComplaintAcknowledgeView.as_view(), name='complaint_acknowledge'),

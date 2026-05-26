@@ -54,6 +54,24 @@ class ComplaintsApi {
     return TrackResult.fromJson(res.data ?? const {});
   }
 
+  Future<void> requestTrackAccessCode(String ticket) =>
+      _dio.post('/api/complaints/track/$ticket/request-access-code/');
+
+  Future<void> verifyTrackAccessCode(String ticket, String code) =>
+      _dio.post('/api/complaints/track/$ticket/verify-access-code/', data: {'code': code});
+
+  Future<void> provideTrackInfo(
+    String ticket, {
+    required String code,
+    required String info,
+    FormData? attachments,
+  }) async {
+    final data = attachments ?? FormData();
+    data.fields.add(MapEntry('code', code));
+    data.fields.add(MapEntry('info', info));
+    await _dio.post('/api/complaints/track/$ticket/provide-info/', data: data);
+  }
+
   Future<List<Category>> categories() async {
     final res = await _dio.get<dynamic>('/api/complaints/categories/');
     final data = res.data;

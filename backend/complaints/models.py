@@ -91,6 +91,10 @@ class Complaint(models.Model):
     complainant_name = models.CharField(max_length=200, blank=True, help_text="Nom si dépôt anonyme ou non-inscrit")
     complainant_phone = models.CharField(max_length=20, blank=True)
     complainant_email = models.EmailField(blank=True)
+    needs_call_center_assistance = models.BooleanField(
+        default=False,
+        help_text="Si vrai, les demandes de complément doivent être prises en charge par le call center.",
+    )
     
     # Location
     establishment = models.ForeignKey(
@@ -161,6 +165,11 @@ class Complaint(models.Model):
     # Plainte vocale (analphabétisme / accessibilité) — fichier audio déposé par l’usager
     voice_file = models.FileField(upload_to='complaints/voice/%Y/%m/', blank=True, null=True)
     media_upload_token = models.CharField(max_length=64, blank=True, editable=False)
+    info_request_open = models.BooleanField(default=False)
+    info_request_notes = models.TextField(blank=True)
+    info_request_at = models.DateTimeField(null=True, blank=True)
+    public_access_code_hash = models.CharField(max_length=128, blank=True)
+    public_access_code_expires_at = models.DateTimeField(null=True, blank=True)
 
     VOICE_DESCRIPTION_PLACEHOLDER = 'Message vocal joint à la plainte.'
     

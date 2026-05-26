@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { complaintsAPI, establishmentsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -59,7 +59,7 @@ export default function DepotPage() {
     if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl)
   }, [voicePreviewUrl])
 
-  const { register, handleSubmit, watch, setValue, getValues, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, control, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       is_anonymous: false,
       channel: user?.role === 'AGENT_CALL_CENTER' ? 'CALL_CENTER' : 'WEB',
@@ -99,6 +99,13 @@ export default function DepotPage() {
   }, [selectedEst])
 
   const estId = watch('establishment')
+  const watched = useWatch({
+    control,
+    name: [
+      'establishment', 'category', 'title', 'description',
+      'is_anonymous', 'complainant_name', 'complainant_phone', 'complainant_email',
+    ],
+  })
   useEffect(() => { if (estId) setSelectedEst(estId) }, [estId])
 
   // Accessibility: Vocal Guide
@@ -109,8 +116,10 @@ export default function DepotPage() {
         msg.lang = 'fr-FR'
         try {
           const voices = window.speechSynthesis?.getVoices?.() || []
-          const frVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('fr'))
-          if (frVoice) msg.voice = frVoice
+          const frVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('fr'))
+          const googleFr = frVoices.find(v => /google/i.test(v.name || ''))
+          if (googleFr) msg.voice = googleFr
+          else if (frVoices[0]) msg.voice = frVoices[0]
         } catch {}
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(msg)
@@ -205,21 +214,22 @@ export default function DepotPage() {
       case 0:
         return manualEstablishment
           ? manualEstName.trim().length > 0
-          : Boolean(watch('establishment'))
+          : Boolean(watched?.[0])
       case 1:
-        return Boolean(watch('category'))
+        return Boolean(watched?.[1])
       case 2:
-        if (!watch('title')?.trim()) return false
+        if (!String(watched?.[2] || '').trim()) return false
         if (descriptionMode === 'voice') return Boolean(voiceBlob)
-        return Boolean(watch('description')?.trim())
+        return Boolean(String(watched?.[3] || '').trim())
       case 3:
         if (isCallCenter) {
-          return Boolean(watch('complainant_name')?.trim()) && Boolean(watch('complainant_phone')?.trim())
+          return Boolean(String(watched?.[5] || '').trim()) && Boolean(String(watched?.[6] || '').trim())
         }
-        if (watch('is_anonymous')) {
-          return Boolean(watch('complainant_phone')?.trim())
+        if (watched?.[4]) {
+          return Boolean(String(watched?.[6] || '').trim()) || Boolean(String(watched?.[7] || '').trim())
         }
-        return Boolean(watch('complainant_name')?.trim())
+        return Boolean(String(watched?.[5] || '').trim()) &&
+          (Boolean(String(watched?.[6] || '').trim()) || Boolean(String(watched?.[7] || '').trim()))
       default:
         return true
     }
@@ -656,14 +666,21 @@ export default function DepotPage() {
                       {isAnonymous ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                           <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                            Votre identité reste confidentielle. Indiquez un numéro de téléphone pour vous recontacter si nécessaire.
+                            Votre identité reste confidentielle. Indiquez au moins un moyen de contact (email ou téléphone).
                           </p>
                           <input
                             className="form-input"
-                            placeholder="Téléphone *"
-                            {...register('complainant_phone', { required: isAnonymous ? 'Téléphone requis pour le dépôt anonyme' : false })}
+                            placeholder="Email"
+                            {...register('complainant_email')}
                           />
-                          {errors.complainant_phone && <span className="form-error">{errors.complainant_phone.message}</span>}
+                          <input
+                            className="form-input"
+                            placeholder="Téléphone"
+                            {...register('complainant_phone')}
+                          />
+                          {isAnonymous && !String(watched?.[6] || '').trim() && !String(watched?.[7] || '').trim() && (
+                            <span className="form-error">Renseignez un email ou un téléphone.</span>
+                          )}
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -674,8 +691,11 @@ export default function DepotPage() {
                           )}
                           <input className="form-input" placeholder="Nom complet *" {...register('complainant_name', { required: !isAnonymous ? 'Nom requis' : false })} />
                           {errors.complainant_name && <span className="form-error">{errors.complainant_name.message}</span>}
-                          <input className="form-input" placeholder="Email (optionnel)" {...register('complainant_email')} />
-                          <input className="form-input" placeholder="Téléphone (optionnel)" {...register('complainant_phone')} />
+                          <input className="form-input" placeholder="Email (recommandé)" {...register('complainant_email')} />
+                          <input className="form-input" placeholder="Téléphone (recommandé)" {...register('complainant_phone')} />
+                          {!isAnonymous && !String(watched?.[6] || '').trim() && !String(watched?.[7] || '').trim() && (
+                            <span className="form-error">Renseignez un email ou un téléphone.</span>
+                          )}
                         </div>
                       )}
                     </>

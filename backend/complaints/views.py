@@ -6,18 +6,21 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from django.utils import timezone
+from datetime import timedelta
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.utils.crypto import salted_hmac
+import secrets
 from accounts.models import UserRole
 from .media_upload import save_attachment, save_voice_file, storage_error_response
 from .models import (
     Category, Complaint, Attachment, ComplaintHistory,
     Escalation, ComplaintStatus, ComplaintDocumentType, ComplaintDocument
 )
-from notifications.utils import notify_user
+from notifications.utils import notify_user, notify_complaint_contact
 from .documents import ensure_singleton_document, generate_document
 from .serializers import (
     CategorySerializer, ComplaintCreateSerializer,
@@ -329,6 +332,9 @@ class ComplaintTrackView(APIView):
             'category_name': complaint.category.name if complaint.category else None,
             'created_at': complaint.created_at,
             'updated_at': complaint.updated_at,
+            'info_request_open': complaint.info_request_open,
+            'info_request_notes': complaint.info_request_notes if complaint.info_request_open else "",
+            'needs_call_center_assistance': complaint.needs_call_center_assistance,
             'establishment_name': establishment_name,
             'establishment_address': (
                 complaint.establishment.address if complaint.establishment
@@ -345,6 +351,14 @@ class ComplaintTrackView(APIView):
             ]
         }
         return Response(data)
+
+
+def _hash_public_code(code: str) -> str:
+    return salted_hmac("complaint-public-access", code).hexdigest()
+
+
+def _generate_public_code() -> str:
+    return f"{secrets.randbelow(1000000):06d}"
 
 
 class ComplaintAcknowledgeView(APIView):
@@ -487,6 +501,11 @@ class ComplaintRequestInfoView(APIView):
         if not notes:
             return Response({'error': "Le champ notes est obligatoire."}, status=400)
 
+        complaint.info_request_open = True
+        complaint.info_request_notes = notes
+        complaint.info_request_at = timezone.now()
+        complaint.save(update_fields=["info_request_open", "info_request_notes", "info_request_at", "updated_at"])
+
         ComplaintHistory.objects.create(
             complaint=complaint,
             action="Demande de complément",
@@ -495,8 +514,23 @@ class ComplaintRequestInfoView(APIView):
             actor=request.user,
             notes=notes,
         )
-        if complaint.complainant:
-            notify_user(complaint.complainant, "Complément demandé", notes, complaint)
+        if complaint.needs_call_center_assistance:
+            # Cas illettrisme/handicap: orienter vers le call center.
+            call_agents = User.objects.filter(role=UserRole.AGENT_CALL_CENTER, is_active=True)[:20]
+            for agent in call_agents:
+                notify_user(
+                    agent,
+                    "Complément à collecter (call center)",
+                    f"Dossier {complaint.ticket_number}: contactez l'usager et saisissez le complément.",
+                    complaint,
+                    send_email_alert=False,
+                )
+
+        notify_complaint_contact(
+            complaint,
+            "Complément demandé",
+            f"Un complément est requis pour votre plainte. Détail : {notes}",
+        )
         return Response({"message": "Demande de complément enregistrée."})
 
 
@@ -516,7 +550,8 @@ class ComplaintProvideInfoView(APIView):
 
         # Ajout non destructif: on garde description + append (audit)
         complaint.description = f"{complaint.description}\n\n[Complément usager] {timezone.now().strftime('%Y-%m-%d %H:%M')} — {info}"
-        complaint.save(update_fields=["description", "updated_at"])
+        complaint.info_request_open = False
+        complaint.save(update_fields=["description", "info_request_open", "updated_at"])
 
         ComplaintHistory.objects.create(
             complaint=complaint,
@@ -526,6 +561,106 @@ class ComplaintProvideInfoView(APIView):
             actor=request.user,
             notes=info,
         )
+        for f in request.FILES.getlist("attachments"):
+            err = save_attachment(complaint, f)
+            if err:
+                return err
+
+        # Notifier les responsables du dossier
+        if complaint.assigned_to:
+            notify_user(complaint.assigned_to, "Complément reçu", f"Dossier {complaint.ticket_number}", complaint)
+        if complaint.establishment_id:
+            pfes = User.objects.filter(role=UserRole.PFE, establishment_id=complaint.establishment_id, is_active=True)[:20]
+            for pfe in pfes:
+                notify_user(pfe, "Complément reçu", f"Dossier {complaint.ticket_number}", complaint, send_email_alert=False)
+        return Response({"message": "Complément enregistré."})
+
+
+class ComplaintPublicRequestAccessCodeView(APIView):
+    """
+    Public: demander un code de vérification pour accéder aux compléments
+    d'une plainte sans compte (envoi SMS/email selon contacts disponibles).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, ticket_number):
+        complaint = get_object_or_404(Complaint, ticket_number=ticket_number.upper())
+        if complaint.complainant_id:
+            return Response({"error": "Utilisez votre compte pour répondre au complément."}, status=400)
+        if not complaint.info_request_open:
+            return Response({"error": "Aucune demande de complément en attente."}, status=400)
+
+        code = _generate_public_code()
+        complaint.public_access_code_hash = _hash_public_code(code)
+        complaint.public_access_code_expires_at = timezone.now() + timedelta(minutes=15)
+        complaint.save(update_fields=["public_access_code_hash", "public_access_code_expires_at", "updated_at"])
+
+        notify_complaint_contact(
+            complaint,
+            "Code de vérification",
+            f"Votre code d'accès temporaire est: {code}. Il expire dans 15 minutes.",
+        )
+        return Response({"message": "Code envoyé par SMS/email."})
+
+
+class ComplaintPublicVerifyAccessCodeView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, ticket_number):
+        complaint = get_object_or_404(Complaint, ticket_number=ticket_number.upper())
+        code = (request.data.get("code") or "").strip()
+        if not code:
+            return Response({"error": "Code requis."}, status=400)
+        if not complaint.public_access_code_hash or not complaint.public_access_code_expires_at:
+            return Response({"error": "Aucun code actif."}, status=400)
+        if complaint.public_access_code_expires_at < timezone.now():
+            return Response({"error": "Code expiré."}, status=400)
+        if complaint.public_access_code_hash != _hash_public_code(code):
+            return Response({"error": "Code invalide."}, status=400)
+        return Response({"message": "Code valide."})
+
+
+class ComplaintPublicProvideInfoView(APIView):
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def post(self, request, ticket_number):
+        complaint = get_object_or_404(Complaint, ticket_number=ticket_number.upper())
+        if not complaint.info_request_open:
+            return Response({"error": "Aucune demande de complément en attente."}, status=400)
+
+        code = (request.data.get("code") or "").strip()
+        info = (request.data.get("info") or "").strip()
+        if not code or not info:
+            return Response({"error": "Champs requis: code, info."}, status=400)
+        if not complaint.public_access_code_hash or not complaint.public_access_code_expires_at:
+            return Response({"error": "Aucun code actif."}, status=400)
+        if complaint.public_access_code_expires_at < timezone.now():
+            return Response({"error": "Code expiré."}, status=400)
+        if complaint.public_access_code_hash != _hash_public_code(code):
+            return Response({"error": "Code invalide."}, status=400)
+
+        complaint.description = f"{complaint.description}\n\n[Complément public] {timezone.now().strftime('%Y-%m-%d %H:%M')} — {info}"
+        complaint.info_request_open = False
+        complaint.public_access_code_hash = ""
+        complaint.public_access_code_expires_at = None
+        complaint.save(update_fields=[
+            "description", "info_request_open", "public_access_code_hash",
+            "public_access_code_expires_at", "updated_at",
+        ])
+
+        ComplaintHistory.objects.create(
+            complaint=complaint,
+            action="Complément public fourni",
+            old_status=complaint.status,
+            new_status=complaint.status,
+            actor=None,
+            notes=info,
+        )
+        for f in request.FILES.getlist("attachments"):
+            err = save_attachment(complaint, f)
+            if err:
+                return err
         return Response({"message": "Complément enregistré."})
 
 
@@ -1111,17 +1246,21 @@ class ComplaintEscalateView(APIView):
             return Response({'error': 'Vous ne pouvez escalader que vos propres plaintes.'}, status=403)
         if request.user.role == UserRole.PFE and complaint.establishment_id and request.user.establishment_id != complaint.establishment_id:
             return Response({'error': 'Le PFE ne peut escalader que les dossiers de son établissement.'}, status=403)
-        if complaint.status not in [ComplaintStatus.INSTRUITE, ComplaintStatus.EN_TRAITEMENT, ComplaintStatus.RESOLUE]:
-            return Response({'error': 'Escalade possible depuis INSTRUITE / EN_TRAITEMENT / RÉSOLUE.'}, status=400)
+        if complaint.status not in [
+            ComplaintStatus.INSTRUITE,
+            ComplaintStatus.AFFECTEE,
+            ComplaintStatus.EN_TRAITEMENT,
+            ComplaintStatus.RESOLUE,
+        ]:
+            return Response({'error': 'Escalade possible depuis INSTRUITE / AFFECTÉE / EN_TRAITEMENT / RÉSOLUE.'}, status=400)
 
         # Notes et raison obligatoires
         reason = request.data.get('reason', '').strip()
         notes = request.data.get('notes', reason).strip()
         if not reason:
             return Response({'error': 'Le champ reason (raison de l\'escalade) est obligatoire.'}, status=400)
-        if len(reason) < 30:
-            return Response({'error': 'La raison de l\'escalade doit contenir au moins 30 caractères. '
-                                      'Décrivez précisément le motif de l\'escalade.'}, status=400)
+        if len(reason) < 10:
+            return Response({'error': 'La raison de l\'escalade doit contenir au moins 10 caractères.'}, status=400)
 
         to_user_id = request.data.get('to_user')
         to_user = get_object_or_404(User, pk=to_user_id) if to_user_id else None

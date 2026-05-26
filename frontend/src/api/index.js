@@ -73,6 +73,9 @@ export const complaintsAPI = {
   },
   detail: (id) => api.get(`/complaints/${id}/`),
   track: (ticket) => api.get(`/complaints/track/${ticket}/`),
+  requestTrackAccessCode: (ticket) => api.post(`/complaints/track/${ticket}/request-access-code/`),
+  verifyTrackAccessCode: (ticket, code) => api.post(`/complaints/track/${ticket}/verify-access-code/`, { code }),
+  provideTrackInfo: (ticket, data) => api.post(`/complaints/track/${ticket}/provide-info/`, data),
 
   // Actions
   acknowledge: (id) => api.post(`/complaints/${id}/acknowledge/`),

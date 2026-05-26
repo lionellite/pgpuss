@@ -93,6 +93,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
             'is_anonymous', 'complainant_name', 'complainant_phone',
             'complainant_email', 'establishment', 'establishment_name_manual',
             'establishment_address_manual', 'service', 'channel',
+            'needs_call_center_assistance',
         ]
 
     def validate(self, attrs):
@@ -131,12 +132,18 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
 
         is_anonymous = _parse_bool(attrs.get('is_anonymous'))
         attrs['is_anonymous'] = is_anonymous
-        if is_anonymous:
-            phone = (attrs.get('complainant_phone') or '').strip()
-            if not phone:
-                raise serializers.ValidationError(
-                    {'complainant_phone': 'Le numéro de téléphone est obligatoire pour un dépôt anonyme.'}
-                )
+        phone = (attrs.get('complainant_phone') or '').strip()
+        email = (attrs.get('complainant_email') or '').strip()
+        request_user = getattr(request, 'user', None)
+        account_phone = (getattr(request_user, 'phone', None) or '').strip() if request_user and request_user.is_authenticated else ''
+        account_email = (getattr(request_user, 'email', None) or '').strip() if request_user and request_user.is_authenticated else ''
+
+        # Tous les dépôts doivent avoir au moins un canal de contact (email ou téléphone),
+        # y compris en anonyme, pour les demandes de complément.
+        if not (phone or email or account_phone or account_email):
+            raise serializers.ValidationError(
+                {'non_field_errors': 'Renseignez au moins un moyen de contact : email ou téléphone.'}
+            )
 
         desc = (attrs.get('description') or '').strip()
         has_voice_in_request = bool(request and request.FILES.get('voice_file'))
@@ -244,6 +251,7 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'channel', 'channel_display',
             'is_anonymous', 'complainant', 'complainant_display',
             'complainant_name', 'complainant_phone', 'complainant_email',
+            'needs_call_center_assistance', 'info_request_open', 'info_request_notes', 'info_request_at',
             'establishment', 'establishment_name', 'service', 'service_name',
             'zone_sanitaire_name',
             'assigned_to', 'assigned_to_name',

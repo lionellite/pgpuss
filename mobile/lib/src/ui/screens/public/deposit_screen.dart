@@ -172,6 +172,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         'channel': 'MOBILE',
         'is_anonymous': _anonymous,
         if (_anonymous) 'complainant_phone': _phoneCtrl.text.trim(),
+        if (_anonymous && _emailCtrl.text.isNotEmpty) 'complainant_email': _emailCtrl.text.trim(),
         if (!_anonymous && _nameCtrl.text.isNotEmpty) 'complainant_name': _nameCtrl.text.trim(),
         if (!_anonymous && _emailCtrl.text.isNotEmpty) 'complainant_email': _emailCtrl.text.trim(),
         if (!_anonymous && _phoneCtrl.text.isNotEmpty) 'complainant_phone': _phoneCtrl.text.trim(),
@@ -490,8 +491,17 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       const SizedBox(height: 16),
       if (_anonymous) ...[
         Text(
-          'Votre identité reste confidentielle. Indiquez un numéro pour vous recontacter si nécessaire.',
+          'Votre identité reste confidentielle. Indiquez au moins un moyen de contact (email ou téléphone).',
           style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
         ),
         const SizedBox(height: 14),
         TextField(
@@ -542,6 +552,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       _confirmItem('Fichiers joints', '${_files.length} fichier(s)'),
       _confirmItem('Identité', _anonymous ? 'Anonyme' : _nameCtrl.text),
       if (_anonymous && _phoneCtrl.text.isNotEmpty) _confirmItem('Téléphone', _phoneCtrl.text),
+      if (_anonymous && _emailCtrl.text.isNotEmpty) _confirmItem('Email', _emailCtrl.text),
       if (!_anonymous && _emailCtrl.text.isNotEmpty) _confirmItem('Email', _emailCtrl.text),
       if (!_anonymous && _phoneCtrl.text.isNotEmpty) _confirmItem('Téléphone', _phoneCtrl.text),
     ]);
@@ -580,8 +591,9 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
               ? _voicePath != null
               : _descCtrl.text.trim().isNotEmpty),
       3 => _anonymous
-          ? _phoneCtrl.text.trim().isNotEmpty
-          : _nameCtrl.text.trim().isNotEmpty,
+          ? (_phoneCtrl.text.trim().isNotEmpty || _emailCtrl.text.trim().isNotEmpty)
+          : (_nameCtrl.text.trim().isNotEmpty &&
+              (_phoneCtrl.text.trim().isNotEmpty || _emailCtrl.text.trim().isNotEmpty)),
       _ => true,
     };
   }

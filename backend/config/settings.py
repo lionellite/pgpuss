@@ -192,6 +192,11 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PGP-USS <noreply@pgpuss.local>")
 SITE_NAME = os.environ.get("SITE_NAME", "PGP-USS Santé Bénin")
 
+# SMS (solution économique : mode "mock" gratuit par défaut, ou webhook externe)
+SMS_PROVIDER_MODE = os.environ.get("SMS_PROVIDER_MODE", "mock")  # mock | webhook
+SMS_WEBHOOK_URL = os.environ.get("SMS_WEBHOOK_URL", "")
+SMS_SENDER = os.environ.get("SMS_SENDER", "PGPUSS")
+
 # Stockage des fichiers médias
 # Production / Vercel : définir CLOUDINARY_URL (voir docs/CLOUDINARY.md)
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
