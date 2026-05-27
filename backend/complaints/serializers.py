@@ -69,6 +69,17 @@ class AttachmentSerializer(serializers.ModelSerializer):
         if not obj.file:
             return None
         url = obj.file.url
+        # Cloudinary: si un audio est stocké en webm/ogg, fournir une URL mp3 transformée
+        # pour garantir la lecture dans <audio> (certains navigateurs refusent video/webm).
+        try:
+            ct = (getattr(obj, 'file_type', '') or '').lower()
+            name = (getattr(obj, 'file_name', '') or '').lower()
+            is_audio = ct.startswith('audio/') or any(name.endswith(ext) for ext in ('.webm', '.ogg', '.m4a', '.wav'))
+            if is_audio and 'res.cloudinary.com' in url and '/upload/' in url and not url.lower().endswith('.mp3'):
+                # Transformation Cloudinary simple: injecter f_mp3
+                url = url.replace('/upload/', '/upload/f_mp3/', 1)
+        except Exception:
+            pass
         if url.startswith('http://') or url.startswith('https://'):
             return url
         request = self.context.get('request')
@@ -313,6 +324,12 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
         if not obj.voice_file:
             return None
         url = obj.voice_file.url
+        # Cloudinary: forcer une URL mp3 lisible dans <audio>
+        try:
+            if 'res.cloudinary.com' in url and '/upload/' in url and not url.lower().endswith('.mp3'):
+                url = url.replace('/upload/', '/upload/f_mp3/', 1)
+        except Exception:
+            pass
         if url.startswith('http://') or url.startswith('https://'):
             return url
         request = self.context.get('request')

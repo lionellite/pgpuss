@@ -48,10 +48,13 @@ export default function LandingPage() {
     <div>
       <section className="hero" aria-labelledby="hero-title">
         <div className="page-container hero__inner">
-          <div className="hero__content">
           <p className="hero__badge">Plateforme officielle — Ministère de la Santé</p>
-          <h1 id="hero-title" className="hero__title">{t('welcome')}</h1>
-          <p className="hero__subtitle">{t('slogan')}</p>
+          <h1 id="hero-title" className="hero__title">
+            Plateforme de Gestion de Plainte pour les Usagers des Services de Santé
+          </h1>
+          <p className="hero__subtitle">
+            Déposez une plainte (identifiée ou anonyme), suivez son traitement et contribuez à l’amélioration des services de santé au Bénin.
+          </p>
 
           <form className="hero__search" onSubmit={handleTrack} role="search" aria-label="Rechercher une plainte">
             <label className="hero__search-label" htmlFor="hero-ticket">
@@ -94,9 +97,35 @@ export default function LandingPage() {
               </span>
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="section" aria-labelledby="acronyms-title">
+        <div className="page-container">
+          <div className="section__header">
+            <h2 id="acronyms-title" className="page-title">Sigles et rôles</h2>
+            <p className="section__lead">
+              Qui fait quoi dans le traitement des plaintes — pour un suivi clair et transparent.
+            </p>
           </div>
-          <div className="hero__media" aria-hidden>
-            <img src="/img/complaint-hero.png" alt="" width={480} height={320} />
+          <div className="grid-2">
+            {[
+              { k: 'Plateforme', t: 'Plateforme de Gestion de Plainte pour les Usagers des Services de Santé', d: "Portail officiel pour déposer, suivre et traiter les plaintes liées aux services de santé." },
+              { k: 'PFE', t: 'Point Focal Établissement', d: "Reçoit les plaintes de l’établissement, accuse réception, qualifie et affecte le dossier." },
+              { k: 'PFZS', t: 'Point Focal Zone Sanitaire', d: "Supervise les plaintes de la zone sanitaire et coordonne l’instruction au niveau de la zone." },
+              { k: 'DDS', t: 'Direction Départementale de la Santé', d: "Suit toutes les plaintes du département, peut instruire et escalader au niveau national si nécessaire." },
+              { k: 'DQSS', t: 'Direction de la Qualité des Soins et de la Sécurité', d: "Niveau national : pilotage qualité, analyse et arbitrage selon les cas." },
+              { k: 'CABINET', t: 'Cabinet du Ministère', d: "Niveau national : supervision, arbitrage, export des statistiques (PDF/Excel)." },
+              { k: 'PNUSS', t: 'Représentant PNUSS', d: "Appui à la médiation/coordination ; le niveau national a une vision globale des plaintes." },
+            ].map((x) => (
+              <div key={x.k} className="glass-card" style={{ padding: '1.25rem', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                  <span className="badge badge-info" style={{ fontWeight: 800 }}>{x.k}</span>
+                  <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{x.t}</span>
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>{x.d}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

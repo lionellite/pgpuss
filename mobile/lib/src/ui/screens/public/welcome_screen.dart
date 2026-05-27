@@ -22,16 +22,6 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const Spacer(),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/complaint-hero.png',
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Container(
                       width: 72,
                       height: 72,
@@ -45,7 +35,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'PGP-USS',
+                      'Plateforme de Gestion des Plaintes',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,

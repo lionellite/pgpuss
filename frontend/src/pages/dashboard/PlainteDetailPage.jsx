@@ -513,6 +513,29 @@ export default function PlainteDetailPage() {
                   onChange={e => setFormData({ ...formData, message: e.target.value })} />
               )}
 
+              {modal === 'escalate' && (
+                <div className="form-group">
+                  <label className="form-label">Escalader vers</label>
+                  <select
+                    className="form-select"
+                    value={formData.to_user || ''}
+                    onChange={(e) => setFormData({ ...formData, to_user: e.target.value || null })}
+                  >
+                    <option value="">Automatique / Non spécifié</option>
+                    {agents
+                      .filter(a => ['PFZS', 'DDS', 'DQSS', 'CABINET', 'PNUSS', 'ADMIN_PLATEFORME'].includes(a.role))
+                      .map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.full_name} — {a.role}
+                        </option>
+                      ))}
+                  </select>
+                  <div className="text-muted" style={{ fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                    Choisissez le destinataire si vous souhaitez orienter l’escalade vers une personne précise.
+                  </div>
+                </div>
+              )}
+
               {['resolve', 'arbitrate', 'qualify', 'escalate'].includes(modal) && (
                 <textarea
                   className="form-textarea"

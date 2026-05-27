@@ -21,6 +21,8 @@ export default function LoginPage() {
       toast.success(`Bienvenue, ${user.first_name} !`)
       const isAgent = [
         'PFE',
+        'PFZS',
+        'PNUSS',
         'AGENT_INTERNE',
         'DIRECTEUR_EST',
         'DDS',

@@ -66,10 +66,10 @@ export default function DashboardLayout() {
       >
         <div className="dashboard-sidebar__head">
           <Link to="/" className="site-brand" style={{ textDecoration: 'none' }}>
-            <img src="/logo.png" alt="PGP-USS" width={36} height={36} />
+            <img src="/logo.png" alt="Plateforme de Gestion des Plaintes" width={36} height={36} />
             {!collapsed && (
               <div>
-                <div className="site-brand__title" style={{ fontSize: '0.875rem' }}>PGP-USS</div>
+                <div className="site-brand__title" style={{ fontSize: '0.875rem' }}>Gestion des plaintes</div>
                 <div className="site-brand__subtitle">Gestion</div>
               </div>
             )}

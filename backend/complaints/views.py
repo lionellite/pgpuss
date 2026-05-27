@@ -275,19 +275,13 @@ class ComplaintListView(generics.ListAPIView):
                 qs = qs.filter(establishment__region__name=user.departement)
             else:
                 qs = qs.none()
-            # Par défaut : uniquement les escaladées
-            if scope != 'all':
-                qs = qs.filter(status=ComplaintStatus.ESCALADEE)
+            # DDS: voit tout le périmètre (toutes les plaintes du département)
 
         elif user.role == UserRole.DQSS:
-            # Par défaut : escaladées pour le niveau DQSS
-            if scope != 'all':
-                qs = qs.filter(status=ComplaintStatus.ESCALADEE)
+            # DQSS: vision nationale
 
         elif user.role == UserRole.CABINET:
-            # Par défaut : escaladées + arbitrées pour le ministère
-            if scope != 'all':
-                qs = qs.filter(status__in=[ComplaintStatus.ESCALADEE, ComplaintStatus.ARBITREE])
+            # Cabinet: vision nationale
 
         elif user.role == UserRole.ADMIN_PLATEFORME:
             pass  # Accès global sans filtre

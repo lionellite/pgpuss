@@ -66,7 +66,7 @@ export default function MainLayout() {
               <img src="/logo.png" alt="" className="brand-app-logo" />
             </div>
             <div className="site-brand__text hide-mobile">
-              <div className="site-brand__title">PGP-USS</div>
+              <div className="site-brand__title">Plateforme de Gestion des Plaintes</div>
               <div className="site-brand__subtitle">Santé — République du Bénin</div>
             </div>
           </Link>
