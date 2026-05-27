@@ -34,6 +34,10 @@ export default function DetailPlaintePage() {
   }, [id])
 
   const handleContest = async () => {
+    if (contestReason.trim().length < 10) {
+      toast.error('La raison doit contenir au moins 10 caractères.')
+      return
+    }
     try {
       await complaintsAPI.escalate(id, { reason: contestReason })
       toast.success('Demande de réexamen enregistrée')
@@ -139,6 +143,21 @@ export default function DetailPlaintePage() {
                   <audio controls src={complaint.voice_file_url} style={{ width: '100%', maxWidth: 420 }}>
                     <track kind="captions" />
                   </audio>
+                </div>
+              )}
+              {complaint.attachments?.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Pièces jointes</div>
+                  {complaint.attachments.map((att) => {
+                    const url = att.file_url || att.file
+                    const isAudio = (att.file_type || '').startsWith('audio/')
+                    return (
+                      <div key={att.id} style={{ marginBottom: '0.5rem' }}>
+                        <a href={url} target="_blank" rel="noopener noreferrer">{att.file_name}</a>
+                        {isAudio && url && <audio controls src={url} style={{ width: '100%', marginTop: '0.35rem' }} />}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

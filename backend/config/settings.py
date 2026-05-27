@@ -178,13 +178,13 @@ FAST_COMPLAINT_CREATE = os.environ.get('FAST_COMPLAINT_CREATE', '').lower() in (
     '1', 'true', 'yes',
 ) or os.environ.get('VERCEL', '').lower() in ('1', 'true')
 
-# Notifications email (alertes)
+# Notifications email (SMTP Gmail en production)
 EMAIL_ALERTS_ENABLED = os.environ.get("EMAIL_ALERTS_ENABLED", "True").lower() == "true"
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
-)
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+_email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
+if not _email_backend and os.environ.get("EMAIL_HOST_USER"):
+    _email_backend = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = _email_backend or "django.core.mail.backends.console.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
@@ -192,10 +192,13 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PGP-USS <noreply@pgpuss.local>")
 SITE_NAME = os.environ.get("SITE_NAME", "PGP-USS Santé Bénin")
 
-# SMS (solution économique : mode "mock" gratuit par défaut, ou webhook externe)
-SMS_PROVIDER_MODE = os.environ.get("SMS_PROVIDER_MODE", "mock")  # mock | webhook
+# SMS : mock (dev) | webhook (API externe) | firebase (OTP côté client Firebase Auth)
+SMS_PROVIDER_MODE = os.environ.get("SMS_PROVIDER_MODE", "mock")
 SMS_WEBHOOK_URL = os.environ.get("SMS_WEBHOOK_URL", "")
 SMS_SENDER = os.environ.get("SMS_SENDER", "PGPUSS")
+
+# Firebase Authentication (OTP SMS — vérification côté serveur du id_token)
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
 
 # Stockage des fichiers médias
 # Production / Vercel : définir CLOUDINARY_URL (voir docs/CLOUDINARY.md)

@@ -48,12 +48,18 @@ export const authAPI = {
     username: data.email || data.username || data.phone,
     password: data.password
   }),
-  register: (data) => api.post('/auth/register/', data),
+  register: (data) => api.post('/auth/register/', {
+    ...data,
+    email: data.email?.trim() || undefined,
+    phone: data.phone?.trim() || undefined,
+  }),
+  firebasePhoneAuth: (data) => api.post('/auth/firebase/phone/', data),
   me: () => api.get('/auth/me/'),
   updateProfile: (data) => api.patch('/auth/me/', data),
   changePassword: (data) => api.post('/auth/change-password/', data),
   users: (params) => api.get('/auth/users/', { params }),
   userDetail: (id) => api.get(`/auth/users/${id}/`),
+  createUser: (data) => api.post('/auth/users/create/', data),
   updateUser: (id, data) => api.patch(`/auth/users/${id}/`, data),
 }
 

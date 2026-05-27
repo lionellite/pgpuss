@@ -226,10 +226,9 @@ export default function DepotPage() {
           return Boolean(String(watched?.[5] || '').trim()) && Boolean(String(watched?.[6] || '').trim())
         }
         if (watched?.[4]) {
-          return Boolean(String(watched?.[6] || '').trim()) || Boolean(String(watched?.[7] || '').trim())
+          return true
         }
-        return Boolean(String(watched?.[5] || '').trim()) &&
-          (Boolean(String(watched?.[6] || '').trim()) || Boolean(String(watched?.[7] || '').trim()))
+        return Boolean(String(watched?.[5] || '').trim())
       default:
         return true
     }
@@ -666,21 +665,18 @@ export default function DepotPage() {
                       {isAnonymous ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                           <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                            Votre identité reste confidentielle. Indiquez au moins un moyen de contact (email ou téléphone).
+                            Votre identité reste confidentielle. Email et téléphone sont facultatifs.
                           </p>
                           <input
                             className="form-input"
-                            placeholder="Email"
+                            placeholder="Email (optionnel)"
                             {...register('complainant_email')}
                           />
                           <input
                             className="form-input"
-                            placeholder="Téléphone"
+                            placeholder="Téléphone (optionnel)"
                             {...register('complainant_phone')}
                           />
-                          {isAnonymous && !String(watched?.[6] || '').trim() && !String(watched?.[7] || '').trim() && (
-                            <span className="form-error">Renseignez un email ou un téléphone.</span>
-                          )}
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -691,11 +687,8 @@ export default function DepotPage() {
                           )}
                           <input className="form-input" placeholder="Nom complet *" {...register('complainant_name', { required: !isAnonymous ? 'Nom requis' : false })} />
                           {errors.complainant_name && <span className="form-error">{errors.complainant_name.message}</span>}
-                          <input className="form-input" placeholder="Email (recommandé)" {...register('complainant_email')} />
-                          <input className="form-input" placeholder="Téléphone (recommandé)" {...register('complainant_phone')} />
-                          {!isAnonymous && !String(watched?.[6] || '').trim() && !String(watched?.[7] || '').trim() && (
-                            <span className="form-error">Renseignez un email ou un téléphone.</span>
-                          )}
+                          <input className="form-input" placeholder="Email (optionnel)" {...register('complainant_email')} />
+                          <input className="form-input" placeholder="Téléphone (optionnel)" {...register('complainant_phone')} />
                         </div>
                       )}
                     </>

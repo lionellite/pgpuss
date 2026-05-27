@@ -17,6 +17,8 @@ export default function PlainteDetailPage() {
   const [agents, setAgents] = useState([])
   const [modal, setModal] = useState(null) // actions + docs
   const [formData, setFormData] = useState({})
+  const [showNewAgent, setShowNewAgent] = useState(false)
+  const [newAgent, setNewAgent] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '' })
 
   const reload = () => {
     complaintsAPI.detail(id).then(({ data }) => setComplaint(data)).catch(() => navigate('/dashboard/plaintes'))
@@ -25,6 +27,26 @@ export default function PlainteDetailPage() {
   useEffect(() => {
     authAPI.users().then(({ data }) => setAgents(data.results || data)).catch(() => {})
   }, [])
+
+  const reloadAgents = () => {
+    authAPI.users().then(({ data }) => setAgents(data.results || data)).catch(() => {})
+  }
+
+  const createAgent = async () => {
+    try {
+      const { data } = await authAPI.createUser(newAgent)
+      toast.success('Agent créé')
+      setShowNewAgent(false)
+      setNewAgent({ first_name: '', last_name: '', email: '', phone: '', password: '' })
+      reloadAgents()
+      if (data?.user?.id) {
+        setFormData((prev) => ({ ...prev, assigned_to: data.user.id }))
+      }
+    } catch (e) {
+      const err = e.response?.data
+      toast.error(err?.non_field_errors?.[0] || err?.error || err?.email?.[0] || 'Erreur création agent')
+    }
+  }
 
   const doAction = async (action, payload) => {
     try {
@@ -49,8 +71,12 @@ export default function PlainteDetailPage() {
 
       toast.success('Action effectuée avec succès')
       setModal(null)
+      setFormData({})
       reload()
-    } catch { toast.error("Erreur lors de l'action") }
+    } catch (e) {
+      const err = e.response?.data
+      toast.error(err?.error || err?.detail || err?.non_field_errors?.[0] || "Erreur lors de l'action")
+    }
   }
 
   const openDocs = () => setModal('documents')
@@ -294,6 +320,33 @@ export default function PlainteDetailPage() {
                 </audio>
               </div>
             )}
+            {complaint.attachments?.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Pièces jointes</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {complaint.attachments.map((att) => {
+                    const url = att.file_url || att.file
+                    const isAudio = (att.file_type || '').startsWith('audio/') || /\.(webm|mp3|m4a|wav|ogg)$/i.test(att.file_name || '')
+                    const isImage = (att.file_type || '').startsWith('image/')
+                    return (
+                      <div key={att.id} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: 4, border: '1px solid #eee' }}>
+                        <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                          {att.file_name}
+                        </a>
+                        {isAudio && url && (
+                          <audio controls src={url} style={{ width: '100%', marginTop: '0.5rem' }}>
+                            <track kind="captions" />
+                          </audio>
+                        )}
+                        {isImage && url && (
+                          <img src={url} alt={att.file_name} style={{ maxWidth: '100%', marginTop: '0.5rem', borderRadius: 4 }} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
           {complaint.resolution_notes && (
             <div className="glass-card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--color-primary)' }}>
@@ -352,12 +405,29 @@ export default function PlainteDetailPage() {
               {modal === 'assign' && (
                 <div className="form-group">
                   <label className="form-label">Agent interne</label>
-                  <select className="form-select" onChange={e => setFormData({...formData, assigned_to: e.target.value})}>
+                  <select className="form-select" value={formData.assigned_to || ''} onChange={e => setFormData({...formData, assigned_to: e.target.value})}>
                     <option value="">Sélectionner un agent</option>
                     {agents.filter(a => a.role === 'AGENT_INTERNE').map(a => (
                       <option key={a.id} value={a.id}>{a.full_name}</option>
                     ))}
                   </select>
+                  {isPFE && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowNewAgent(!showNewAgent)}>
+                        {showNewAgent ? 'Annuler' : '+ Ajouter un agent manuellement'}
+                      </button>
+                      {showNewAgent && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+                          <input className="form-input" placeholder="Prénom *" value={newAgent.first_name} onChange={e => setNewAgent({ ...newAgent, first_name: e.target.value })} />
+                          <input className="form-input" placeholder="Nom" value={newAgent.last_name} onChange={e => setNewAgent({ ...newAgent, last_name: e.target.value })} />
+                          <input className="form-input" placeholder="Email" value={newAgent.email} onChange={e => setNewAgent({ ...newAgent, email: e.target.value })} />
+                          <input className="form-input" placeholder="Téléphone" value={newAgent.phone} onChange={e => setNewAgent({ ...newAgent, phone: e.target.value })} />
+                          <input className="form-input" placeholder="Mot de passe (optionnel)" type="password" value={newAgent.password} onChange={e => setNewAgent({ ...newAgent, password: e.target.value })} />
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={createAgent}>Créer l&apos;agent</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -414,8 +484,12 @@ export default function PlainteDetailPage() {
               )}
 
               {['resolve', 'arbitrate', 'qualify', 'escalate'].includes(modal) && (
-                <textarea className="form-textarea" placeholder="Notes ou commentaires..."
-                  onChange={e => setFormData({...formData, notes: e.target.value, resolution_notes: e.target.value, reason: e.target.value})} />
+                <textarea
+                  className="form-textarea"
+                  placeholder={modal === 'escalate' ? 'Raison de l\'escalade (min. 10 caractères)…' : 'Notes ou commentaires…'}
+                  value={formData.reason || formData.notes || ''}
+                  onChange={e => setFormData({...formData, notes: e.target.value, resolution_notes: e.target.value, reason: e.target.value})}
+                />
               )}
 
               {modal === 'resolve' && (

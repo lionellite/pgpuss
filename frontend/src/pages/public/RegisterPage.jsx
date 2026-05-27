@@ -17,9 +17,11 @@ export default function RegisterPage() {
       navigate('/connexion')
     } catch (e) {
       const msg = e.response?.data
-      if (msg?.email) toast.error('Cet email est déjà utilisé.')
-      else if (msg?.phone) toast.error('Ce numéro de téléphone est déjà utilisé.')
-      else if (msg?.non_field_errors) toast.error(msg.non_field_errors)
+      if (msg?.email) toast.error(Array.isArray(msg.email) ? msg.email[0] : msg.email)
+      else if (msg?.phone) toast.error(Array.isArray(msg.phone) ? msg.phone[0] : msg.phone)
+      else if (msg?.password) toast.error(Array.isArray(msg.password) ? msg.password.join(' ') : msg.password)
+      else if (msg?.password_confirm) toast.error(msg.password_confirm)
+      else if (msg?.non_field_errors) toast.error(Array.isArray(msg.non_field_errors) ? msg.non_field_errors[0] : msg.non_field_errors)
       else toast.error("Erreur lors de l'inscription. Vérifiez vos informations.")
     }
   }

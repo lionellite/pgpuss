@@ -21,6 +21,9 @@ def _base_payload(complaint: Complaint) -> dict:
         "establishment": {
             "id": str(complaint.establishment_id) if complaint.establishment_id else None,
             "name": getattr(complaint.establishment, "name", None),
+            "manual_name": (complaint.establishment_name_manual or "").strip() or None,
+            "manual_address": (complaint.establishment_address_manual or "").strip() or None,
+            "is_unlisted": bool((complaint.establishment_name_manual or "").strip()) and not complaint.establishment_id,
         },
         "complainant": {
             "is_anonymous": complaint.is_anonymous,

@@ -10,3 +10,5 @@ dj-database-url
 cloudinary
 django-cloudinary-storage
 Pillow>=10.0
+# OTP SMS Firebase (optionnel — pip install firebase-admin)
+firebase-admin>=6.0

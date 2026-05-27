@@ -171,7 +171,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         if (_selectedCategory != null) 'category': _selectedCategory!.id,
         'channel': 'MOBILE',
         'is_anonymous': _anonymous,
-        if (_anonymous) 'complainant_phone': _phoneCtrl.text.trim(),
+        if (_anonymous && _phoneCtrl.text.trim().isNotEmpty) 'complainant_phone': _phoneCtrl.text.trim(),
         if (_anonymous && _emailCtrl.text.isNotEmpty) 'complainant_email': _emailCtrl.text.trim(),
         if (!_anonymous && _nameCtrl.text.isNotEmpty) 'complainant_name': _nameCtrl.text.trim(),
         if (!_anonymous && _emailCtrl.text.isNotEmpty) 'complainant_email': _emailCtrl.text.trim(),
@@ -491,7 +491,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       const SizedBox(height: 16),
       if (_anonymous) ...[
         Text(
-          'Votre identité reste confidentielle. Indiquez au moins un moyen de contact (email ou téléphone).',
+          'Votre identité reste confidentielle. Email et téléphone sont facultatifs.',
           style: TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         const SizedBox(height: 14),
@@ -499,7 +499,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           controller: _emailCtrl,
           keyboardType: TextInputType.emailAddress,
           decoration: const InputDecoration(
-            labelText: 'Email',
+            labelText: 'Email (optionnel)',
             prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
@@ -508,7 +508,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           controller: _phoneCtrl,
           keyboardType: TextInputType.phone,
           decoration: const InputDecoration(
-            labelText: 'Téléphone *',
+            labelText: 'Téléphone (optionnel)',
             prefixIcon: Icon(Icons.phone_outlined),
             hintText: '+229 XX XX XX XX',
           ),
@@ -590,10 +590,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           (_descriptionMode == 'voice'
               ? _voicePath != null
               : _descCtrl.text.trim().isNotEmpty),
-      3 => _anonymous
-          ? (_phoneCtrl.text.trim().isNotEmpty || _emailCtrl.text.trim().isNotEmpty)
-          : (_nameCtrl.text.trim().isNotEmpty &&
-              (_phoneCtrl.text.trim().isNotEmpty || _emailCtrl.text.trim().isNotEmpty)),
+      3 => _anonymous ? true : _nameCtrl.text.trim().isNotEmpty,
       _ => true,
     };
   }

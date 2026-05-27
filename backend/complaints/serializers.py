@@ -17,6 +17,20 @@ def _parse_bool(value) -> bool:
     return str(value).strip().lower() in ('true', '1', 'yes', 'on')
 
 
+def _establishment_display(obj):
+    """Nom affiché de l'établissement (référencé ou saisi manuellement)."""
+    if obj.establishment_id and getattr(obj, 'establishment', None):
+        return obj.establishment.name
+    manual = (getattr(obj, 'establishment_name_manual', None) or '').strip()
+    if manual:
+        return f'Établissement non répertorié — {manual}'
+    return None
+
+
+def _is_unlisted_establishment(obj) -> bool:
+    return bool((getattr(obj, 'establishment_name_manual', None) or '').strip()) and not obj.establishment_id
+
+
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
@@ -39,10 +53,25 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Attachment
-        fields = ['id', 'complaint', 'file', 'file_name', 'file_type', 'file_size', 'uploaded_at']
-        read_only_fields = ['id', 'uploaded_at', 'file_name', 'file_type', 'file_size']
+        fields = [
+            'id', 'complaint', 'file', 'file_url', 'file_name', 'file_type', 'file_size', 'uploaded_at',
+        ]
+        read_only_fields = ['id', 'uploaded_at', 'file_name', 'file_type', 'file_size', 'file_url']
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        url = obj.file.url
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
     def create(self, validated_data):
         f = validated_data.get('file')
@@ -132,18 +161,10 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
 
         is_anonymous = _parse_bool(attrs.get('is_anonymous'))
         attrs['is_anonymous'] = is_anonymous
-        phone = (attrs.get('complainant_phone') or '').strip()
-        email = (attrs.get('complainant_email') or '').strip()
-        request_user = getattr(request, 'user', None)
-        account_phone = (getattr(request_user, 'phone', None) or '').strip() if request_user and request_user.is_authenticated else ''
-        account_email = (getattr(request_user, 'email', None) or '').strip() if request_user and request_user.is_authenticated else ''
-
-        # Tous les dépôts doivent avoir au moins un canal de contact (email ou téléphone),
-        # y compris en anonyme, pour les demandes de complément.
-        if not (phone or email or account_phone or account_email):
-            raise serializers.ValidationError(
-                {'non_field_errors': 'Renseignez au moins un moyen de contact : email ou téléphone.'}
-            )
+        attrs['complainant_phone'] = (attrs.get('complainant_phone') or '').strip()
+        attrs['complainant_email'] = (attrs.get('complainant_email') or '').strip()
+        if is_anonymous:
+            attrs['complainant_name'] = ''
 
         desc = (attrs.get('description') or '').strip()
         has_voice_in_request = bool(request and request.FILES.get('voice_file'))
@@ -197,7 +218,8 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
 class ComplaintListSerializer(serializers.ModelSerializer):
     """Serializer léger pour les listes"""
     category_name = serializers.CharField(source='category.name', read_only=True, default=None)
-    establishment_name = serializers.CharField(source='establishment.name', read_only=True, default=None)
+    establishment_name = serializers.SerializerMethodField()
+    is_unlisted_establishment = serializers.SerializerMethodField()
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True, default=None)
     call_center_agent_name = serializers.CharField(source='call_center_agent.full_name', read_only=True, default=None)
     zone_sanitaire_name = serializers.SerializerMethodField()
@@ -212,11 +234,17 @@ class ComplaintListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'ticket_number', 'title', 'status', 'status_display',
             'priority', 'priority_display', 'channel', 'channel_display',
-            'category_name', 'establishment_name', 'assigned_to_name',
+            'category_name', 'establishment_name', 'is_unlisted_establishment', 'assigned_to_name',
             'call_center_agent_name', 'zone_sanitaire_name',
             'is_anonymous', 'is_overdue', 'attachment_count',
             'created_at', 'updated_at', 'deadline'
         ]
+
+    def get_establishment_name(self, obj):
+        return _establishment_display(obj)
+
+    def get_is_unlisted_establishment(self, obj):
+        return _is_unlisted_establishment(obj)
 
     def get_zone_sanitaire_name(self, obj):
         if obj.establishment and obj.establishment.zone_sanitaire:
@@ -228,7 +256,8 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
     """Serializer complet pour le détail"""
     category_name = serializers.CharField(source='category.name', read_only=True, default=None)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True, default=None)
-    establishment_name = serializers.CharField(source='establishment.name', read_only=True, default=None)
+    establishment_name = serializers.SerializerMethodField()
+    is_unlisted_establishment = serializers.SerializerMethodField()
     service_name = serializers.CharField(source='service.name', read_only=True, default=None)
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True, default=None)
     call_center_agent_name = serializers.CharField(source='call_center_agent.full_name', read_only=True, default=None)
@@ -252,7 +281,9 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'is_anonymous', 'complainant', 'complainant_display',
             'complainant_name', 'complainant_phone', 'complainant_email',
             'needs_call_center_assistance', 'info_request_open', 'info_request_notes', 'info_request_at',
-            'establishment', 'establishment_name', 'service', 'service_name',
+            'establishment', 'establishment_name', 'establishment_name_manual',
+            'establishment_address_manual', 'is_unlisted_establishment',
+            'service', 'service_name',
             'zone_sanitaire_name',
             'assigned_to', 'assigned_to_name',
             'call_center_agent', 'call_center_agent_name',
@@ -266,11 +297,19 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'attachments', 'history', 'escalations'
         ]
 
+    def get_establishment_name(self, obj):
+        return _establishment_display(obj)
+
+    def get_is_unlisted_establishment(self, obj):
+        return _is_unlisted_establishment(obj)
+
     def get_voice_file_url(self, obj):
         if not obj.voice_file:
             return None
-        request = self.context.get('request')
         url = obj.voice_file.url
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        request = self.context.get('request')
         if request:
             return request.build_absolute_uri(url)
         return url

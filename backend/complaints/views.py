@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.views.decorators.cache import cache_page
@@ -37,8 +37,10 @@ def user_can_view_complaint_documents(user, complaint) -> bool:
     """Accès lecture aux documents du dossier (même logique que la liste)."""
     if user.role == UserRole.USAGER and complaint.complainant_id != user.id:
         return False
-    if user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST] and complaint.establishment_id != user.establishment_id:
-        return False
+    if user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST]:
+        if not complaint.establishment_id:
+            return False
+        return complaint.establishment_id == user.establishment_id
     if user.role == UserRole.AGENT_INTERNE and complaint.assigned_to_id != user.id:
         return False
     if user.role == UserRole.AGENT_CALL_CENTER and complaint.call_center_agent_id != user.id:
@@ -63,6 +65,14 @@ def user_can_view_complaint_documents(user, complaint) -> bool:
         and complaint.establishment.zone_sanitaire_id != user.zone_sanitaire_id
     ):
         return False
+    if (
+        user.role == UserRole.PNUSS
+        and user.departement
+        and complaint.establishment
+        and complaint.establishment.region
+        and complaint.establishment.region.name != user.departement
+    ):
+        return False
     return True
 
 
@@ -79,7 +89,7 @@ class ComplaintCreateView(generics.CreateAPIView):
     Dépôt d'une nouvelle plainte.
     - Réservé aux USAGERS (avec compte) ou aux visiteurs anonymes.
     - Les agents, PFE, directeurs, etc. ne peuvent PAS déposer de plainte.
-    - Si anonyme : le numéro de téléphone est obligatoire.
+    - Si anonyme : téléphone et email entièrement facultatifs.
     """
     serializer_class = ComplaintCreateSerializer
     permission_classes = [permissions.AllowAny]
@@ -95,16 +105,7 @@ class ComplaintCreateView(generics.CreateAPIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Validation : si anonyme, téléphone obligatoire
-        is_anonymous = request.data.get('is_anonymous', False)
-        if is_anonymous in [True, 'true', '1', 'True']:
-            phone = (request.data.get('complainant_phone') or '').strip()
-            if not phone:
-                return Response(
-                    {'error': 'Pour une plainte anonyme, le numéro de téléphone est obligatoire.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
+        # Validation anonymat : téléphone et email entièrement facultatifs
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         complaint = serializer.save()
@@ -264,7 +265,9 @@ class ComplaintListView(generics.ListAPIView):
                 qs = qs.filter(establishment__zone_sanitaire=user.zone_sanitaire)
             elif user.departement:
                 qs = qs.filter(establishment__region__name=user.departement)
-            # Sinon : vision nationale (qs non filtré)
+            else:
+                # Niveau national : vision complète (inclut établissements non répertoriés)
+                pass
 
         elif user.role == UserRole.DDS:
             # Zone de compétence (département)
@@ -306,6 +309,11 @@ class ComplaintDetailView(generics.RetrieveUpdateAPIView):
             'category', 'subcategory', 'establishment', 'service',
             'assigned_to', 'complainant'
         ).prefetch_related('attachments', 'history', 'escalations')
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 
 class ComplaintTrackView(APIView):
@@ -455,6 +463,9 @@ class ComplaintAssignView(APIView):
                 return Response({'error': "L'utilisateur affecté doit avoir le rôle AGENT_INTERNE."}, status=400)
             if agent.establishment_id and complaint.establishment_id and agent.establishment_id != complaint.establishment_id:
                 return Response({'error': "L'agent interne doit appartenir au même établissement que la plainte."}, status=400)
+            if not complaint.establishment_id and request.user.establishment_id:
+                if agent.establishment_id != request.user.establishment_id:
+                    return Response({'error': "L'agent doit appartenir à votre établissement."}, status=400)
             old_status = complaint.status
             complaint.assigned_to = agent
             complaint.status = ComplaintStatus.AFFECTEE
@@ -1233,14 +1244,17 @@ class ComplaintReopenView(APIView):
         return Response({"message": "Plainte rouverte."})
 
 class ComplaintEscalateView(APIView):
-    """Escalader une plainte — notes et raison obligatoires (min. 30 caractères)."""
+    """Escalader une plainte — raison obligatoire (min. 10 caractères)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in [UserRole.USAGER, UserRole.PFE, UserRole.DIRECTEUR_EST,
-                                     UserRole.DDS, UserRole.DQSS, UserRole.CABINET,
-                                     UserRole.ADMIN_PLATEFORME]:
+        allowed_roles = [
+            UserRole.USAGER, UserRole.PFE, UserRole.PFZS, UserRole.PNUSS,
+            UserRole.DIRECTEUR_EST, UserRole.DDS, UserRole.DQSS, UserRole.CABINET,
+            UserRole.ADMIN_PLATEFORME,
+        ]
+        if request.user.role not in allowed_roles:
             return Response({'error': 'Non autorisé.'}, status=403)
         if request.user.role == UserRole.USAGER and complaint.complainant_id != request.user.id:
             return Response({'error': 'Vous ne pouvez escalader que vos propres plaintes.'}, status=403)
@@ -1251,14 +1265,14 @@ class ComplaintEscalateView(APIView):
             ComplaintStatus.AFFECTEE,
             ComplaintStatus.EN_TRAITEMENT,
             ComplaintStatus.RESOLUE,
+            ComplaintStatus.ESCALADEE,
         ]:
-            return Response({'error': 'Escalade possible depuis INSTRUITE / AFFECTÉE / EN_TRAITEMENT / RÉSOLUE.'}, status=400)
+            return Response({'error': 'Escalade possible depuis INSTRUITE / AFFECTÉE / EN_TRAITEMENT / RÉSOLUE / ESCALADÉE.'}, status=400)
 
-        # Notes et raison obligatoires
-        reason = request.data.get('reason', '').strip()
-        notes = request.data.get('notes', reason).strip()
+        reason = (request.data.get('reason') or request.data.get('notes') or '').strip()
+        notes = (request.data.get('notes') or reason).strip()
         if not reason:
-            return Response({'error': 'Le champ reason (raison de l\'escalade) est obligatoire.'}, status=400)
+            return Response({'error': 'La raison de l\'escalade est obligatoire (min. 10 caractères).'}, status=400)
         if len(reason) < 10:
             return Response({'error': 'La raison de l\'escalade doit contenir au moins 10 caractères.'}, status=400)
 
@@ -1283,18 +1297,21 @@ class ComplaintEscalateView(APIView):
             actor=request.user,
             notes=notes
         )
-        generate_document(
-            complaint=complaint,
-            doc_type=ComplaintDocumentType.DOSSIER_ESCALADE,
-            actor=request.user,
-            extra={
-                "document": {
-                    "title": "Dossier d'escalade",
-                    "reason": reason,
-                    "history_snapshot_count": complaint.history.count(),
-                }
-            },
-        )
+        try:
+            generate_document(
+                complaint=complaint,
+                doc_type=ComplaintDocumentType.DOSSIER_ESCALADE,
+                actor=request.user,
+                extra={
+                    "document": {
+                        "title": "Dossier d'escalade",
+                        "reason": reason,
+                        "history_snapshot_count": complaint.history.count(),
+                    }
+                },
+            )
+        except Exception:
+            pass
         return Response({'message': 'Plainte escaladée avec succès.'})
 
 
@@ -1344,9 +1361,15 @@ class ComplaintAttachmentView(generics.ListCreateAPIView):
     """Pièces jointes d'une plainte"""
     serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         return Attachment.objects.filter(complaint_id=self.kwargs['pk'])
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_create(self, serializer):
         complaint = get_object_or_404(Complaint, pk=self.kwargs['pk'])

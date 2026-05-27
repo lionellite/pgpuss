@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -15,6 +16,8 @@ from .serializers import (
     ChangePasswordSerializer,
     PhoneLoginSerializer,
     AdminPasswordResetSerializer,
+    PFEStaffCreateSerializer,
+    PFEStaffUpdateSerializer,
 )
 
 User = get_user_model()
@@ -28,12 +31,61 @@ class RegisterView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
         return Response({
             'message': 'Compte créé avec succès.',
             'user': UserSerializer(user).data
         }, status=status.HTTP_201_CREATED)
+
+
+class FirebasePhoneAuthView(APIView):
+    """
+    Connexion / inscription via Firebase Authentication (OTP SMS côté client).
+    Le client envoie l'id_token obtenu après vérification OTP Firebase.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .firebase_auth import verify_firebase_id_token
+
+        import secrets
+
+        id_token = (request.data.get('id_token') or '').strip()
+        if not id_token:
+            return Response({'error': 'Le champ id_token est obligatoire.'}, status=400)
+
+        try:
+            claims = verify_firebase_id_token(id_token)
+        except RuntimeError as exc:
+            return Response({'error': str(exc)}, status=503)
+        except Exception:
+            return Response({'error': 'Token Firebase invalide ou expiré.'}, status=401)
+
+        phone = (claims.get('phone_number') or '').strip()
+        if not phone:
+            return Response({'error': 'Le token ne contient pas de numéro de téléphone vérifié.'}, status=400)
+
+        phone_normalized = phone.replace(' ', '').replace('-', '').replace('.', '')
+        user = User.objects.filter(phone=phone_normalized).first()
+        if not user:
+            user = User.objects.create_user(
+                phone=phone_normalized,
+                email=None,
+                password=secrets.token_urlsafe(24),
+                first_name=(request.data.get('first_name') or 'Usager').strip()[:100],
+                last_name=(request.data.get('last_name') or '').strip()[:100],
+                role=UserRole.USAGER,
+            )
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': UserSerializer(user).data,
+            'message': 'Authentification Firebase réussie.',
+        })
 
 
 class PhoneLoginView(APIView):
@@ -101,6 +153,36 @@ class IsAdminPlateforme(permissions.BasePermission):
         )
 
 
+class UserCreateView(generics.CreateAPIView):
+    """Création d'utilisateur — PFE (agents internes) ou admin plateforme."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.user.role == UserRole.PFE:
+            return PFEStaffCreateSerializer
+        if self.request.user.role == UserRole.ADMIN_PLATEFORME:
+            return AdminUserUpdateSerializer
+        raise PermissionDenied("Création d'utilisateur non autorisée.")
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role == UserRole.PFE:
+            serializer = PFEStaffCreateSerializer(data=request.data, context={'request': request})
+        elif request.user.role == UserRole.ADMIN_PLATEFORME:
+            return Response(
+                {'error': 'Utilisez l\'interface admin Django pour créer des comptes non-agents.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response({'error': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            'message': 'Agent interne créé avec succès.',
+            'user': UserSerializer(user).data,
+        }, status=status.HTTP_201_CREATED)
+
+
 class UserListView(generics.ListAPIView):
     """
     Liste des utilisateurs.
@@ -146,8 +228,11 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         user = self.request.user
-        if self.request.method in ['PUT', 'PATCH'] and user.role == UserRole.ADMIN_PLATEFORME:
-            return AdminUserUpdateSerializer
+        if self.request.method in ['PUT', 'PATCH']:
+            if user.role == UserRole.ADMIN_PLATEFORME:
+                return AdminUserUpdateSerializer
+            if user.role == UserRole.PFE:
+                return PFEStaffUpdateSerializer
         return UserSerializer
 
     def get_queryset(self):
@@ -155,7 +240,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.role == UserRole.ADMIN_PLATEFORME:
             return User.objects.select_related('establishment', 'zone_sanitaire').all()
         elif user.role in [UserRole.DIRECTEUR_EST, UserRole.PFE]:
-            return User.objects.filter(establishment=user.establishment)
+            if user.establishment_id:
+                return User.objects.filter(establishment=user.establishment)
+            return User.objects.filter(id=user.id)
         elif user.role == UserRole.PFZS:
             if user.zone_sanitaire_id:
                 return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
@@ -163,9 +250,20 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         return User.objects.filter(id=user.id)
 
     def update(self, request, *args, **kwargs):
+        target = self.get_object()
+        if request.user.role == UserRole.PFE:
+            if target.role != UserRole.AGENT_INTERNE or target.establishment_id != request.user.establishment_id:
+                return Response(
+                    {'error': 'Vous ne pouvez modifier que les agents internes de votre établissement.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            serializer = PFEStaffUpdateSerializer(target, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(UserSerializer(target).data)
         if request.user.role != UserRole.ADMIN_PLATEFORME:
             return Response(
-                {'error': "Modification réservée à l'administrateur plateforme."},
+                {'error': "Modification réservée à l'administrateur plateforme ou au PFE."},
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().update(request, *args, **kwargs)
