@@ -279,9 +279,11 @@ class ComplaintListView(generics.ListAPIView):
 
         elif user.role == UserRole.DQSS:
             # DQSS: vision nationale
+            pass
 
         elif user.role == UserRole.CABINET:
             # Cabinet: vision nationale
+            pass
 
         elif user.role == UserRole.ADMIN_PLATEFORME:
             pass  # Accès global sans filtre
