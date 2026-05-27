@@ -699,12 +699,33 @@ export default function DepotPage() {
               {step === 4 && (
                 <div>
                   <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>5. Confirmation</h2>
-                  <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '4px', marginBottom: '2rem' }}>
-                    <p style={{ fontSize: '0.9rem', color: '#444' }}>
-                      Vérifiez vos informations avant validation.
-                      {files.length > 0 && ` ${files.length} pièce(s) jointe(s).`}
-                      {voiceBlob && ' Message vocal inclus.'}
-                    </p>
+                  <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '4px', marginBottom: '1.25rem', border: '1px solid #eee' }}>
+                    <div style={{ fontSize: '0.9rem', color: '#111', fontWeight: 700, marginBottom: '0.75rem' }}>Récapitulatif</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                      {[
+                        { label: 'Établissement', value: manualEstablishment ? (manualEstName || '—') : (establishments.find(e => String(e.id) === String(watched?.[0]))?.name || '—') },
+                        { label: 'Service', value: services.find(s => String(s.id) === String(watched?.[1]))?.name || '—' },
+                        { label: 'Catégorie', value: categories.find(c => String(c.id) === String(watched?.[4] || watched?.[1]))?.display_name || categories.find(c => String(c.id) === String(watched?.[1]))?.display_name || '—' },
+                        { label: 'Titre', value: String(watched?.[2] || '').trim() || '—' },
+                        { label: 'Mode description', value: descriptionMode === 'voice' ? 'Message vocal' : 'Texte' },
+                        { label: 'Pièces jointes', value: files.length ? `${files.length} fichier(s)` : 'Aucune' },
+                        { label: 'Vocal', value: voiceBlob ? 'Oui' : 'Non' },
+                        { label: 'Identité', value: isCallCenter ? 'Saisie call center' : (watched?.[4] ? 'Anonyme' : (String(watched?.[5] || '').trim() || '—')) },
+                        { label: 'Email', value: String(watched?.[6] || '').trim() || '—' },
+                        { label: 'Téléphone', value: String(watched?.[7] || '').trim() || '—' },
+                      ].map((it, i) => (
+                        <div key={i} style={{ padding: '0.75rem', background: '#fff', borderRadius: 4, border: '1px solid #eee' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{it.label}</div>
+                          <div style={{ fontSize: '0.9rem', color: '#111', fontWeight: 500, whiteSpace: 'pre-wrap' }}>{it.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {descriptionMode === 'text' && String(watched?.[3] || '').trim() && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#fff', borderRadius: 4, border: '1px solid #eee' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Description</div>
+                        <div style={{ fontSize: '0.9rem', color: '#111', whiteSpace: 'pre-wrap' }}>{String(watched?.[3] || '').trim()}</div>
+                      </div>
+                    )}
                   </div>
                   <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ width: '100%' }}>
                     {isSubmitting ? 'Envoi...' : 'Soumettre ma plainte'}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { complaintsAPI, authAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
@@ -17,6 +18,7 @@ export default function PlainteDetailPage() {
   const [agents, setAgents] = useState([])
   const [modal, setModal] = useState(null) // actions + docs
   const [formData, setFormData] = useState({})
+  const [confirm, setConfirm] = useState(null) // { action, payload, title, message }
   const [showNewAgent, setShowNewAgent] = useState(false)
   const [newAgent, setNewAgent] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '' })
 
@@ -79,7 +81,30 @@ export default function PlainteDetailPage() {
     }
   }
 
-  const openDocs = () => setModal('documents')
+  const askConfirm = (action, payload, title, message) => {
+    setModal(null)
+    setConfirm({ action, payload: payload || {}, title: title || 'Confirmer', message: message || '' })
+  }
+
+  const openActionModal = (name) => {
+    setConfirm(null)
+    setFormData({})
+    if (!name) {
+      setModal(null)
+      setShowNewAgent(false)
+      return
+    }
+    setModal(name)
+  }
+
+  const runConfirmed = async () => {
+    if (!confirm) return
+    const { action, payload } = confirm
+    setConfirm(null)
+    await doAction(action, payload)
+  }
+
+  const openDocs = () => openActionModal('documents')
 
   if (!complaint && loading) return <div className="loading-center"><div className="spinner" /></div>
   if (!complaint) return null
@@ -139,34 +164,34 @@ export default function PlainteDetailPage() {
           {/* PFE Actions */}
           {isPFE && complaint.status === 'SOUMISE' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
+              <button className="btn btn-primary btn-sm" onClick={() => askConfirm('acknowledge', {}, 'Accuser réception', 'Confirmez-vous l’accusé de réception de cette plainte ?')}>
                 Accuser réception
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('requestInfo')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('requestInfo')}>
                 Demander complément
               </button>
             </div>
           )}
           {isPFE && complaint.status === 'ACCUSEE' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setModal('qualify')}>
+            <button className="btn btn-primary btn-sm" onClick={() => openActionModal('qualify')}>
               <FiFileText /> Qualifier
             </button>
           )}
           {isPFE && complaint.status === 'INSTRUITE' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('assign')}>
+              <button className="btn btn-primary btn-sm" onClick={() => openActionModal('assign')}>
                 <FiUser /> Affecter
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => doAction('start')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => askConfirm('start', {}, 'Démarrer le traitement', 'Confirmez-vous le démarrage du traitement (investigation) ?')}>
                 Traiter directement
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('escalate')}>
                 <FiArrowUp /> Escalader (Zone Sanitaire)
               </button>
             </div>
           )}
           {isPFE && complaint.status === 'RESOLUE' && (
-            <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+            <button className="btn btn-ghost btn-sm" onClick={() => askConfirm('close', {}, 'Clôturer', 'Confirmez-vous la clôture de ce dossier ?')}>
               <FiLock /> Clôturer
             </button>
           )}
@@ -174,26 +199,26 @@ export default function PlainteDetailPage() {
           {/* Agent Actions */}
           {isAgent && complaint.status === 'AFFECTEE' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => doAction('acceptAssignment')}>
+              <button className="btn btn-primary btn-sm" onClick={() => askConfirm('acceptAssignment', formData, "Accepter l'affectation", 'Confirmez-vous l’acceptation de cette affectation ?')}>
                 <FiCheckCircle /> Accepter l'affectation
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('refuseAssignment')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('refuseAssignment')}>
                 <FiXCircle /> Refuser / Réorienter
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => doAction('start')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => askConfirm('start', {}, 'Démarrer le traitement', 'Confirmez-vous le démarrage du traitement (investigation) ?')}>
                 🚀 Démarrer le traitement
               </button>
             </div>
           )}
           {isAgent && complaint.status === 'EN_TRAITEMENT' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setModal('investigationLog')}>
+              <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('investigationLog')}>
                 <FiBookOpen /> Journal
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setModal('requestExtension')}>
+              <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('requestExtension')}>
                 <FiClock /> Extension délai
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('resolve')}>
                 <FiCheckCircle /> Soumettre rapport
               </button>
             </div>
@@ -202,16 +227,16 @@ export default function PlainteDetailPage() {
           {/* Direction Actions */}
           {isDirecteur && complaint.status === 'RESOLUE' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('validateResolution')}>
+              <button className="btn btn-primary btn-sm" onClick={() => openActionModal('validateResolution')}>
                 Valider la résolution
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('rejectResolution')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('rejectResolution')}>
                 Rejeter / Renvoyer
               </button>
             </div>
           )}
           {isDirecteur && complaint.status === 'INSTRUITE' && (
-            <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+            <button className="btn btn-danger btn-sm" onClick={() => openActionModal('escalate')}>
               <FiArrowUp /> Escalader à la DDS
             </button>
           )}
@@ -219,7 +244,7 @@ export default function PlainteDetailPage() {
           {/* PFZS — Zone Sanitaire Actions (diag: UC25-UC29) */}
           {isPFZS && ['SOUMISE', 'ACCUSEE', 'INSTRUITE', 'AFFECTEE', 'EN_TRAITEMENT'].includes(complaint.status) && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setModal('investigationLog')}>
+              <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('investigationLog')}>
                 <FiBookOpen /> Superviser / Journal
               </button>
             </div>
@@ -229,19 +254,19 @@ export default function PlainteDetailPage() {
               <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
                 Accuser réception (PFZS)
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('investigationLog')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('investigationLog')}>
                 <FiBookOpen /> Instruire enquête
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('resolve')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('resolve')}>
                 <FiCheckCircle /> Proposer résolution
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('escalate')}>
                 <FiArrowUp /> Escalader à la DDS
               </button>
             </div>
           )}
           {isPFZS && complaint.status === 'RESOLUE' && (
-            <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+            <button className="btn btn-ghost btn-sm" onClick={() => askConfirm('close', {}, 'Clôturer', 'Confirmez-vous la clôture de ce dossier ?')}>
               <FiLock /> Clôturer
             </button>
           )}
@@ -249,19 +274,19 @@ export default function PlainteDetailPage() {
           {/* DDS Actions */}
           {isDDS && complaint.status === 'ESCALADEE' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('ddsAssignInspector')}>
+              <button className="btn btn-primary btn-sm" onClick={() => openActionModal('ddsAssignInspector')}>
                 Affecter inspecteur
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('ddsInvestigation')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('ddsInvestigation')}>
                 Enquête DDS
               </button>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
+              <button className="btn btn-primary btn-sm" onClick={() => openActionModal('arbitrate')}>
                 <FiShield /> Arbitrer
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('escalate')}>
                 <FiArrowUp /> Escalader au Ministère
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+              <button className="btn btn-ghost btn-sm" onClick={() => askConfirm('close', {}, 'Clôturer dossier', 'Confirmez-vous la clôture de ce dossier ?')}>
                 <FiLock /> Clôturer dossier
               </button>
             </div>
@@ -270,10 +295,10 @@ export default function PlainteDetailPage() {
           {/* DQSS / National Actions (UC37-UC41) */}
           {isDQSS && complaint.status === 'ESCALADEE' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('arbitrate')}>
+              <button className="btn btn-primary btn-sm" onClick={() => openActionModal('arbitrate')}>
                 <FiShield /> Arbitrer / Injonction
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => doAction('close')}>
+              <button className="btn btn-ghost btn-sm" onClick={() => askConfirm('close', {}, 'Clôturer définitivement', 'Confirmez-vous la clôture définitive de ce dossier ?')}>
                 <FiLock /> Clôturer définitivement
               </button>
             </div>
@@ -282,13 +307,13 @@ export default function PlainteDetailPage() {
           {/* PNUSS Actions (UC46-UC51) */}
           {isPNUSS && ['EN_TRAITEMENT', 'ESCALADEE'].includes(complaint.status) && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('investigationLog')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('investigationLog')}>
                 <FiBookOpen /> Participer à l'enquête
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModal('notifyParties')}>
+              <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('notifyParties')}>
                 Médiation / Intervention
               </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setModal('escalate')}>
+              <button className="btn btn-danger btn-sm" onClick={() => openActionModal('escalate')}>
                 <FiArrowUp /> Alerter hiérarchie
               </button>
             </div>
@@ -296,7 +321,7 @@ export default function PlainteDetailPage() {
 
           {/* Notify parties — accessible à tous les acteurs hiérarchiques */}
           {(isRegulateur || isDirecteur || isPFE || isPFZS || isPNUSS) && (
-            <button className="btn btn-ghost btn-sm" onClick={() => setModal('notifyParties')}>
+            <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('notifyParties')}>
               Notifier parties
             </button>
           )}
@@ -330,9 +355,14 @@ export default function PlainteDetailPage() {
                     const isImage = (att.file_type || '').startsWith('image/')
                     return (
                       <div key={att.id} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: 4, border: '1px solid #eee' }}>
-                        <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                          {att.file_name}
-                        </a>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            {att.file_name}
+                          </a>
+                          <a className="btn btn-ghost btn-sm" href={url} download>
+                            Télécharger
+                          </a>
+                        </div>
                         {isAudio && url && (
                           <audio controls src={url} style={{ width: '100%', marginTop: '0.5rem' }}>
                             <track kind="captions" />
@@ -371,13 +401,13 @@ export default function PlainteDetailPage() {
         </div>
       </div>
 
-      {/* Action Modals */}
-      {modal && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+      {/* Action Modals (portal) */}
+      {modal && typeof document !== 'undefined' && createPortal(
+        <div className="modal-overlay" onClick={() => openActionModal(null)} role="presentation">
+          <div className="modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="modal-header">
               <h3 className="modal-title">Action : {modal}</h3>
-              <button className="modal-close" onClick={() => setModal(null)}>✕</button>
+              <button className="modal-close" onClick={() => openActionModal(null)}>✕</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -499,7 +529,7 @@ export default function PlainteDetailPage() {
 
               {modal !== 'documents' && (
                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                  <button className="btn btn-ghost" onClick={() => setModal(null)}>Annuler</button>
+                  <button className="btn btn-ghost" onClick={() => openActionModal(null)}>Annuler</button>
                   <button
                     className="btn btn-primary"
                     onClick={() => {
@@ -519,7 +549,7 @@ export default function PlainteDetailPage() {
                         ddsInvestigation: 'ddsInvestigation',
                         notifyParties: 'notifyParties',
                       }
-                      doAction(map[modal] || modal, formData)
+                      askConfirm(map[modal] || modal, formData, 'Confirmer l’action', 'Confirmez-vous cette action ?')
                     }}
                   >
                     Confirmer
@@ -528,7 +558,28 @@ export default function PlainteDetailPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* Confirm Modal */}
+      {confirm && typeof document !== 'undefined' && createPortal(
+        <div className="modal-overlay" onClick={() => setConfirm(null)} role="presentation">
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <h3 className="modal-title">{confirm.title}</h3>
+              <button className="modal-close" onClick={() => setConfirm(null)}>✕</button>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              {confirm.message || 'Confirmez-vous cette action ?'}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button className="btn btn-ghost" onClick={() => setConfirm(null)}>Annuler</button>
+              <button className="btn btn-primary" onClick={runConfirmed}>Oui, confirmer</button>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

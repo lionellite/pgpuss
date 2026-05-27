@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   FiFileText, FiUsers, FiLogOut, FiMenu,
   FiHome, FiTrendingUp, FiBell, FiChevronRight,
-  FiLayers, FiMapPin, FiPhone,
+  FiLayers, FiMapPin, FiPhone, FiUser,
 } from 'react-icons/fi'
 import GovFlagBar from '../components/GovFlagBar'
 
@@ -19,6 +19,10 @@ const getNavItems = (role) => {
   }
 
   items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp aria-hidden />, label: 'Analytique' })
+
+  if (role === 'PFE') {
+    items.push({ to: '/dashboard/agents-internes', icon: <FiUser aria-hidden />, label: 'Agents internes' })
+  }
 
   if (role === 'ADMIN_PLATEFORME') {
     items.push(

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { analyticsAPI } from '../../api'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -22,8 +23,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [period, setPeriod] = useState('monthly')
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [value, setValue] = useState(new Date().getMonth() + 1)
 
   useEffect(() => {
     analyticsAPI.dashboard()
@@ -72,6 +78,84 @@ export default function AnalyticsPage() {
         <h1 className="page-title">Analytique</h1>
         <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>Indicateurs et tendances de la plateforme.</p>
       </div>
+
+      {(user?.role === 'CABINET' || user?.role === 'ADMIN_PLATEFORME') && (
+        <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'end', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Période</label>
+                <select className="form-select" value={period} onChange={(e) => setPeriod(e.target.value)}>
+                  <option value="monthly">Mensuel</option>
+                  <option value="quarterly">Trimestriel</option>
+                  <option value="semiannual">Semestriel</option>
+                  <option value="annual">Annuel</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Année</label>
+                <input className="form-input" type="number" value={year} onChange={(e) => setYear(Number(e.target.value || 0))} style={{ width: 120 }} />
+              </div>
+              {period !== 'annual' && (
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">{period === 'monthly' ? 'Mois' : period === 'quarterly' ? 'Trimestre' : 'Semestre'}</label>
+                  <input className="form-input" type="number" value={value} onChange={(e) => setValue(Number(e.target.value || 0))} style={{ width: 120 }} />
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-secondary"
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    const params = { format: 'xlsx', period, year, ...(period !== 'annual' ? { value } : {}) }
+                    const res = await analyticsAPI.exportStats(params)
+                    const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/octet-stream' })
+                    const url = window.URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `pgpuss_stats_${period}_${year}${period !== 'annual' ? '_' + value : ''}.xlsx`
+                    document.body.appendChild(a)
+                    a.click()
+                    a.remove()
+                    window.URL.revokeObjectURL(url)
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+              >
+                {exporting ? 'Export…' : 'Exporter Excel'}
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    const params = { format: 'pdf', period, year, ...(period !== 'annual' ? { value } : {}) }
+                    const res = await analyticsAPI.exportStats(params)
+                    const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/pdf' })
+                    const url = window.URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `pgpuss_stats_${period}_${year}${period !== 'annual' ? '_' + value : ''}.pdf`
+                    document.body.appendChild(a)
+                    a.click()
+                    a.remove()
+                    window.URL.revokeObjectURL(url)
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+              >
+                {exporting ? 'Export…' : 'Exporter PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>

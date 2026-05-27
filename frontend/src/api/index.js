@@ -165,6 +165,7 @@ export const analyticsAPI = {
   dashboard: () => api.get('/analytics/dashboard/'),
   publicStats: () => api.get('/analytics/public-stats/'),
   submitSatisfaction: (data) => api.post('/analytics/satisfaction/', data),
+  exportStats: (params) => api.get('/analytics/export/', { params, responseType: 'blob' }),
 }
 
 export default api

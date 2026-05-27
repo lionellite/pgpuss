@@ -1,6 +1,7 @@
 """Validation et enregistrement des médias de dépôt (hors corps JSON principal)."""
 import logging
 import os
+import uuid
 
 from django.conf import settings
 from rest_framework import status
@@ -53,28 +54,35 @@ def _ensure_cloudinary_sdk():
     cloudinary.config(cloudinary_url=url, secure=True)
 
 
-def _cloudinary_upload(uploaded_file, *, folder: str, resource_type: str = 'auto'):
-    """Upload direct via l'API Cloudinary (fiable sur Vercel serverless)."""
+def _cloudinary_upload(uploaded_file, *, folder: str, resource_type: str = 'auto', force_format: str | None = None):
+    """Upload direct via l'API Cloudinary (public_id court pour éviter varchar(100))."""
     import cloudinary.uploader
 
     _ensure_cloudinary_sdk()
     uploaded_file.seek(0)
-    return cloudinary.uploader.upload(
-        uploaded_file,
-        folder=folder,
-        resource_type=resource_type,
-        use_filename=True,
-        unique_filename=True,
-        overwrite=False,
-    )
+    public_id = f'{folder}/{uuid.uuid4().hex}'
+    kwargs = {
+        'public_id': public_id,
+        'resource_type': resource_type,
+        'use_filename': False,
+        'unique_filename': False,
+        'overwrite': False,
+    }
+    if force_format:
+        kwargs['format'] = force_format
+    return cloudinary.uploader.upload(uploaded_file, **kwargs)
 
 
 def _assign_cloudinary_file(file_field, result: dict):
-    """Associe un résultat Cloudinary à un FileField (MediaCloudinaryStorage)."""
+    """Associe un résultat Cloudinary à un FileField (nom court, max 255)."""
     public_id = result.get('public_id') or ''
     fmt = result.get('format')
     name = f'{public_id}.{fmt}' if fmt else public_id
-    file_field.name = name
+    file_field.name = name[:255]
+
+
+def _secure_url(result: dict) -> str:
+    return (result.get('secure_url') or result.get('url') or '').strip()
 
 
 def save_voice_file(complaint: Complaint, uploaded_file) -> Response | None:
@@ -82,7 +90,7 @@ def save_voice_file(complaint: Complaint, uploaded_file) -> Response | None:
     if missing:
         return missing
 
-    if complaint.voice_file:
+    if complaint.voice_file or complaint.voice_media_url:
         return Response(
             {'error': 'Un message vocal est déjà enregistré pour cette plainte.'},
             status=status.HTTP_400_BAD_REQUEST,
@@ -101,13 +109,16 @@ def save_voice_file(complaint: Complaint, uploaded_file) -> Response | None:
 
     folder = f'complaints/voice/{complaint.id}'
     if _cloudinary_url():
+        # Toujours convertir en mp3 pour lecture <audio> dans tous les navigateurs.
         result = _cloudinary_upload(
             uploaded_file,
             folder=folder,
             resource_type='video',
+            force_format='mp3',
         )
         _assign_cloudinary_file(complaint.voice_file, result)
-        complaint.save(update_fields=['voice_file'])
+        complaint.voice_media_url = _secure_url(result)
+        complaint.save(update_fields=['voice_file', 'voice_media_url'])
     else:
         complaint.voice_file = uploaded_file
         complaint.save(update_fields=['voice_file'])
@@ -145,12 +156,14 @@ def save_attachment(complaint: Complaint, uploaded_file) -> Response | None:
     folder = f'attachments/{complaint.id}'
 
     if _cloudinary_url():
-        result = _cloudinary_upload(uploaded_file, folder=folder, resource_type='auto')
+        resource_type = 'video' if ct.startswith('audio/') else 'auto'
+        result = _cloudinary_upload(uploaded_file, folder=folder, resource_type=resource_type)
         att = Attachment(
             complaint=complaint,
             file_name=file_name,
-            file_type=ct,
+            file_type=ct or (result.get('format') or ''),
             file_size=getattr(uploaded_file, 'size', 0) or 0,
+            media_url=_secure_url(result),
         )
         _assign_cloudinary_file(att.file, result)
         att.save()

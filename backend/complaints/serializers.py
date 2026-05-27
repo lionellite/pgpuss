@@ -63,6 +63,9 @@ class AttachmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'uploaded_at', 'file_name', 'file_type', 'file_size', 'file_url']
 
     def get_file_url(self, obj):
+        stored = (getattr(obj, 'media_url', None) or '').strip()
+        if stored:
+            return stored
         if not obj.file:
             return None
         url = obj.file.url
@@ -304,6 +307,9 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
         return _is_unlisted_establishment(obj)
 
     def get_voice_file_url(self, obj):
+        stored = (getattr(obj, 'voice_media_url', None) or '').strip()
+        if stored:
+            return stored
         if not obj.voice_file:
             return None
         url = obj.voice_file.url

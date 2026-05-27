@@ -48,6 +48,7 @@ export default function LandingPage() {
     <div>
       <section className="hero" aria-labelledby="hero-title">
         <div className="page-container hero__inner">
+          <div className="hero__content">
           <p className="hero__badge">Plateforme officielle — Ministère de la Santé</p>
           <h1 id="hero-title" className="hero__title">{t('welcome')}</h1>
           <p className="hero__subtitle">{t('slogan')}</p>
@@ -92,6 +93,10 @@ export default function LandingPage() {
                 Vérifier <FiArrowRight aria-hidden />
               </span>
             </Link>
+          </div>
+          </div>
+          <div className="hero__media" aria-hidden>
+            <img src="/img/complaint-hero.png" alt="" width={480} height={320} />
           </div>
         </div>
       </section>

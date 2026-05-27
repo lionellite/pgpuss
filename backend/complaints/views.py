@@ -1269,6 +1269,7 @@ class ComplaintEscalateView(APIView):
         ]:
             return Response({'error': 'Escalade possible depuis INSTRUITE / AFFECTÉE / EN_TRAITEMENT / RÉSOLUE / ESCALADÉE.'}, status=400)
 
+        kind = (request.data.get('kind') or '').strip().upper()
         reason = (request.data.get('reason') or request.data.get('notes') or '').strip()
         notes = (request.data.get('notes') or reason).strip()
         if not reason:
@@ -1289,9 +1290,13 @@ class ComplaintEscalateView(APIView):
             to_user=to_user,
             reason=reason
         )
+        action_label = 'Escalade de la plainte'
+        if kind in ('SECOND_DEGREE_APPEAL', 'APPEAL_2', 'RECOURS_2'):
+            action_label = 'Recours (2e degré)'
+
         ComplaintHistory.objects.create(
             complaint=complaint,
-            action='Escalade de la plainte',
+            action=action_label,
             old_status=old_status,
             new_status=ComplaintStatus.ESCALADEE,
             actor=request.user,

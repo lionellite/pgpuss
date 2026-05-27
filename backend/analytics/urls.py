@@ -6,4 +6,5 @@ urlpatterns = [
     path('public-stats/', views.PublicStatsView.as_view(), name='public_stats'),
     path('satisfaction/', views.SatisfactionCreateView.as_view(), name='satisfaction_create'),
     path('satisfaction/list/', views.SatisfactionListView.as_view(), name='satisfaction_list'),
+    path('export/', views.ExportStatsView.as_view(), name='export_stats'),
 ]

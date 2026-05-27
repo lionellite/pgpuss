@@ -12,3 +12,6 @@ django-cloudinary-storage
 Pillow>=10.0
 # OTP SMS Firebase (optionnel — pip install firebase-admin)
 firebase-admin>=6.0
+# Exports statistiques (Excel/PDF)
+openpyxl>=3.1
+reportlab>=4.0

@@ -706,9 +706,48 @@ button, input, select, textarea {
 }
 
 .hero__inner {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
-  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2xl);
+  align-items: center;
+}
+
+.hero__content {
+  text-align: left;
+}
+
+.hero__media {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero__media img {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .hero__inner {
+    grid-template-columns: 1fr;
+  }
+  .hero__content {
+    text-align: center;
+  }
+  .hero__media {
+    order: -1;
+    margin-bottom: var(--space-lg);
+  }
+  .hero__search {
+    text-align: left;
+  }
 }
 
 .hero__badge {
@@ -1489,6 +1528,60 @@ button, input, select, textarea {
 
 .text-muted {
   color: var(--text-muted);
+}
+
+/* Modales (actions workflow, confirmations) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: min(90vh, 720px);
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {

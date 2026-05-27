@@ -22,6 +22,8 @@ export default function DetailPlaintePage() {
   const [showAckResolution, setShowAckResolution] = useState(false)
   const [ackAccepted, setAckAccepted] = useState(true)
   const [ackNotes, setAckNotes] = useState('')
+  const [showAppeal2, setShowAppeal2] = useState(false)
+  const [appealReason, setAppealReason] = useState('')
   const [showProvideInfo, setShowProvideInfo] = useState(false)
   const [provideInfo, setProvideInfo] = useState('')
   const [showDocs, setShowDocs] = useState(false)
@@ -47,6 +49,21 @@ export default function DetailPlaintePage() {
     } catch { toast.error('Erreur lors de la contestation') }
   }
 
+  const handleAppeal2 = async () => {
+    if (appealReason.trim().length < 10) {
+      toast.error('La raison doit contenir au moins 10 caractères.')
+      return
+    }
+    try {
+      await complaintsAPI.escalate(id, { kind: 'SECOND_DEGREE_APPEAL', reason: `Recours 2e degré : ${appealReason}` })
+      toast.success('Recours 2e degré enregistré')
+      setShowAppeal2(false)
+      setAppealReason('')
+      const { data } = await complaintsAPI.detail(id)
+      setComplaint(data)
+    } catch { toast.error('Erreur lors du recours') }
+  }
+
   const handleSatisfaction = async () => {
     try {
       await analyticsAPI.submitSatisfaction({ complaint: id, rating, comment })
@@ -60,6 +77,7 @@ export default function DetailPlaintePage() {
 
   const canAckResolution = complaint.status === 'RESOLUE' && complaint.resolution_notes
   const canContest = complaint.status === 'RESOLUE'
+  const canAppeal2 = complaint.status === 'RESOLUE' && complaint.resolution_notes && complaint.resolution_accepted === false
   const canRate = ['RESOLUE', 'CLOTUREE'].includes(complaint.status)
   const hasRequestInfo = (complaint.history || []).some(h => (h.action || '').toLowerCase().includes('demande de complément'))
   const canProvideInfo = complaint.status === 'SOUMISE' && hasRequestInfo
@@ -152,8 +170,11 @@ export default function DetailPlaintePage() {
                     const url = att.file_url || att.file
                     const isAudio = (att.file_type || '').startsWith('audio/')
                     return (
-                      <div key={att.id} style={{ marginBottom: '0.5rem' }}>
-                        <a href={url} target="_blank" rel="noopener noreferrer">{att.file_name}</a>
+                      <div key={att.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: '#f8faf9' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <a href={url} target="_blank" rel="noopener noreferrer">{att.file_name}</a>
+                          <a className="btn btn-ghost btn-sm" href={url} download>Télécharger</a>
+                        </div>
                         {isAudio && url && <audio controls src={url} style={{ width: '100%', marginTop: '0.35rem' }} />}
                       </div>
                     )
@@ -195,6 +216,11 @@ export default function DetailPlaintePage() {
               {canContest && (
                 <button className="btn btn-danger" onClick={() => setShowContest(true)}>
                   <FiAlertTriangle /> Contester la résolution / Escalader
+                </button>
+              )}
+              {canAppeal2 && (
+                <button className="btn btn-danger" onClick={() => setShowAppeal2(true)}>
+                  <FiAlertTriangle /> Recours (2e degré)
                 </button>
               )}
               {canRate && (
@@ -244,6 +270,28 @@ export default function DetailPlaintePage() {
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                 <button className="btn btn-ghost" onClick={() => setShowContest(false)}>Annuler</button>
                 <button className="btn btn-danger" onClick={handleContest}>Soumettre la contestation</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Appeal 2nd degree Modal */}
+        {showAppeal2 && (
+          <div className="modal-overlay" onClick={() => setShowAppeal2(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Recours (2e degré)</h3>
+                <button className="modal-close" onClick={() => setShowAppeal2(false)}>✕</button>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+                Vous n’êtes pas satisfait(e) de la résolution. Expliquez brièvement votre recours pour escalade au niveau supérieur.
+              </p>
+              <textarea className="form-textarea" value={appealReason}
+                onChange={e => setAppealReason(e.target.value)}
+                placeholder="Motif du recours (min. 10 caractères)..." style={{ marginBottom: '1rem' }} />
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost" onClick={() => setShowAppeal2(false)}>Annuler</button>
+                <button className="btn btn-danger" onClick={handleAppeal2}>Soumettre le recours</button>
               </div>
             </div>
           </div>

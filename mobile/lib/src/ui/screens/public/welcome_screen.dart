@@ -22,10 +22,20 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const Spacer(),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/images/complaint-hero.png',
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Container(
-                      width: 88,
-                      height: 88,
-                      padding: const EdgeInsets.all(12),
+                      width: 72,
+                      height: 72,
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
