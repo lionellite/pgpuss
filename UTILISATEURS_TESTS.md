@@ -52,11 +52,11 @@
 - **Niveau** : Périphérique (rattaché à un `establishment`)
 - Premier récepteur de toutes les plaintes de son établissement
 - Accuse réception (48h max), qualifie (catégorisation, priorité)
-- Affecte aux agents internes ou traite directement
+- Affecte aux **agents internes** ou au **PNUSS** de l'établissement, ou traite directement
 - Escalade vers le PFZS (Zone Sanitaire) si dépassement
 - Clôture les plaintes résolues
 
-### 3. Agent Affecté (`AGENT_INTERNE`)
+### 3. Agent interne / Agent traitant (`AGENT_INTERNE`)
 - **Niveau** : Périphérique (rattaché à un `establishment`)
 - Accepte ou refuse une affectation
 - Documente l'investigation (journal d'instruction)
@@ -108,11 +108,13 @@
 - Assure le suivi téléphonique (rappels, compléments)
 
 ### 10. Représentant PNUSS (`PNUSS`)
-- **Niveau** : Multi-niveaux (présent à CHAQUE niveau de la pyramide)
+- **Niveau** : Transversal — présent à **chaque** niveau de la pyramide
 - Rattachement détermine le scope :
-  - `zone_sanitaire` renseignée → plaintes de la zone
-  - `departement` renseigné → plaintes du département
+  - `establishment` → plaintes de l'établissement (médiation locale)
+  - `zone_sanitaire` → plaintes de la zone
+  - `departement` → plaintes du département
   - Aucun → visibilité nationale
+- Le **PFE** peut affecter un PNUSS établissement pour médiation (comme un agent interne)
 - Actions :
   - **Suivi** : Tableau de bord dédié PNUSS
   - **Enquête** : Participe aux investigations (maltraitance, violations de droits)
@@ -120,7 +122,12 @@
   - **Statistiques** : Génère rapports de sa zone
   - **Plaidoyer** : Alerte la hiérarchie, plaidoyer national
 
-### 11. Administrateur Plateforme (`ADMIN_PLATEFORME`)
+### 11. Auditeur / Superviseur (`AUDITEUR`)
+- **Niveau** : Selon rattachement (établissement, zone, département ou national)
+- **Lecture seule** : consultation des plaintes, tableaux de bord et analytique
+- Aucune action de workflow (accusé, affectation, escalade, clôture)
+
+### 12. Administrateur Plateforme (`ADMIN_PLATEFORME`)
 - **Niveau** : Transversal
 - Configuration globale du système
 - Gestion des référentiels (catégories, zones, établissements)
@@ -163,5 +170,18 @@
 | `pnuss.borgou@pgpuss.bj` | PNUSS | Raïssa Saka | Dept. Borgou |
 | `pnuss.cotonou@pgpuss.bj` | PNUSS | Joël Ahossi | ZS Cotonou 1-2-3 |
 | `pnuss.parakou@pgpuss.bj` | PNUSS | Latifou Orou Guidou | ZS Parakou/N'Dali |
+| `pnuss.cnhu@pgpuss.bj` | PNUSS | Marie-Claire Zinsou | CHU de Cotonou |
+| `auditeur.national@pgpuss.bj` | AUDITEUR | Inspecteur National | National |
+| `auditeur.littoral@pgpuss.bj` | AUDITEUR | Contrôleur Littoral | Dept. Littoral |
 
-> **Total : 34 utilisateurs** | **Mot de passe commun** : `Pgpuss2026!` (réinitialisé à chaque exécution de `create_test_users.py`)
+## Flux d'affectation (établissement)
+
+```
+Plainte → PFE (réception / qualification)
+          ↓
+   Affectation : Agent interne OU Représentant PNUSS (médiation)
+          ↓
+   Escalade : PFZS → PF-DDS → PF-DQSS
+```
+
+> **Total : 37+ utilisateurs** | **Mot de passe commun** : `Pgpuss2026!` (réinitialisé à chaque exécution de `create_test_users.py`)

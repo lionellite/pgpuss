@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
+import { contextBadgeForUser } from '../../constants/roles'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
 import {
@@ -53,18 +54,12 @@ export default function DashboardHome() {
           Bienvenue, {user?.first_name} — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
         {/* Contexte hiérarchique pyramide sanitaire */}
-        <p className="context-badge">
-          {user?.role === 'PFE' && <>Niveau périphérique — {user.establishment_name || 'Établissement'}</>}
-          {user?.role === 'DIRECTEUR_EST' && <>Direction — {user.establishment_name || 'Établissement'}</>}
-          {user?.role === 'AGENT_INTERNE' && <>Agent affecté — {user.establishment_name || 'Établissement'}</>}
-          {user?.role === 'PFZS' && <>Zone sanitaire — {user.zone_sanitaire_name || 'Zone'}</>}
-          {user?.role === 'DDS' && <>Niveau départemental — {user.departement || 'Département'}</>}
-          {user?.role === 'DQSS' && 'Niveau national — DQSS'}
-          {user?.role === 'CABINET' && 'Niveau national — Ministère de la Santé'}
-          {user?.role === 'AGENT_CALL_CENTER' && 'Call center — Ligne verte 136'}
-          {user?.role === 'PNUSS' && <>PNUSS — {user.zone_sanitaire_name || user.departement || 'National'}</>}
-          {user?.role === 'ADMIN_PLATEFORME' && 'Administration plateforme'}
-        </p>
+        <p className="context-badge">{contextBadgeForUser(user)}</p>
+        {user?.role === 'AUDITEUR' && (
+          <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.35rem' }}>
+            Accès en lecture seule — consultation et statistiques uniquement.
+          </p>
+        )}
       </div>
 
       {/* KPIs */}

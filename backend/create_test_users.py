@@ -236,6 +236,15 @@ get_or_create_user('pnuss.borgou@pgpuss.bj', {
     'zone_sanitaire': None,
 })
 
+# PNUSS Niveau Établissement (rattaché à un établissement — médiation locale)
+get_or_create_user('pnuss.cnhu@pgpuss.bj', {
+    'first_name': 'Marie-Claire', 'last_name': 'Zinsou',
+    'role': 'PNUSS',
+    'establishment': est_cnhu,
+    'zone_sanitaire': None,
+    'departement': '',
+})
+
 # PNUSS Niveau Zone Sanitaire (zone_sanitaire renseignée)
 get_or_create_user('pnuss.cotonou@pgpuss.bj', {
     'first_name': 'Joël', 'last_name': 'Ahossi',
@@ -248,6 +257,18 @@ get_or_create_user('pnuss.parakou@pgpuss.bj', {
     'role': 'PNUSS',
     'zone_sanitaire': zone_parakou,
     'departement': '',
+})
+
+# ─── 11. AUDITEURS (lecture seule — ARS, inspection, etc.) ───────────────
+print('\n── Auditeurs / Superviseurs (lecture seule) ──')
+get_or_create_user('auditeur.national@pgpuss.bj', {
+    'first_name': 'Inspecteur', 'last_name': 'National',
+    'role': 'AUDITEUR',
+})
+get_or_create_user('auditeur.littoral@pgpuss.bj', {
+    'first_name': 'Contrôleur', 'last_name': 'Littoral',
+    'role': 'AUDITEUR',
+    'departement': 'Littoral',
 })
 
 # Nettoyer ancien PNUSS zone

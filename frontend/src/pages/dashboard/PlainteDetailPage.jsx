@@ -8,6 +8,7 @@ import PriorityBadge from '../../components/PriorityBadge'
 import ComplaintDocumentsEditor from '../../components/ComplaintDocumentsEditor'
 import toast from 'react-hot-toast'
 import { FiArrowLeft, FiUser, FiCheckCircle, FiLock, FiArrowUp, FiFileText, FiShield, FiXCircle, FiClock, FiBookOpen } from 'react-icons/fi'
+import { READ_ONLY_ROLES } from '../../constants/roles'
 
 export default function PlainteDetailPage() {
   const { id } = useParams()
@@ -119,6 +120,11 @@ export default function PlainteDetailPage() {
   const isPFZS = user?.role === 'PFZS'
   const isPNUSS = user?.role === 'PNUSS'
   const isCallCenter = user?.role === 'AGENT_CALL_CENTER'
+  const isReadOnly = READ_ONLY_ROLES.includes(user?.role)
+  const pfeAssignTargets = agents.filter(a =>
+    a.role === 'AGENT_INTERNE' ||
+    (a.role === 'PNUSS' && (!user?.establishment || a.establishment === user?.establishment))
+  )
 
   return (
     <div style={{ padding: '1rem 0' }}>
@@ -161,7 +167,15 @@ export default function PlainteDetailPage() {
         {/* Workflow Actions */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
 
+          {isReadOnly && (
+            <p style={{ fontSize: '0.85rem', color: '#666', width: '100%' }}>
+              Profil auditeur : consultation du dossier sans action de traitement.
+            </p>
+          )}
+
           {/* PFE Actions */}
+          {!isReadOnly && (
+          <>
           {isPFE && complaint.status === 'SOUMISE' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn btn-primary btn-sm" onClick={() => askConfirm('acknowledge', {}, 'Accuser réception', 'Confirmez-vous l’accusé de réception de cette plainte ?')}>
@@ -304,7 +318,17 @@ export default function PlainteDetailPage() {
             </div>
           )}
 
-          {/* PNUSS Actions (UC46-UC51) */}
+          {/* PNUSS — médiation (affectation ou enquête) */}
+          {isPNUSS && complaint.status === 'AFFECTEE' && String(complaint.assigned_to) === String(user?.id) && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => askConfirm('acceptAssignment', formData, 'Accepter la médiation', 'Confirmez-vous la prise en charge de ce dossier ?')}>
+                <FiCheckCircle /> Accepter la médiation
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => askConfirm('start', {}, 'Démarrer', 'Démarrer la médiation / investigation ?')}>
+                Démarrer la médiation
+              </button>
+            </div>
+          )}
           {isPNUSS && ['EN_TRAITEMENT', 'ESCALADEE'].includes(complaint.status) && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('investigationLog')}>
@@ -320,10 +344,13 @@ export default function PlainteDetailPage() {
           )}
 
           {/* Notify parties — accessible à tous les acteurs hiérarchiques */}
-          {(isRegulateur || isDirecteur || isPFE || isPFZS || isPNUSS) && (
+          {!isReadOnly && (isRegulateur || isDirecteur || isPFE || isPFZS || isPNUSS) && (
             <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('notifyParties')}>
               Notifier parties
             </button>
+          )}
+
+          </>
           )}
 
           <button className="btn btn-ghost btn-sm" onClick={openDocs}>
@@ -434,11 +461,13 @@ export default function PlainteDetailPage() {
 
               {modal === 'assign' && (
                 <div className="form-group">
-                  <label className="form-label">Agent interne</label>
+                  <label className="form-label">Agent interne ou représentant PNUSS</label>
                   <select className="form-select" value={formData.assigned_to || ''} onChange={e => setFormData({...formData, assigned_to: e.target.value})}>
-                    <option value="">Sélectionner un agent</option>
-                    {agents.filter(a => a.role === 'AGENT_INTERNE').map(a => (
-                      <option key={a.id} value={a.id}>{a.full_name}</option>
+                    <option value="">Sélectionner</option>
+                    {pfeAssignTargets.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.full_name} — {a.role === 'PNUSS' ? 'PNUSS (médiation)' : 'Agent interne'}
+                      </option>
                     ))}
                   </select>
                   {isPFE && (

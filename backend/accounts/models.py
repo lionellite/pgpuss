@@ -5,17 +5,18 @@ import secrets
 
 
 class UserRole(models.TextChoices):
-    USAGER = 'USAGER', 'Usager (Plaignant)'
-    PFE = 'PFE', 'Point Focal Établissement'
-    PFZS = 'PFZS', 'Point Focal Zone Sanitaire'
-    DIRECTEUR_EST = 'DIRECTEUR_EST', "Établissement (Direction)"
-    DDS = 'DDS', 'Direction Départementale de la Santé (DDS)'
-    DQSS = 'DQSS', 'DQSS / Agence Nationale Qualité'
+    USAGER = 'USAGER', 'Plaignant'
+    PFE = 'PFE', 'Point Focal Établissement (PFE)'
+    AGENT_INTERNE = 'AGENT_INTERNE', 'Agent interne / Agent traitant'
+    PFZS = 'PFZS', 'Point Focal Zone Sanitaire (PFZS)'
+    DDS = 'DDS', 'Point Focal Départemental (PF-DDS)'
+    DQSS = 'DQSS', 'Point Focal National (PF-DQSS)'
     CABINET = 'CABINET', 'Ministère de la Santé (Cabinet)'
-    AGENT_INTERNE = 'AGENT_INTERNE', 'Agent Affecté (Interne)'
-    AGENT_CALL_CENTER = 'AGENT_CALL_CENTER', 'Agent Call Center 136'
+    DIRECTEUR_EST = 'DIRECTEUR_EST', "Direction de l'établissement"
     PNUSS = 'PNUSS', 'Représentant PNUSS'
-    ADMIN_PLATEFORME = 'ADMIN_PLATEFORME', 'Administrateur Plateforme'
+    AGENT_CALL_CENTER = 'AGENT_CALL_CENTER', 'Agent Call Center (136)'
+    ADMIN_PLATEFORME = 'ADMIN_PLATEFORME', 'Administrateur national'
+    AUDITEUR = 'AUDITEUR', 'Auditeur / Superviseur (lecture seule)'
 
 
 class UserManager(BaseUserManager):
@@ -57,16 +58,16 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Pour les DDS : département de compétence
     departement = models.CharField(max_length=100, blank=True, null=True,
-                                   help_text="Département de compétence (pour rôle DDS)")
+                                   help_text="Département (PF-DDS, PNUSS départemental, auditeur)")
 
-    # Pour les PFZS et PNUSS (niveau zone) : zone sanitaire de compétence
+    # Zone sanitaire : PFZS, PNUSS zone, auditeur zone
     zone_sanitaire = models.ForeignKey(
         'establishments.ZoneSanitaire',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='agents',
         verbose_name='Zone Sanitaire',
-        help_text='Zone sanitaire de compétence (pour PFZS, PNUSS niveau zone).',
+        help_text='Zone sanitaire (PFZS, PNUSS zone, auditeur).',
     )
 
     language_pref = models.CharField(max_length=5, default='fr')
@@ -75,7 +76,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Lien vers un établissement (pour PFE, DIRECTEUR_EST, AGENT_INTERNE)
+    # Établissement : PFE, agent interne, direction, PNUSS établissement, auditeur local
     establishment = models.ForeignKey(
         'establishments.Establishment',
         on_delete=models.SET_NULL,

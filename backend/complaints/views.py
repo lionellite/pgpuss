@@ -15,6 +15,13 @@ from django.utils.decorators import method_decorator
 from django.utils.crypto import salted_hmac
 import secrets
 from accounts.models import UserRole
+from accounts.roles import (
+    filter_complaints_for_user,
+    user_can_view_complaint,
+    assignable_roles_for_pfe,
+    is_readonly_role,
+)
+from accounts.permissions import DenyReadOnlyOnWrite
 from .media_upload import save_attachment, save_voice_file, storage_error_response
 from .models import (
     Category, Complaint, Attachment, ComplaintHistory,
@@ -34,46 +41,8 @@ User = get_user_model()
 
 
 def user_can_view_complaint_documents(user, complaint) -> bool:
-    """Accès lecture aux documents du dossier (même logique que la liste)."""
-    if user.role == UserRole.USAGER and complaint.complainant_id != user.id:
-        return False
-    if user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST]:
-        if not complaint.establishment_id:
-            return False
-        return complaint.establishment_id == user.establishment_id
-    if user.role == UserRole.AGENT_INTERNE and complaint.assigned_to_id != user.id:
-        return False
-    if user.role == UserRole.AGENT_CALL_CENTER and complaint.call_center_agent_id != user.id:
-        return False
-    if (
-        user.role == UserRole.PFZS
-        and complaint.establishment
-        and complaint.establishment.zone_sanitaire_id != user.zone_sanitaire_id
-    ):
-        return False
-    if (
-        user.role == UserRole.DDS
-        and complaint.establishment
-        and complaint.establishment.region
-        and complaint.establishment.region.name != user.departement
-    ):
-        return False
-    if (
-        user.role == UserRole.PNUSS
-        and user.zone_sanitaire_id
-        and complaint.establishment
-        and complaint.establishment.zone_sanitaire_id != user.zone_sanitaire_id
-    ):
-        return False
-    if (
-        user.role == UserRole.PNUSS
-        and user.departement
-        and complaint.establishment
-        and complaint.establishment.region
-        and complaint.establishment.region.name != user.departement
-    ):
-        return False
-    return True
+    """Accès lecture aux documents du dossier (même périmètre que la liste)."""
+    return user_can_view_complaint(user, complaint)
 
 
 @method_decorator(cache_page(60 * 5), name='dispatch')
@@ -224,70 +193,13 @@ class ComplaintListView(generics.ListAPIView):
     de leur périmètre, pas seulement les escaladées.
     """
     serializer_class = ComplaintListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
     filterset_fields = ['status', 'priority', 'category', 'establishment', 'channel', 'is_anonymous']
     search_fields = ['ticket_number', 'title', 'description']
     ordering_fields = ['created_at', 'updated_at', 'priority', 'status']
 
     def get_queryset(self):
-        user = self.request.user
-        scope = self.request.query_params.get('scope', 'default')
-        qs = Complaint.objects.all()
-
-        if user.role == UserRole.USAGER:
-            qs = qs.filter(complainant=user)
-
-        elif user.role in [UserRole.PFE, UserRole.DIRECTEUR_EST]:
-            # Strictement leur établissement
-            if user.establishment_id:
-                qs = qs.filter(establishment=user.establishment)
-            else:
-                qs = qs.none()
-
-        elif user.role == UserRole.AGENT_INTERNE:
-            qs = qs.filter(assigned_to=user)
-
-        elif user.role == UserRole.AGENT_CALL_CENTER:
-            # L'agent call center ne voit que les plaintes qu'il a transcrites
-            qs = qs.filter(call_center_agent=user)
-
-        elif user.role == UserRole.PFZS:
-            # Point Focal Zone Sanitaire : plaintes des établissements de sa zone
-            if user.zone_sanitaire_id:
-                qs = qs.filter(establishment__zone_sanitaire=user.zone_sanitaire)
-            else:
-                qs = qs.none()
-            # Par défaut : toutes (pas de filtre sur le statut pour ce niveau)
-
-        elif user.role == UserRole.PNUSS:
-            # PNUSS : scope selon son niveau de rattachement
-            if user.zone_sanitaire_id:
-                qs = qs.filter(establishment__zone_sanitaire=user.zone_sanitaire)
-            elif user.departement:
-                qs = qs.filter(establishment__region__name=user.departement)
-            else:
-                # Niveau national : vision complète (inclut établissements non répertoriés)
-                pass
-
-        elif user.role == UserRole.DDS:
-            # Zone de compétence (département)
-            if user.departement:
-                qs = qs.filter(establishment__region__name=user.departement)
-            else:
-                qs = qs.none()
-            # DDS: voit tout le périmètre (toutes les plaintes du département)
-
-        elif user.role == UserRole.DQSS:
-            # DQSS: vision nationale
-            pass
-
-        elif user.role == UserRole.CABINET:
-            # Cabinet: vision nationale
-            pass
-
-        elif user.role == UserRole.ADMIN_PLATEFORME:
-            pass  # Accès global sans filtre
-
+        qs = filter_complaints_for_user(self.request.user, Complaint.objects.all())
         return qs.select_related(
             'category', 'establishment', 'assigned_to'
         ).annotate(
@@ -298,13 +210,19 @@ class ComplaintListView(generics.ListAPIView):
 class ComplaintDetailView(generics.RetrieveUpdateAPIView):
     """Détail d'une plainte"""
     serializer_class = ComplaintDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def get_queryset(self):
         return Complaint.objects.select_related(
             'category', 'subcategory', 'establishment', 'service',
             'assigned_to', 'complainant'
         ).prefetch_related('attachments', 'history', 'escalations')
+
+    def get_object(self):
+        obj = super().get_object()
+        if not user_can_view_complaint(self.request.user, obj):
+            raise PermissionDenied('Vous n\'avez pas accès à ce dossier.')
+        return obj
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -367,7 +285,7 @@ def _generate_public_code() -> str:
 
 class ComplaintAcknowledgeView(APIView):
     """Accuser réception d'une plainte (Action PFE)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -397,7 +315,7 @@ class ComplaintAcknowledgeView(APIView):
 
 class ComplaintQualifyView(APIView):
     """Qualifier / Catégoriser une plainte (Action PFE)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -439,8 +357,8 @@ class ComplaintQualifyView(APIView):
 
 
 class ComplaintAssignView(APIView):
-    """Affecter une plainte à un agent interne (Action PFE)"""
-    permission_classes = [permissions.IsAuthenticated]
+    """Affecter une plainte à un agent interne ou PNUSS établissement (Action PFE)"""
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -455,13 +373,17 @@ class ComplaintAssignView(APIView):
         assigned_to_id = serializer.validated_data.get('assigned_to')
         if assigned_to_id:
             agent = get_object_or_404(User, pk=assigned_to_id)
-            if agent.role != UserRole.AGENT_INTERNE:
-                return Response({'error': "L'utilisateur affecté doit avoir le rôle AGENT_INTERNE."}, status=400)
-            if agent.establishment_id and complaint.establishment_id and agent.establishment_id != complaint.establishment_id:
-                return Response({'error': "L'agent interne doit appartenir au même établissement que la plainte."}, status=400)
-            if not complaint.establishment_id and request.user.establishment_id:
-                if agent.establishment_id != request.user.establishment_id:
-                    return Response({'error': "L'agent doit appartenir à votre établissement."}, status=400)
+            allowed_roles = assignable_roles_for_pfe()
+            if agent.role not in allowed_roles:
+                return Response({
+                    'error': "Affectation possible uniquement vers un agent interne ou un représentant PNUSS."
+                }, status=400)
+            est_id = complaint.establishment_id or request.user.establishment_id
+            if est_id and agent.establishment_id and agent.establishment_id != est_id:
+                return Response({'error': "La personne affectée doit appartenir au même établissement."}, status=400)
+            if agent.role == UserRole.PNUSS and agent.establishment_id and est_id and agent.establishment_id != est_id:
+                return Response({'error': "Le représentant PNUSS doit être rattaché à cet établissement."}, status=400)
+            label = 'Agent interne' if agent.role == UserRole.AGENT_INTERNE else 'Médiation PNUSS'
             old_status = complaint.status
             complaint.assigned_to = agent
             complaint.status = ComplaintStatus.AFFECTEE
@@ -469,7 +391,7 @@ class ComplaintAssignView(APIView):
             complaint.save()
 
             ComplaintHistory.objects.create(
-                complaint=complaint, action=f'Affectée à {agent.full_name}',
+                complaint=complaint, action=f'Affectée ({label}) à {agent.full_name}',
                 old_status=old_status, new_status=ComplaintStatus.AFFECTEE,
                 actor=request.user, notes=serializer.validated_data.get('notes', '')
             )
@@ -495,7 +417,7 @@ class ComplaintAssignView(APIView):
 class ComplaintRequestInfoView(APIView):
     """Demander un complément d'information (Action PFE)"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -544,7 +466,7 @@ class ComplaintRequestInfoView(APIView):
 class ComplaintProvideInfoView(APIView):
     """Usager: compléter une plainte suite à demande du PFE"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -674,11 +596,13 @@ class ComplaintPublicProvideInfoView(APIView):
 class ComplaintAcceptAssignmentView(APIView):
     """Accepter l'affectation (Action Agent Interne)"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role != UserRole.AGENT_INTERNE or complaint.assigned_to_id != request.user.id:
+        if complaint.assigned_to_id != request.user.id:
+            return Response({'error': "Non autorisé."}, status=403)
+        if request.user.role not in (UserRole.AGENT_INTERNE, UserRole.PNUSS):
             return Response({'error': "Non autorisé."}, status=403)
         if complaint.status != ComplaintStatus.AFFECTEE:
             return Response({'error': "Seules les plaintes AFFECTÉES peuvent être acceptées."}, status=400)
@@ -697,7 +621,7 @@ class ComplaintAcceptAssignmentView(APIView):
 class ComplaintRefuseAssignmentView(APIView):
     """Agent interne: refuser / réorienter une affectation"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -729,11 +653,14 @@ class ComplaintRefuseAssignmentView(APIView):
 
 class ComplaintStartInvestigationView(APIView):
     """Démarrer l'investigation (Action Agent Interne)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if complaint.assigned_to != request.user and request.user.role != UserRole.PFE:
+        if (
+            complaint.assigned_to != request.user
+            and request.user.role not in (UserRole.PFE, UserRole.PNUSS)
+        ):
             return Response({'error': "Non autorisé."}, status=403)
         if complaint.status not in [ComplaintStatus.AFFECTEE, ComplaintStatus.INSTRUITE]:
             return Response({'error': "Le traitement démarre depuis AFFECTÉE (ou INSTRUITE pour traitement direct PFE)."}, status=400)
@@ -759,14 +686,19 @@ class ComplaintStartInvestigationView(APIView):
 class ComplaintInvestigationLogView(APIView):
     """Agent interne: documenter les investigations (journal d'instruction)."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in [UserRole.AGENT_INTERNE, UserRole.PFE] and complaint.assigned_to_id != request.user.id:
+        if is_readonly_role(request.user.role):
+            return Response({'error': 'Accès lecture seule.'}, status=403)
+        if not user_can_view_complaint(request.user, complaint):
             return Response({'error': "Non autorisé."}, status=403)
-        if complaint.status != ComplaintStatus.EN_TRAITEMENT:
-            return Response({'error': "Le journal se renseigne en EN_TRAITEMENT."}, status=400)
+        allowed = {UserRole.AGENT_INTERNE, UserRole.PFE, UserRole.PNUSS, UserRole.PFZS}
+        if request.user.role not in allowed and complaint.assigned_to_id != request.user.id:
+            return Response({'error': "Non autorisé."}, status=403)
+        if complaint.status not in (ComplaintStatus.EN_TRAITEMENT, ComplaintStatus.ESCALADEE):
+            return Response({'error': "Le journal se renseigne en EN_TRAITEMENT ou ESCALADÉE."}, status=400)
 
         entry = request.data.get("entry", "").strip()
         if not entry:
@@ -792,7 +724,7 @@ class ComplaintInvestigationLogView(APIView):
 class ComplaintRequestExtensionView(APIView):
     """Agent interne: demander une extension de délai."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -829,7 +761,7 @@ class ComplaintRequestExtensionView(APIView):
 
 class ComplaintResolveView(APIView):
     """Proposer une résolution (Action Agent ou PFE)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -879,7 +811,7 @@ class ComplaintResolveView(APIView):
 class ComplaintAcknowledgeResolutionView(APIView):
     """Usager: accepter ou contester une résolution proposée."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -939,7 +871,7 @@ class ComplaintAcknowledgeResolutionView(APIView):
 class ComplaintValidateResolutionView(APIView):
     """Direction: valider la résolution (avant clôture / envoi officiel)."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -969,7 +901,7 @@ class ComplaintValidateResolutionView(APIView):
 class ComplaintRejectResolutionView(APIView):
     """Direction: infirmer / renvoyer la résolution pour correction."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1006,7 +938,7 @@ class ComplaintRejectResolutionView(APIView):
 class ComplaintDDSAssignInspectorView(APIView):
     """DDS: affecter un inspecteur DDS à un dossier escaladé."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1037,7 +969,7 @@ class ComplaintDDSAssignInspectorView(APIView):
 class ComplaintDDSInvestigationView(APIView):
     """DDS: instruire / diligenter une enquête (journalisation + doc)."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1070,11 +1002,19 @@ class ComplaintDDSInvestigationView(APIView):
 class ComplaintNotifyPartiesView(APIView):
     """Notifier toutes les parties (in-app) — utilitaire DQSS/DDS/Cabinet."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role not in [UserRole.DDS, UserRole.DQSS, UserRole.CABINET, UserRole.ADMIN_PLATEFORME]:
+        if is_readonly_role(request.user.role):
+            return Response({'error': 'Accès lecture seule.'}, status=403)
+        if not user_can_view_complaint(request.user, complaint):
+            return Response({'error': "Non autorisé."}, status=403)
+        if request.user.role not in [
+            UserRole.PFE, UserRole.PFZS, UserRole.PNUSS,
+            UserRole.DDS, UserRole.DQSS, UserRole.CABINET, UserRole.ADMIN_PLATEFORME,
+            UserRole.DIRECTEUR_EST,
+        ]:
             return Response({'error': "Non autorisé."}, status=403)
 
         message = request.data.get("message", "").strip()
@@ -1102,7 +1042,7 @@ class ComplaintNotifyPartiesView(APIView):
 
 class ComplaintArbitrateView(APIView):
     """Arbitrer un dossier escaladé (Action DDS ou DQSS)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1132,7 +1072,7 @@ class ComplaintArbitrateView(APIView):
 
 class ComplaintCloseView(APIView):
     """Clôturer définitivement un dossier — notes obligatoires (min. 30 caractères)."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1184,7 +1124,7 @@ class ComplaintCloseView(APIView):
 class ComplaintWithdrawView(APIView):
     """Retirer une plainte (Action Usager)"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1215,7 +1155,7 @@ class ComplaintWithdrawView(APIView):
 class ComplaintReopenView(APIView):
     """Rouvrir une plainte clôturée (Action PFE)"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1241,7 +1181,7 @@ class ComplaintReopenView(APIView):
 
 class ComplaintEscalateView(APIView):
     """Escalader une plainte — raison obligatoire (min. 10 caractères)."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1320,7 +1260,7 @@ class ComplaintDocumentsView(generics.ListAPIView):
     """Liste des documents générés pour une plainte."""
 
     serializer_class = ComplaintDocumentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def get_queryset(self):
         complaint = get_object_or_404(Complaint, pk=self.kwargs['pk'])
@@ -1332,7 +1272,7 @@ class ComplaintDocumentsView(generics.ListAPIView):
 class ComplaintDocumentDetailView(generics.RetrieveUpdateAPIView):
     """Lecture et mise à jour du corps d'un document (rôles autorisés ou admin plateforme)."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def get_serializer_class(self):
         if self.request.method in ('PATCH', 'PUT'):
@@ -1361,7 +1301,7 @@ class ComplaintDocumentDetailView(generics.RetrieveUpdateAPIView):
 class ComplaintAttachmentView(generics.ListCreateAPIView):
     """Pièces jointes d'une plainte"""
     serializer_class = AttachmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
@@ -1380,7 +1320,7 @@ class ComplaintAttachmentView(generics.ListCreateAPIView):
 class ComplaintHistoryView(generics.ListAPIView):
     """Historique d'une plainte"""
     serializer_class = ComplaintHistorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def get_queryset(self):
         return ComplaintHistory.objects.filter(complaint_id=self.kwargs['pk'])
@@ -1391,7 +1331,7 @@ class MyScopeView(APIView):
     Retourne les établissements, zones et services accessibles selon le rôle.
     Utilisé par l'onglet de navigation dans le frontend/mobile.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
 
     def get(self, request):
         from establishments.models import Establishment, Region
@@ -1412,6 +1352,37 @@ class MyScopeView(APIView):
                 data['establishments'] = EstablishmentSerializer([user.establishment], many=True).data
             else:
                 data['scope'] = 'none'
+
+        elif user.role == UserRole.PNUSS:
+            from accounts.roles import pnuss_level
+            level = pnuss_level(user)
+            data['pnuss_level'] = level
+            if level == 'establishment' and user.establishment:
+                data['scope'] = 'establishment'
+                data['establishments'] = EstablishmentSerializer([user.establishment], many=True).data
+            elif level == 'zone' and user.zone_sanitaire_id:
+                data['scope'] = 'zone'
+                ests = Establishment.objects.filter(zone_sanitaire=user.zone_sanitaire)
+                data['establishments'] = EstablishmentSerializer(ests, many=True).data
+            elif level == 'department' and user.departement:
+                data['scope'] = 'department'
+                data['departement'] = user.departement
+                ests = Establishment.objects.filter(region__name=user.departement)
+                data['establishments'] = EstablishmentSerializer(ests, many=True).data
+            else:
+                data['scope'] = 'national'
+
+        elif user.role == UserRole.PFZS:
+            data['scope'] = 'zone'
+            if user.zone_sanitaire_id:
+                ests = Establishment.objects.filter(zone_sanitaire=user.zone_sanitaire)
+                data['establishments'] = EstablishmentSerializer(ests, many=True).data
+
+        elif user.role == UserRole.AUDITEUR:
+            from accounts.roles import pnuss_level
+            level = pnuss_level(user) if user.establishment_id or user.zone_sanitaire_id or user.departement else 'national'
+            data['scope'] = level if level != 'national' else 'national'
+            data['read_only'] = True
 
         elif user.role == UserRole.DDS:
             data['scope'] = 'department'

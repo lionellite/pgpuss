@@ -7,6 +7,7 @@ import {
   FiLayers, FiMapPin, FiPhone, FiUser,
 } from 'react-icons/fi'
 import GovFlagBar from '../components/GovFlagBar'
+import { ROLE_LABELS } from '../constants/roles'
 
 const getNavItems = (role) => {
   const items = [
@@ -102,7 +103,7 @@ export default function DashboardLayout() {
           {!collapsed && user && (
             <div className="dashboard-user-card">
               <div className="dashboard-user-card__name">{user.full_name}</div>
-              <div className="dashboard-user-card__role">{user.role?.replace(/_/g, ' ')}</div>
+              <div className="dashboard-user-card__role">{ROLE_LABELS[user.role] || user.role}</div>
             </div>
           )}
           <button

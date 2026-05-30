@@ -207,13 +207,15 @@ class UserListView(generics.ListAPIView):
                 return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
             return User.objects.filter(id=user.id)
         elif user.role == UserRole.PNUSS:
-            # PNUSS : scope selon son niveau de rattachement
+            if user.establishment_id:
+                return User.objects.filter(establishment_id=user.establishment_id)
             if user.zone_sanitaire_id:
                 return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
-            elif user.departement:
+            if user.departement:
                 return User.objects.filter(establishment__region__name=user.departement)
-            # Niveau national : tous
             return User.objects.select_related('establishment', 'zone_sanitaire').all()
+        elif user.role == UserRole.AUDITEUR:
+            return User.objects.filter(id=user.id)
         return User.objects.filter(id=user.id)
 
 

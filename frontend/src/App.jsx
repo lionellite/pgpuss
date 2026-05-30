@@ -29,6 +29,7 @@ import UsersPage from './pages/dashboard/UsersPage'
 import ReferentialsAdminPage from './pages/dashboard/ReferentialsAdminPage'
 import EstablishmentsAdminPage from './pages/dashboard/EstablishmentsAdminPage'
 import InternalAgentsPage from './pages/dashboard/InternalAgentsPage'
+import { DASHBOARD_ROLES } from './constants/roles'
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -40,10 +41,7 @@ function PrivateRoute({ children, roles }) {
 
 function AgentRoute({ children }) {
   return (
-    <PrivateRoute roles={[
-      'PFE', 'PFZS', 'AGENT_INTERNE', 'DIRECTEUR_EST',
-      'DDS', 'DQSS', 'CABINET', 'AGENT_CALL_CENTER', 'PNUSS', 'ADMIN_PLATEFORME'
-    ]}>
+    <PrivateRoute roles={DASHBOARD_ROLES}>
       {children}
     </PrivateRoute>
   )

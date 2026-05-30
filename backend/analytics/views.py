@@ -12,6 +12,7 @@ from complaints.serializers import ComplaintListSerializer
 from .models import SatisfactionSurvey
 from .serializers import SatisfactionSurveySerializer
 from accounts.models import UserRole
+from accounts.roles import filter_complaints_for_user
 
 
 def _period_range(period: str, year: int, value: int | None):
@@ -64,11 +65,7 @@ class DashboardView(APIView):
 
     def get(self, request):
         user = request.user
-        qs = Complaint.objects.all()
-
-        # Filter by establishment for non-admin users
-        if user.role in [UserRole.PFE, UserRole.AGENT_INTERNE, UserRole.DIRECTEUR_EST]:
-            qs = qs.filter(establishment=user.establishment)
+        qs = filter_complaints_for_user(user, Complaint.objects.all())
 
         now = timezone.now()
         thirty_days_ago = now - timedelta(days=30)

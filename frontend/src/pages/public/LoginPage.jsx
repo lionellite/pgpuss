@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { FiUser, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
+import { DASHBOARD_ROLES } from '../../constants/roles'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -19,17 +20,7 @@ export default function LoginPage() {
     try {
       const user = await login(data.email, data.password)
       toast.success(`Bienvenue, ${user.first_name} !`)
-      const isAgent = [
-        'PFE',
-        'PFZS',
-        'PNUSS',
-        'AGENT_INTERNE',
-        'DIRECTEUR_EST',
-        'DDS',
-        'DQSS',
-        'CABINET',
-        'ADMIN_PLATEFORME',
-      ].includes(user.role)
+      const isAgent = DASHBOARD_ROLES.includes(user.role)
       navigate(isAgent ? '/dashboard' : '/espace/plaintes')
     } catch (err) {
       const detail = err.response?.data?.detail
