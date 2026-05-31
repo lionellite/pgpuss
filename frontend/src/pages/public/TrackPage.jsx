@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { complaintsAPI } from '../../api'
 import { FiSearch, FiAlertCircle, FiCopy, FiCheck } from 'react-icons/fi'
@@ -7,19 +7,26 @@ import StatusBadge from '../../components/StatusBadge'
 
 export default function TrackPage() {
   const [searchParams] = useSearchParams()
-  const [ticket, setTicket] = useState(searchParams.get('ticket') || '')
+  const ticketParam = searchParams.get('ticket')
+  const inputRef = useRef(null)
+  const [ticket, setTicket] = useState(ticketParam || '')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const runSearch = async () => {
-    if (!ticket.trim()) return
+  const runSearch = async (query) => {
+    const q = (query ?? ticket).trim()
+    if (!q) {
+      setError('Saisissez un numéro de ticket pour lancer la recherche.')
+      inputRef.current?.focus()
+      return
+    }
     setLoading(true)
     setError('')
     setResult(null)
     try {
-      const { data } = await complaintsAPI.track(ticket.trim().toUpperCase())
+      const { data } = await complaintsAPI.track(q.toUpperCase())
       setResult(data)
     } catch {
       setError('Aucune plainte trouvée avec ce numéro. Vérifiez le ticket et réessayez.')
@@ -29,9 +36,11 @@ export default function TrackPage() {
   }
 
   useEffect(() => {
-    if (searchParams.get('ticket')) runSearch()
+    if (!ticketParam?.trim()) return
+    setTicket(ticketParam)
+    runSearch(ticketParam)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [ticketParam])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -69,15 +78,19 @@ export default function TrackPage() {
                   }}
                 />
                 <input
+                  ref={inputRef}
                   id="track-ticket"
                   className="form-input"
                   style={{ paddingLeft: '2.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}
                   value={ticket}
                   onChange={(e) => setTicket(e.target.value)}
                   placeholder="PGP-2026-AB1234"
+                  autoComplete="off"
+                  aria-invalid={error && !ticket.trim() ? 'true' : undefined}
+                  aria-describedby={error ? 'track-error' : undefined}
                 />
               </div>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+              <button type="submit" className="btn btn-primary" disabled={loading} aria-busy={loading}>
                 {loading ? 'Recherche…' : 'Rechercher'}
               </button>
             </div>
@@ -85,7 +98,7 @@ export default function TrackPage() {
         </div>
 
         {error && (
-          <div className="alert alert-danger" style={{ marginBottom: '1.5rem' }} role="alert">
+          <div id="track-error" className="alert alert-danger" style={{ marginBottom: '1.5rem' }} role="alert">
             <FiAlertCircle aria-hidden />
             {error}
           </div>
