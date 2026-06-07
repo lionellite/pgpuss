@@ -119,7 +119,7 @@ class _State extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 12),
             Text(u.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            Text(u.email, style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+            Text(u.email, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

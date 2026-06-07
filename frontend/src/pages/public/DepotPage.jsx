@@ -333,32 +333,32 @@ export default function DepotPage() {
           <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
             <div style={{
               width: 80, height: 80, borderRadius: '50%', margin: '0 auto 2rem',
-              background: 'rgba(6,214,160,0.1)', border: '3px solid #06D6A0',
+              background: 'rgba(0,102,102,0.1)', border: '3px solid var(--color-primary-container)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '2.5rem',
             }}><FiCheckCircle aria-hidden style={{ fontSize: '2.5rem', color: 'var(--color-primary)' }} /></div>
-            <h1 style={{ fontFamily: 'Inter', fontWeight: 800, fontSize: '2rem', color: '#111', marginBottom: '0.75rem' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
               Plainte déposée !
             </h1>
-            <p style={{ color: '#666', marginBottom: '2rem', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.7 }}>
               Votre plainte a été enregistrée avec succès. Conservez votre numéro de ticket pour le suivi.
             </p>
             <div style={{
-              padding: '1.5rem', background: '#f0f9f5',
-              border: '2px solid #06D6A0', borderRadius: '8px', marginBottom: '2rem',
+              padding: '1.5rem', background: 'var(--surface-container-low)',
+              border: '2px solid var(--color-primary-container)', borderRadius: '8px', marginBottom: '2rem',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
             }}>
-              <div style={{ fontSize: '0.85rem', color: '#666' }}>Votre numéro de ticket</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Votre numéro de ticket</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ fontWeight: 900, fontSize: '2.5rem', color: '#008751', letterSpacing: '0.1em' }}>
+                <div style={{ fontWeight: 900, fontSize: '2.5rem', color: 'var(--color-primary)', letterSpacing: '0.1em' }}>
                   {submitted.ticket_number}
                 </div>
                 <button
                   onClick={() => handleCopy(submitted.ticket_number)}
                   aria-label="Copier le numéro de ticket"
                   style={{
-                    background: 'white', border: '1px solid #ccc',
-                    color: '#333', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer',
+                    background: 'white', border: '1px solid var(--border-strong)',
+                    color: 'var(--text-primary)', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
@@ -383,14 +383,14 @@ export default function DepotPage() {
   }
 
   return (
-    <div style={{ padding: '4rem 0', minHeight: '80vh', background: '#fff' }}>
+    <div style={{ padding: '4rem 0', minHeight: '80vh', background: 'var(--bg-page)' }}>
       <div className="page-container">
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           {/* Bannière Call Center 136 */}
           {isCallCenter && (
             <div style={{
               marginBottom: '1.5rem', padding: '1rem 1.5rem', borderRadius: '8px',
-              background: 'linear-gradient(135deg, #008751 0%, #006B40 100%)',
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
               color: 'white', display: 'flex', alignItems: 'center', gap: '1rem',
             }}>
               <span style={{ fontSize: '2rem' }}>📞</span>
@@ -406,7 +406,7 @@ export default function DepotPage() {
           <div style={{ marginBottom: '3rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h1 className="page-title">{isCallCenter ? 'Saisie de plainte (136)' : 'Déposer une plainte'}</h1>
-              <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
                 {isCallCenter
                   ? 'Transcrivez la plainte de l\'usager en remplissant le formulaire. Le numéro de ticket sera généré automatiquement.'
                   : 'Suivez les étapes pour soumettre votre dossier aux autorités sanitaires compétentes.'
@@ -432,24 +432,24 @@ export default function DepotPage() {
                   <div className={`step-circle ${i < step ? 'done' : i === step ? 'active' : ''}`}
                     style={{
                       width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: i < step ? '#008751' : i === step ? '#008751' : '#eee',
-                      color: i <= step ? 'white' : '#999', fontSize: '0.8rem', fontWeight: 700
+                      background: i < step ? 'var(--color-primary)' : i === step ? 'var(--color-primary)' : 'var(--border-color)',
+                      color: i <= step ? 'white' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700
                     }}>
                     {i < step ? '✓' : i + 1}
                   </div>
-                  <span style={{ fontSize: '0.65rem', fontWeight: 600, color: i === step ? '#111' : '#999', textTransform: 'uppercase' }}>{s}</span>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, color: i === step ? 'var(--text-primary)' : 'var(--text-muted)', textTransform: 'uppercase' }}>{s}</span>
                 </div>
-                {i < STEPS.length - 1 && <div style={{ height: 2, background: i < step ? '#008751' : '#eee', flex: 1, marginBottom: '1.2rem' }} />}
+                {i < STEPS.length - 1 && <div style={{ height: 2, background: i < step ? 'var(--color-primary)' : 'var(--border-color)', flex: 1, marginBottom: '1.2rem' }} />}
               </React.Fragment>
             ))}
           </div>
 
-          <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+          <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
             <form onSubmit={handleSubmit(onSubmit)}>
 
               {step === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#111' }}>1. Établissement concerné</h2>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>1. Établissement concerné</h2>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
@@ -522,18 +522,18 @@ export default function DepotPage() {
 
               {step === 1 && (
                 <div>
-                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>2. Type de plainte</h2>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>2. Type de plainte</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     {categories.map(cat => (
                       <label key={cat.id} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
                         padding: '1.5rem', borderRadius: '4px', cursor: 'pointer',
-                        background: String(catId) === String(cat.id) ? '#f0f9f5' : '#fff',
-                        border: String(catId) === String(cat.id) ? '2px solid #008751' : '1px solid #ddd',
+                        background: String(catId) === String(cat.id) ? 'var(--surface-container-low)' : 'var(--bg-card)',
+                        border: String(catId) === String(cat.id) ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
                         textAlign: 'center',
                       }}>
                         <input type="radio" value={cat.id} {...register('category', { required: 'Requis' })} style={{ display: 'none' }} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{cleanCategoryLabel(cat)}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{cleanCategoryLabel(cat)}</span>
                       </label>
                     ))}
                   </div>
@@ -543,7 +543,7 @@ export default function DepotPage() {
 
               {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>3. Description</h2>
+                  <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>3. Description</h2>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     Choisissez <strong>une seule</strong> option : texte au clavier ou message vocal.
                   </p>
@@ -638,12 +638,12 @@ export default function DepotPage() {
 
               {step === 3 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.1rem', color: '#111' }}>
+                  <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
                     {isCallCenter ? '4. Coordonnées de l\'usager' : '4. Identité'}
                   </h2>
                   {isCallCenter ? (
                     <>
-                      <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                         Renseignez le nom et le numéro de téléphone de l'usager qui appelle. Ces informations permettront de le recontacter.
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -664,7 +664,7 @@ export default function DepotPage() {
                       </label>
                       {isAnonymous ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             Votre identité reste confidentielle. Email et téléphone sont facultatifs.
                           </p>
                           <input
@@ -681,7 +681,7 @@ export default function DepotPage() {
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                           {user?.role === 'USAGER' && (
-                            <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                               Vos coordonnées sont préremplies depuis votre compte. Vous pouvez les modifier avant validation.
                             </p>
                           )}
@@ -698,9 +698,9 @@ export default function DepotPage() {
 
               {step === 4 && (
                 <div>
-                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#111' }}>5. Confirmation</h2>
-                  <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '4px', marginBottom: '1.25rem', border: '1px solid #eee' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#111', fontWeight: 700, marginBottom: '0.75rem' }}>Récapitulatif</div>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>5. Confirmation</h2>
+                  <div style={{ background: 'var(--bg-page)', padding: '1rem', borderRadius: '4px', marginBottom: '1.25rem', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700, marginBottom: '0.75rem' }}>Récapitulatif</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
                       {[
                         { label: 'Établissement', value: manualEstablishment ? (manualEstName || '—') : (establishments.find(e => String(e.id) === String(watched?.[0]))?.name || '—') },
@@ -714,16 +714,16 @@ export default function DepotPage() {
                         { label: 'Email', value: String(watched?.[6] || '').trim() || '—' },
                         { label: 'Téléphone', value: String(watched?.[7] || '').trim() || '—' },
                       ].map((it, i) => (
-                        <div key={i} style={{ padding: '0.75rem', background: '#fff', borderRadius: 4, border: '1px solid #eee' }}>
-                          <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{it.label}</div>
-                          <div style={{ fontSize: '0.9rem', color: '#111', fontWeight: 500, whiteSpace: 'pre-wrap' }}>{it.value}</div>
+                        <div key={i} style={{ padding: '0.75rem', background: 'var(--bg-card)', borderRadius: 4, border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{it.label}</div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'pre-wrap' }}>{it.value}</div>
                         </div>
                       ))}
                     </div>
                     {descriptionMode === 'text' && String(watched?.[3] || '').trim() && (
-                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#fff', borderRadius: 4, border: '1px solid #eee' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Description</div>
-                        <div style={{ fontSize: '0.9rem', color: '#111', whiteSpace: 'pre-wrap' }}>{String(watched?.[3] || '').trim()}</div>
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--bg-card)', borderRadius: 4, border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Description</div>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{String(watched?.[3] || '').trim()}</div>
                       </div>
                     )}
                   </div>

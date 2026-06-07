@@ -132,18 +132,18 @@ export default function PlainteDetailPage() {
         <FiArrowLeft /> RETOUR À LA LISTE
       </button>
 
-      <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+      <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '1.5rem', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dossier N°</div>
-            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111', letterSpacing: '0.05em' }}>{complaint.ticket_number}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dossier N°</div>
+            <div style={{ fontWeight: 800, fontSize: '1.5rem', color: 'var(--text-primary)', letterSpacing: '0.05em' }}>{complaint.ticket_number}</div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <StatusBadge status={complaint.status} />
             <PriorityBadge priority={complaint.priority} />
           </div>
         </div>
-        <h1 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', color: '#111' }}>{complaint.title}</h1>
+        <h1 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>{complaint.title}</h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           {[
@@ -157,18 +157,18 @@ export default function PlainteDetailPage() {
             ...(complaint.zone_sanitaire_name ? [{ label: 'Zone Sanitaire', value: complaint.zone_sanitaire_name }] : []),
             { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
           ].map((item, i) => (
-            <div key={i} style={{ padding: '1rem', background: '#f8f9fa', border: '1px solid #eee' }}>
-              <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
-              <div style={{ fontSize: '0.9rem', color: '#333', fontWeight: 500 }}>{item.value || '—'}</div>
+            <div key={i} style={{ padding: '1rem', background: 'var(--bg-page)', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>{item.value || '—'}</div>
             </div>
           ))}
         </div>
 
         {/* Workflow Actions */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
 
           {isReadOnly && (
-            <p style={{ fontSize: '0.85rem', color: '#666', width: '100%' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', width: '100%' }}>
               Profil auditeur : consultation du dossier sans action de traitement.
             </p>
           )}
@@ -363,7 +363,7 @@ export default function PlainteDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-card" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Description</h3>
-            <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
             {complaint.voice_file_url && (
               <div style={{ marginTop: '1rem' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-muted)' }}>Message vocal déposé</div>
@@ -381,7 +381,7 @@ export default function PlainteDetailPage() {
                     const isAudio = (att.file_type || '').startsWith('audio/') || /\.(webm|mp3|m4a|wav|ogg)$/i.test(att.file_name || '')
                     const isImage = (att.file_type || '').startsWith('image/')
                     return (
-                      <div key={att.id} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: 4, border: '1px solid #eee' }}>
+                      <div key={att.id} style={{ padding: '0.75rem', background: 'var(--bg-page)', borderRadius: 4, border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                           <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                             {att.file_name}
@@ -408,7 +408,7 @@ export default function PlainteDetailPage() {
           {complaint.resolution_notes && (
             <div className="glass-card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--color-primary)' }}>
               <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>Résolution / Rapport</h3>
-              <p style={{ color: '#444', lineHeight: 1.8, fontSize: '0.9rem' }}>{complaint.resolution_notes}</p>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.9rem' }}>{complaint.resolution_notes}</p>
             </div>
           )}
         </div>

@@ -12,9 +12,9 @@ class TimelineWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return Text(
+      return const Text(
         'Aucun historique',
-        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+        style: TextStyle(color: AppColors.textMuted, fontSize: 14),
       );
     }
 
@@ -35,13 +35,9 @@ class TimelineWidget extends StatelessWidget {
                       height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: i == 0
-                            ? AppColors.primary
-                            : Colors.grey[300],
+                        color: i == 0 ? AppColors.primary : AppColors.divider,
                         border: Border.all(
-                          color: i == 0
-                              ? AppColors.primary
-                              : Colors.grey[400]!,
+                          color: i == 0 ? AppColors.primary : AppColors.textMuted,
                           width: 2,
                         ),
                       ),
@@ -50,7 +46,7 @@ class TimelineWidget extends StatelessWidget {
                       Expanded(
                         child: Container(
                           width: 2,
-                          color: Colors.grey[300],
+                          color: AppColors.divider,
                         ),
                       ),
                   ],
@@ -67,9 +63,9 @@ class TimelineWidget extends StatelessWidget {
                         Text(
                           DateFormat('d MMM yyyy, HH:mm', 'fr_FR')
                               .format(entry.timestamp!),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[500],
+                            color: AppColors.textMuted,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -87,7 +83,7 @@ class TimelineWidget extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
                             'par ${entry.actorName}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.primary,
                               fontWeight: FontWeight.w500,
@@ -100,14 +96,15 @@ class TimelineWidget extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
+                              color: AppColors.surfaceGray,
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.divider),
                             ),
                             child: Text(
                               entry.notes!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[700],
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ),

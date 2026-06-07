@@ -136,7 +136,21 @@ class AuthController extends Notifier<AuthState> {
   }
 
   void forceLogout() {
+    unawaited(ref.read(tokenStorageProvider).clear());
     state = const AuthState(isBootstrapping: false, session: null);
+  }
+
+  void updateAccessToken(String accessToken) {
+    final session = state.session;
+    if (session == null) return;
+    state = AuthState(
+      isBootstrapping: false,
+      session: AuthSession(
+        accessToken: accessToken,
+        refreshToken: session.refreshToken,
+        user: session.user,
+      ),
+    );
   }
 
   Future<void> refreshUser() async {

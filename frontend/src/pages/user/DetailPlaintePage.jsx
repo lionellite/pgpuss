@@ -138,7 +138,7 @@ export default function DetailPlaintePage() {
               { label: 'Déposée le', value: new Date(complaint.created_at).toLocaleDateString('fr-FR') },
               { label: 'Assignée à', value: complaint.assigned_to_name || 'Non assignée' },
             ].map((item, i) => (
-              <div key={i} style={{ padding: '0.75rem', background: '#f8faf9', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <div key={i} style={{ padding: '0.75rem', background: 'var(--bg-page)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>{item.label}</div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{item.value || '—'}</div>
               </div>
@@ -170,7 +170,7 @@ export default function DetailPlaintePage() {
                     const url = att.file_url || att.file
                     const isAudio = (att.file_type || '').startsWith('audio/')
                     return (
-                      <div key={att.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: '#f8faf9' }}>
+                      <div key={att.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-page)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                           <a href={url} target="_blank" rel="noopener noreferrer">{att.file_name}</a>
                           <a className="btn btn-ghost btn-sm" href={url} download>Télécharger</a>

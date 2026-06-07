@@ -29,6 +29,17 @@ class PgpussApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            boldText: MediaQuery.of(context).boldText,
+          ),
+          child: Semantics(
+            label: 'PGP-USS — Plateforme de gestion des plaintes santé',
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 }

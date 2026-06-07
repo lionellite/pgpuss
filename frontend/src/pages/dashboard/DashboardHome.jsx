@@ -1,13 +1,39 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import { analyticsAPI } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { contextBadgeForUser } from '../../constants/roles'
 import StatusBadge from '../../components/StatusBadge'
 import PriorityBadge from '../../components/PriorityBadge'
+import PageHeader from '../../components/a11y/PageHeader'
+import LoadingState from '../../components/a11y/LoadingState'
+import KpiCard from '../../components/dashboard/KpiCard'
+import AccessibleChartCard from '../../components/charts/AccessibleChartCard'
+import ChartTooltipAccessible from '../../components/charts/ChartTooltipAccessible'
+import { CHART_COLORS, PRIORITY_COLORS, STATUS_LABELS, chartAxisStyle, chartGridStyle } from '../../components/charts/chartConfig'
+import ScrollReveal from '../../components/a11y/ScrollReveal'
 import {
   FiFileText, FiAlertCircle, FiCheckCircle, FiClock, FiTrendingUp, FiArrowRight, FiStar,
 } from 'react-icons/fi'
+
+function DataTable({ headers, rows }) {
+  return (
+    <table className="data-table">
+      <thead>
+        <tr>{headers.map((h) => <th key={h} scope="col">{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map(([a, b], i) => (
+          <tr key={i}><td>{a}</td><td>{b}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
 
 export default function DashboardHome() {
   const { user } = useAuth()
@@ -21,177 +47,153 @@ export default function DashboardHome() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="loading-center"><div className="spinner" /></div>
+  if (loading) return <LoadingState label="Chargement du tableau de bord…" />
+  if (!stats) return <p className="text-muted" role="alert">Données indisponibles.</p>
 
   const kpis = [
-    { label: 'Total plaintes', value: stats?.total_complaints ?? 0, icon: <FiFileText />, color: 'var(--color-primary)' },
-    { label: 'En cours', value: stats?.open_complaints ?? 0, icon: <FiClock />, color: '#d97706' },
-    { label: 'Résolues', value: stats?.resolved_complaints ?? 0, icon: <FiCheckCircle />, color: 'var(--color-primary)' },
-    { label: 'En retard', value: stats?.overdue_complaints ?? 0, icon: <FiAlertCircle />, color: '#dc2626' },
-    { label: 'Temps moy. résolution', value: stats?.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', icon: <FiTrendingUp />, color: '#4f46e5' },
-    { label: 'Satisfaction moyenne', value: stats?.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', icon: <FiStar />, color: '#d97706' },
+    { label: 'Total plaintes', value: stats.total_complaints ?? 0, icon: <FiFileText />, color: 'var(--color-primary)' },
+    { label: 'En cours', value: stats.open_complaints ?? 0, icon: <FiClock />, color: 'var(--priority-p2)' },
+    { label: 'Résolues', value: stats.resolved_complaints ?? 0, icon: <FiCheckCircle />, color: 'var(--color-secondary)' },
+    { label: 'En retard', value: stats.overdue_complaints ?? 0, icon: <FiAlertCircle />, color: 'var(--priority-p1)' },
+    { label: 'Temps moy. résolution', value: stats.avg_resolution_time ? `${stats.avg_resolution_time}h` : '—', icon: <FiTrendingUp />, color: 'var(--priority-p4)' },
+    { label: 'Satisfaction moyenne', value: stats.satisfaction_avg ? `${stats.satisfaction_avg}/5` : '—', icon: <FiStar />, color: 'var(--priority-p3)' },
   ]
 
-  const STATUS_COLORS = {
-    SOUMISE: '#717171', ACCUSEE: '#0077b6', INSTRUITE: '#6b5b95',
-    AFFECTEE: '#d97706', EN_TRAITEMENT: '#2563eb', RESOLUE: '#059669',
-    ARBITREE: '#f59e0b', CLOTUREE: '#1e293b',
-    ESCALADEE: '#dc2626', REJETEE: '#94a3b8',
-  }
+  const statusData = Object.entries(stats.complaints_by_status || {}).map(([k, v]) => ({
+    name: STATUS_LABELS[k] || k,
+    value: v,
+  }))
 
-  const STATUS_LABELS = {
-    SOUMISE: 'Soumise', ACCUSEE: 'Accusée', INSTRUITE: 'Instruite',
-    AFFECTEE: 'Affectée', EN_TRAITEMENT: 'Investigation', RESOLUE: 'Résolue',
-    ARBITREE: 'Arbitrée', CLOTUREE: 'Clôturée',
-    ESCALADEE: 'Escaladée'
-  }
+  const priorityData = ['P1', 'P2', 'P3', 'P4', 'P5'].map((p) => ({
+    name: p,
+    count: stats.complaints_by_priority?.[p] || 0,
+  }))
+
+  const dateLabel = new Date().toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
 
   return (
-    <div style={{ padding: '1rem 0' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h1 className="page-title">Tableau de bord</h1>
-        <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-          Bienvenue, {user?.first_name} — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-        {/* Contexte hiérarchique pyramide sanitaire */}
+    <div className="dashboard-page">
+      <PageHeader
+        title="Tableau de bord"
+        description={`Bienvenue, ${user?.first_name} — ${dateLabel}`}
+      >
         <p className="context-badge">{contextBadgeForUser(user)}</p>
         {user?.role === 'AUDITEUR' && (
-          <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.35rem' }}>
+          <p className="dashboard-page__hint">
             Accès en lecture seule — consultation et statistiques uniquement.
           </p>
         )}
-      </div>
+      </PageHeader>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+      <div className="kpi-grid" role="region" aria-label="Indicateurs clés">
         {kpis.map((kpi, i) => (
-          <div key={i} className="kpi-card" style={{ borderLeftColor: kpi.color }}>
-            <div className="kpi-card__head">
-              <span className="kpi-card__icon" style={{ color: kpi.color }}>{kpi.icon}</span>
-              <span className="kpi-card__label">{kpi.label}</span>
-            </div>
-            <div className="kpi-card__value">{kpi.value}</div>
-          </div>
+          <KpiCard key={kpi.label} {...kpi} index={i} />
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        {/* By Status */}
-        <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
-            Répartition par statut
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            {Object.entries(stats?.complaints_by_status || {}).map(([status, count]) => {
-              const total = stats?.total_complaints || 1
-              const pct = Math.round((count / total) * 100)
-              return (
-                <div key={status}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{STATUS_LABELS[status] || status}</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: STATUS_COLORS[status] || 'var(--text-muted)' }}>{count}</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: '2px', background: 'var(--bg-muted)' }}>
-                    <div style={{ height: '100%', borderRadius: '2px', width: `${pct}%`, background: STATUS_COLORS[status] || 'var(--text-muted)' }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+      <div className="chart-grid chart-grid--2">
+        <AccessibleChartCard
+          title="Répartition par statut"
+          description="Nombre de plaintes par étape du workflow."
+          dataTable={
+            <DataTable
+              headers={['Statut', 'Nombre']}
+              rows={statusData.map((d) => [d.name, d.value])}
+            />
+          }
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={statusData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={85}
+                dataKey="value"
+                nameKey="name"
+              >
+                {statusData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltipAccessible />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </AccessibleChartCard>
 
-        {/* By Priority */}
-        <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
-            Répartition par priorité
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {[
-              { key: 'P1', label: 'P1 Critique', color: '#dc2626' },
-              { key: 'P2', label: 'P2 Urgent', color: '#ea580c' },
-              { key: 'P3', label: 'P3 Élevé', color: '#d97706' },
-              { key: 'P4', label: 'P4 Normal', color: '#2563eb' },
-              { key: 'P5', label: 'P5 Faible', color: '#717171' },
-            ].map(({ key, label, color }) => {
-              const count = stats?.complaints_by_priority?.[key] || 0
-              const total = stats?.total_complaints || 1
-              const pct = Math.round((count / total) * 100)
-              return (
-                <div key={key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color }}>{count} ({pct}%)</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: '2px', background: 'var(--bg-muted)' }}>
-                    <div style={{ height: '100%', borderRadius: '2px', width: `${pct}%`, background: color }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <AccessibleChartCard
+          title="Répartition par priorité"
+          description="Distribution des plaintes selon les niveaux P1 à P5."
+          dataTable={
+            <DataTable
+              headers={['Priorité', 'Nombre']}
+              rows={priorityData.map((d) => [d.name, d.count])}
+            />
+          }
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={priorityData}>
+              <CartesianGrid {...chartGridStyle} vertical={false} />
+              <XAxis dataKey="name" {...chartAxisStyle} axisLine={false} />
+              <YAxis {...chartAxisStyle} axisLine={false} />
+              <Tooltip content={<ChartTooltipAccessible />} />
+              <Bar dataKey="count" name="Plaintes" radius={[2, 2, 0, 0]}>
+                {priorityData.map((_, i) => (
+                  <Cell key={i} fill={PRIORITY_COLORS[i]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </AccessibleChartCard>
       </div>
 
-      {/* By Category */}
-      {stats?.complaints_by_category?.length > 0 && (
-        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <h3 style={{ fontSize: '0.95rem', marginBottom: '1.5rem', fontWeight: 700 }}>
-            Catégories récurrentes
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+      {stats.complaints_by_category?.length > 0 && (
+        <ScrollReveal className="card card--padding dashboard-section">
+          <h2 className="dashboard-section__title">Catégories récurrentes</h2>
+          <div className="category-grid">
             {stats.complaints_by_category.map((item, i) => (
-              <div key={i} style={{
-                padding: '1rem', borderRadius: '4px',
-                background: '#f8f9fa', border: '1px solid #eee',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{ fontSize: '0.85rem', color: '#333', fontWeight: 600 }}>{item.category__name}</span>
+              <div key={i} className="category-chip">
+                <span className="category-chip__name">{item.category__name}</span>
                 <span className="badge badge-info">{item.count}</span>
               </div>
             ))}
           </div>
-        </div>
+        </ScrollReveal>
       )}
 
-      {/* Recent complaints */}
-      {stats?.recent_complaints?.length > 0 && (
-        <div className="glass-card" style={{ padding: '2rem', border: '1px solid #ddd', boxShadow: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-              Dossiers récents
-            </h3>
+      {stats.recent_complaints?.length > 0 && (
+        <ScrollReveal className="card card--padding dashboard-section">
+          <div className="dashboard-section__head">
+            <h2 className="dashboard-section__title">Dossiers récents</h2>
             <Link to="/dashboard/plaintes" className="btn btn-ghost btn-sm">
               Tout afficher <FiArrowRight aria-hidden />
             </Link>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {stats.recent_complaints.map((c, i) => (
-              <Link key={i} to={`/dashboard/plaintes/${c.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem',
-                  borderRadius: '4px', background: '#fff',
-                  border: '1px solid #eee',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.title}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+          <ul className="recent-list">
+            {stats.recent_complaints.map((c) => (
+              <li key={c.id}>
+                <Link to={`/dashboard/plaintes/${c.id}`} className="recent-list__item">
+                  <div className="recent-list__main">
+                    <span className="recent-list__title">{c.title}</span>
+                    <span className="recent-list__meta">
                       {c.ticket_number} — {c.establishment_name}
-                    </div>
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                  <div className="recent-list__badges">
                     <StatusBadge status={c.status} />
                     <PriorityBadge priority={c.priority} />
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                  <time className="recent-list__date" dateTime={c.created_at}>
                     {new Date(c.created_at).toLocaleDateString('fr-FR')}
-                  </div>
-                </div>
-              </Link>
+                  </time>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </ScrollReveal>
       )}
     </div>
   )

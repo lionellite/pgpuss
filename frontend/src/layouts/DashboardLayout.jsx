@@ -109,7 +109,7 @@ export default function DashboardLayout() {
           <button
             type="button"
             className="dashboard-nav__link user-menu__item--danger"
-            style={{ width: '100%', border: '1px solid rgba(232,17,45,0.2)', background: '#fef2f2' }}
+            style={{ width: '100%', border: '1px solid rgba(211,47,47,0.2)', background: 'rgba(211,47,47,0.06)' }}
             onClick={handleLogout}
           >
             <FiLogOut aria-hidden />

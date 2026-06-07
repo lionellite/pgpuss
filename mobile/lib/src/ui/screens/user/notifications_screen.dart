@@ -80,17 +80,17 @@ class _State extends ConsumerState<NotificationsScreen> {
       margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: n.isRead ? Colors.grey[100] : AppColors.secondary.withValues(alpha: 0.12),
+          backgroundColor: n.isRead ? AppColors.surfaceGray : AppColors.secondary.withValues(alpha: 0.12),
           child: Icon(Icons.description_outlined, size: 18,
-            color: n.isRead ? Colors.grey[400] : AppColors.secondary),
+            color: n.isRead ? AppColors.textMuted : AppColors.secondary),
         ),
         title: Text(n.title, style: TextStyle(
           fontSize: 14, fontWeight: n.isRead ? FontWeight.w400 : FontWeight.w600)),
         subtitle: Text(n.message, maxLines: 2, overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           if (n.createdAt != null) Text('${n.createdAt!.day}/${n.createdAt!.month}',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
           if (!n.isRead) Container(width: 8, height: 8, margin: const EdgeInsets.only(top: 4),
             decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.secondary)),
         ]),

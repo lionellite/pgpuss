@@ -6,7 +6,8 @@ import '../state/auth_controller.dart';
 import 'token_storage.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  final auth = ref.watch(authControllerProvider);
+  final storage = ref.read(tokenStorageProvider);
+  final authNotifier = ref.read(authControllerProvider.notifier);
 
   final dio = Dio(
     BaseOptions(
@@ -29,43 +30,53 @@ final dioProvider = Provider<Dio>((ref) {
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) {
-        final token = auth.session?.accessToken;
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+        final session = ref.read(authControllerProvider).session;
+        if (session != null) {
+          options.headers['Authorization'] = 'Bearer ${session.accessToken}';
+        } else {
+          options.headers.remove('Authorization');
         }
         handler.next(options);
       },
       onError: (error, handler) async {
-        if (error.response?.statusCode == 401 &&
-            !(error.requestOptions.extra['_retry'] == true)) {
-          error.requestOptions.extra['_retry'] = true;
-          final storage = ref.read(tokenStorageProvider);
-          final pair = await storage.read();
-          if (pair != null) {
-            try {
-              final refreshDio = Dio(BaseOptions(
-                baseUrl: AppConfig.apiBaseUrl,
-                headers: {'Accept': 'application/json'},
-              ));
-              final res =
-                  await refreshDio.post<Map<String, dynamic>>(
-                '/api/auth/refresh/',
-                data: {'refresh': pair.refreshToken},
-              );
-              final newAccess = res.data?['access'] as String?;
-              if (newAccess != null) {
-                await storage.write(pair.copyWith(accessToken: newAccess));
-                error.requestOptions.headers['Authorization'] =
-                    'Bearer $newAccess';
-                final retryRes = await dio.fetch(error.requestOptions);
-                return handler.resolve(retryRes);
-              }
-            } catch (_) {
-              await storage.clear();
-              ref.read(authControllerProvider.notifier).forceLogout();
-            }
-          }
+        if (error.response?.statusCode != 401 ||
+            error.requestOptions.extra['_retry'] == true) {
+          handler.next(error);
+          return;
         }
+
+        error.requestOptions.extra['_retry'] = true;
+        final pair = await storage.read();
+        if (pair == null) {
+          handler.next(error);
+          return;
+        }
+
+        try {
+          final refreshDio = Dio(
+            BaseOptions(
+              baseUrl: AppConfig.apiBaseUrl,
+              headers: {'Accept': 'application/json'},
+            ),
+          );
+          final res = await refreshDio.post<Map<String, dynamic>>(
+            '/api/auth/refresh/',
+            data: {'refresh': pair.refreshToken},
+          );
+          final newAccess = res.data?['access'] as String?;
+          if (newAccess != null && newAccess.isNotEmpty) {
+            await storage.write(pair.copyWith(accessToken: newAccess));
+            authNotifier.updateAccessToken(newAccess);
+            error.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
+            final retryRes = await dio.fetch(error.requestOptions);
+            handler.resolve(retryRes);
+            return;
+          }
+        } catch (_) {
+          await storage.clear();
+          authNotifier.forceLogout();
+        }
+
         handler.next(error);
       },
     ),

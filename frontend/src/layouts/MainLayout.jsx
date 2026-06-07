@@ -15,6 +15,7 @@ export default function MainLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
   const [unread, setUnread] = useState(0)
+  const [searchTicket, setSearchTicket] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -36,10 +37,17 @@ export default function MainLayout() {
     navigate('/')
   }
 
+  const handleSearch = (e) => {
+    e.preventDefault()
+    const q = searchTicket.trim()
+    if (q) navigate(`/suivi?ticket=${encodeURIComponent(q)}`)
+  }
+
   const navLinks = [
     { to: '/', label: t('home'), icon: <FiHome aria-hidden /> },
-    { to: '/deposer', label: t('submit_complaint'), icon: <FiPlusCircle aria-hidden /> },
-    { to: '/suivi', label: t('track_complaint'), icon: <FiSearch aria-hidden /> },
+    { to: '/#comment', label: 'Comment ça marche', icon: null },
+    { to: '/#statistiques', label: 'Statistiques', icon: null },
+    { to: '/#contact', label: 'Contact', icon: null },
   ]
 
   const isActive = (path) =>
@@ -55,21 +63,29 @@ export default function MainLayout() {
       <header className="site-header" role="banner">
         <div className="site-header__inner">
           <Link to="/" className="site-brand">
-            <div className="site-brand__logos">
-              <img
-                src="https://gouv.bj/assets/img/logo-benin.png"
-                alt="République du Bénin"
-                height={40}
-                onError={(e) => { e.target.style.display = 'none' }}
-              />
-              <span className="site-brand__divider hide-mobile" aria-hidden />
-              <img src="/logo.png" alt="" className="brand-app-logo" />
-            </div>
-            <div className="site-brand__text hide-mobile">
-              <div className="site-brand__title">Plateforme de Gestion des Plaintes</div>
-              <div className="site-brand__subtitle">Santé — République du Bénin</div>
-            </div>
+            <span className="material-symbols-outlined site-brand__icon material-symbols-outlined--filled" aria-hidden>account_balance</span>
+            <span className="site-brand__name">PGP-USS Bénin</span>
           </Link>
+
+          <form
+            className="site-search hide-mobile"
+            onSubmit={handleSearch}
+            role="search"
+            aria-label="Rechercher une plainte"
+          >
+            <label className="sr-only" htmlFor="header-ticket">Numéro de ticket</label>
+            <input
+              id="header-ticket"
+              className="site-search__input form-input"
+              value={searchTicket}
+              onChange={(e) => setSearchTicket(e.target.value)}
+              placeholder="N° ticket…"
+              autoComplete="off"
+            />
+            <button type="submit" className="site-search__btn btn btn-primary btn-sm" aria-label="Rechercher">
+              <FiSearch aria-hidden />
+            </button>
+          </form>
 
           <nav className="site-nav hide-mobile" aria-label="Navigation principale">
             {navLinks.map((link) => (
@@ -159,11 +175,11 @@ export default function MainLayout() {
               </>
             ) : (
               <>
-                <Link to="/connexion" className="btn btn-ghost btn-sm hide-mobile">
-                  <FiLogIn aria-hidden /> Connexion
+                <Link to="/connexion" className="btn btn-outline-primary btn-sm hide-mobile">
+                  Se connecter
                 </Link>
-                <Link to="/inscription" className="btn btn-primary btn-sm">
-                  S&apos;inscrire
+                <Link to="/deposer" className="btn btn-primary btn-primary--container btn-sm">
+                  Déposer une plainte
                 </Link>
               </>
             )}
@@ -183,6 +199,17 @@ export default function MainLayout() {
 
         {menuOpen && (
           <nav id="mobile-nav" className="mobile-nav-panel hide-desktop" aria-label="Navigation mobile">
+            <form className="mobile-nav-search" onSubmit={handleSearch} role="search">
+              <label className="sr-only" htmlFor="mobile-ticket">Numéro de ticket</label>
+              <input
+                id="mobile-ticket"
+                className="form-input"
+                value={searchTicket}
+                onChange={(e) => setSearchTicket(e.target.value)}
+                placeholder="Rechercher un ticket…"
+              />
+              <button type="submit" className="btn btn-primary btn-sm">Rechercher</button>
+            </form>
             {navLinks.map((link) => (
               <Link key={link.to} to={link.to}>
                 {link.icon}
@@ -207,35 +234,43 @@ export default function MainLayout() {
         <Outlet />
       </main>
 
-      <footer className="site-footer" role="contentinfo">
+      <footer id="contact" className="site-footer" role="contentinfo">
         <div className="page-container">
           <div className="site-footer__grid">
             <div>
-              <h2 className="site-footer__title">À propos</h2>
+              <div className="site-brand" style={{ marginBottom: '1rem' }}>
+                <span className="material-symbols-outlined site-brand__icon material-symbols-outlined--filled" aria-hidden>account_balance</span>
+                <span className="site-brand__name">PGP-USS</span>
+              </div>
               <p className="site-footer__text">
-                Plateforme officielle de gestion des plaintes des usagers des services de santé au Bénin.
+                Plateforme de Gestion des Plaintes des Usagers des Services de Santé. Une initiative du Ministère de la Santé de la République du Bénin.
               </p>
             </div>
             <div>
-              <h2 className="site-footer__title">Liens utiles</h2>
+              <h2 className="site-footer__title">Navigation</h2>
               <ul className="site-footer__links">
+                <li><Link to="/">Accueil</Link></li>
+                <li><Link to="/#statistiques">Statistiques Nationales</Link></li>
                 <li><Link to="/deposer">Déposer une plainte</Link></li>
-                <li><Link to="/suivi">Suivre une plainte</Link></li>
-                <li>
-                  <a href="https://sante.gouv.bj" target="_blank" rel="noopener noreferrer">
-                    Ministère de la Santé
-                  </a>
-                </li>
+                <li><Link to="/#contact">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h2 className="site-footer__title">Liens Utiles</h2>
+              <ul className="site-footer__links">
+                <li><a href="https://sante.gouv.bj" target="_blank" rel="noopener noreferrer">Ministère de la Santé</a></li>
+                <li><a href="tel:136">Ligne Verte 136</a></li>
+                <li><a href="https://gouv.bj" target="_blank" rel="noopener noreferrer">Portail Gouvernemental</a></li>
               </ul>
             </div>
             <div>
               <h2 className="site-footer__title">Contact</h2>
-              <p className="site-footer__text">Ligne verte : 136</p>
+              <p className="site-footer__text">Ligne verte : <a href="tel:136">136</a></p>
               <p className="site-footer__text">Courriel : contact@sante.gouv.bj</p>
             </div>
           </div>
           <div className="site-footer__bottom">
-            <p>© {new Date().getFullYear()} République du Bénin — Ministère de la Santé. Tous droits réservés.</p>
+            <p>© {new Date().getFullYear()} Ministère de la Santé du Bénin. Tous droits réservés.</p>
           </div>
         </div>
       </footer>

@@ -249,7 +249,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
           content: Text(msg),
-          backgroundColor: const Color(0xFFE8112D),
+          backgroundColor: AppColors.danger,
           duration: const Duration(seconds: 6),
           behavior: SnackBarBehavior.floating,
         ));
@@ -305,7 +305,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         final active = i == _step; final done = i < _step;
         return Expanded(child: Column(children: [
           Container(width: 28, height: 28, decoration: BoxDecoration(shape: BoxShape.circle,
-            color: done ? AppColors.primary : active ? AppColors.primary : Colors.grey[300]),
+            color: done ? AppColors.primary : active ? AppColors.primary : AppColors.divider),
             child: Center(child: done ? const Icon(Icons.check, size: 14, color: Colors.white)
               : Text('${i + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
                   color: active ? Colors.white : AppColors.textMuted)))),
@@ -598,7 +598,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   Widget _buildSuccess() {
     return Scaffold(appBar: AppBar(title: const Text('Plainte déposée')),
       body: Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(padding: const EdgeInsets.all(20), decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFE6F7EF)),
+        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.successSurface),
           child: const Icon(Icons.check_circle, size: 64, color: AppColors.primary)),
         const SizedBox(height: 24),
         const Text('Plainte déposée avec succès !', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800), textAlign: TextAlign.center),

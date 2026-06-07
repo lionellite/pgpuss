@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authAPI } from '../../api'
 import toast from 'react-hot-toast'
-import { FiUser, FiMail, FiPhone, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -27,46 +26,56 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-      <header className="login-page-header">
-        <h1 className="login-page-title">Créer un compte</h1>
-        <p className="login-page-subtitle">
-          Rejoignez la plateforme pour suivre vos plaintes en toute sécurité
+    <div className="auth-form">
+      <header className="auth-form__header">
+        <span className="material-symbols-outlined auth-form__icon material-symbols-outlined--filled" aria-hidden>
+          person_add
+        </span>
+        <h1 className="auth-form__title">Créer votre compte</h1>
+        <p className="auth-form__subtitle">
+          Rejoignez la plateforme pour déposer et suivre vos plaintes en toute sécurité.
         </p>
       </header>
 
-      <section className="glass-card login-card">
-        <form className="login-form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="first_name">Prénom</label>
+      <form className="auth-form__body" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <div className="auth-form__grid-2">
+          <div className="form-group">
+            <label className="form-label" htmlFor="first_name">Prénom</label>
+            <div className="auth-field">
+              <span className="material-symbols-outlined auth-field__icon" aria-hidden>badge</span>
               <input
                 id="first_name"
-                className="form-input"
+                className="form-input auth-field__input"
                 type="text"
                 autoComplete="given-name"
                 {...register('first_name', { required: 'Requis' })}
               />
-              {errors.first_name && <span className="form-error" role="alert">{errors.first_name.message}</span>}
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="last_name">Nom</label>
+            {errors.first_name && <span className="form-error" role="alert">{errors.first_name.message}</span>}
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="last_name">Nom</label>
+            <div className="auth-field">
+              <span className="material-symbols-outlined auth-field__icon" aria-hidden>badge</span>
               <input
                 id="last_name"
-                className="form-input"
+                className="form-input auth-field__input"
                 type="text"
                 autoComplete="family-name"
                 {...register('last_name', { required: 'Requis' })}
               />
-              {errors.last_name && <span className="form-error" role="alert">{errors.last_name.message}</span>}
             </div>
+            {errors.last_name && <span className="form-error" role="alert">{errors.last_name.message}</span>}
           </div>
+        </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">Adresse email</label>
+        <div className="form-group">
+          <label className="form-label" htmlFor="email">Adresse email</label>
+          <div className="auth-field">
+            <span className="material-symbols-outlined auth-field__icon" aria-hidden>mail</span>
             <input
               id="email"
-              className="form-input"
+              className="form-input auth-field__input"
               type="email"
               autoComplete="email"
               placeholder="exemple@email.bj"
@@ -78,48 +87,58 @@ export default function RegisterPage() {
                 },
               })}
             />
-            {errors.email && <span className="form-error" role="alert">{errors.email.message}</span>}
           </div>
+          {errors.email && <span className="form-error" role="alert">{errors.email.message}</span>}
+        </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="phone">Téléphone</label>
+        <div className="form-group">
+          <label className="form-label" htmlFor="phone">Téléphone</label>
+          <div className="auth-field">
+            <span className="material-symbols-outlined auth-field__icon" aria-hidden>phone</span>
             <input
               id="phone"
-              className="form-input"
+              className="form-input auth-field__input"
               type="tel"
               autoComplete="tel"
               placeholder="+229 XX XX XX XX"
               {...register('phone')}
             />
           </div>
+        </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Mot de passe</label>
-            <div className="login-input-wrap">
-              <input
-                id="password"
-                className="form-input"
-                type={showPwd ? 'text' : 'password'}
-                autoComplete="new-password"
-                {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Minimum 8 caractères' } })}
-              />
-              <button
-                type="button"
-                className="login-toggle-pwd"
-                onClick={() => setShowPwd(!showPwd)}
-                aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              >
-                {showPwd ? <FiEyeOff aria-hidden /> : <FiEye aria-hidden />}
-              </button>
-            </div>
-            {errors.password && <span className="form-error" role="alert">{errors.password.message}</span>}
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">Mot de passe</label>
+          <div className="auth-field">
+            <span className="material-symbols-outlined auth-field__icon" aria-hidden>lock</span>
+            <input
+              id="password"
+              className="form-input auth-field__input"
+              type={showPwd ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Minimum 8 caractères"
+              {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Minimum 8 caractères' } })}
+            />
+            <button
+              type="button"
+              className="auth-field__toggle"
+              onClick={() => setShowPwd(!showPwd)}
+              aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            >
+              <span className="material-symbols-outlined" aria-hidden>
+                {showPwd ? 'visibility' : 'visibility_off'}
+              </span>
+            </button>
           </div>
+          {errors.password && <span className="form-error" role="alert">{errors.password.message}</span>}
+        </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password_confirm">Confirmer le mot de passe</label>
+        <div className="form-group">
+          <label className="form-label" htmlFor="password_confirm">Confirmer le mot de passe</label>
+          <div className="auth-field">
+            <span className="material-symbols-outlined auth-field__icon" aria-hidden>lock_reset</span>
             <input
               id="password_confirm"
-              className="form-input"
+              className="form-input auth-field__input"
               type="password"
               autoComplete="new-password"
               {...register('password_confirm', {
@@ -127,23 +146,25 @@ export default function RegisterPage() {
                 validate: (v) => v === watch('password') || 'Les mots de passe ne correspondent pas',
               })}
             />
-            {errors.password_confirm && (
-              <span className="form-error" role="alert">{errors.password_confirm.message}</span>
-            )}
           </div>
+          {errors.password_confirm && (
+            <span className="form-error" role="alert">{errors.password_confirm.message}</span>
+          )}
+        </div>
 
-          <button type="submit" className="btn btn-primary login-submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Création en cours…' : 'Créer mon compte'}
-          </button>
-        </form>
-      </section>
+        <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
+          <span className="material-symbols-outlined" aria-hidden>how_to_reg</span>
+          {isSubmitting ? 'Création en cours…' : 'Créer mon compte'}
+        </button>
+      </form>
 
-      <footer className="login-footer">
-        <p>
-          Déjà un compte ?{' '}
-          <Link to="/connexion" className="login-footer-link">Se connecter</Link>
-        </p>
-      </footer>
+      <div className="auth-form__divider">
+        <p>Déjà un compte ?</p>
+        <Link to="/connexion" className="auth-form__secondary-btn">
+          <span className="material-symbols-outlined" aria-hidden>login</span>
+          Se connecter
+        </Link>
+      </div>
     </div>
   )
 }

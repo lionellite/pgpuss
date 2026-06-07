@@ -143,7 +143,7 @@ export default function UsersPage() {
             </thead>
             <tbody>
               {users.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#4A6080' }}>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                   Aucun utilisateur trouvé
                 </td></tr>
               ) : users.map(u => (
@@ -152,13 +152,13 @@ export default function UsersPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{
                         width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                        background: 'linear-gradient(135deg, #0077B6, #06D6A0)',
+                        background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-container))',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.8rem', fontWeight: 700, color: 'white',
                       }}>{u.first_name?.[0]}{u.last_name?.[0]}</div>
                       <div>
                         <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{u.full_name}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#4A6080' }}>#{u.id?.slice(0, 8)}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>#{u.id?.slice(0, 8)}</div>
                       </div>
                     </div>
                   </td>
@@ -211,7 +211,7 @@ export default function UsersPage() {
                       {u.is_active ? 'Actif' : 'Inactif'}
                     </span>
                   </td>
-                  <td style={{ fontSize: '0.75rem', color: '#4A6080' }}>
+                  <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {new Date(u.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td>

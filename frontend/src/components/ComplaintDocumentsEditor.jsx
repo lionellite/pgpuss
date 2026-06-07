@@ -66,11 +66,11 @@ export default function ComplaintDocumentsEditor({ complaintId, userRole }) {
           role="status"
           style={{
             padding: '0.75rem',
-            background: '#fffbeb',
-            border: '1px solid #fcd34d',
+            background: 'rgba(251, 192, 45, 0.1)',
+            border: '1px solid var(--priority-p3)',
             borderRadius: 'var(--radius-md)',
             fontSize: '0.8rem',
-            color: '#92400e',
+            color: 'var(--priority-p2)',
           }}
         >
           Documents obligatoires à compléter :{' '}
@@ -87,7 +87,7 @@ export default function ComplaintDocumentsEditor({ complaintId, userRole }) {
               padding: '1rem',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-md)',
-              background: 'var(--bg-surface)',
+              background: 'var(--bg-card)',
             }}
           >
             <header style={{ marginBottom: '0.5rem' }}>

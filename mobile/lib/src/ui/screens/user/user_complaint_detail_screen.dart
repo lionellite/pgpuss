@@ -5,6 +5,7 @@ import '../../../api/complaints_api.dart';
 import '../../../models/complaint.dart';
 import '../../theme.dart';
 import '../../widgets/app_chrome.dart';
+import '../../widgets/a11y_widgets.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/timeline_widget.dart';
 
@@ -124,7 +125,7 @@ class _UserComplaintDetailScreenState
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -145,40 +146,30 @@ class _UserComplaintDetailScreenState
               if (c.resolutionNotes != null &&
                   c.resolutionNotes!.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Card(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: const Border(
-                        left: BorderSide(
+                AccentLeftCard(
+                  accentColor: AppColors.primary,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'RÉSOLUTION',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.primary,
-                          width: 4,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'RÉSOLUTION',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: 0.5,
-                          ),
+                      const SizedBox(height: 8),
+                      Text(
+                        c.resolutionNotes!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.7,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          c.resolutionNotes!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.7,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -194,7 +185,7 @@ class _UserComplaintDetailScreenState
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey,
+                    color: AppColors.textMuted,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -229,9 +220,9 @@ class _UserComplaintDetailScreenState
           width: (MediaQuery.of(context).size.width - 80) / 2,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: AppColors.surfaceGray,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: AppColors.divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +232,7 @@ class _UserComplaintDetailScreenState
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey[500],
+                  color: AppColors.textMuted,
                   letterSpacing: 0.3,
                 ),
               ),
@@ -301,7 +292,7 @@ class _UserComplaintDetailScreenState
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey,
+                  color: AppColors.textMuted,
                   letterSpacing: 0.5,
                 ),
               ),

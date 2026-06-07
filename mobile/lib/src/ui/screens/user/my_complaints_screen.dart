@@ -168,7 +168,7 @@ class _MyComplaintsScreenState extends ConsumerState<MyComplaintsScreen> {
                       '${c.createdAt!.day}/${c.createdAt!.month}/${c.createdAt!.year}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey[500],
+                        color: AppColors.textMuted,
                       ),
                     ),
                 ],
@@ -189,7 +189,7 @@ class _MyComplaintsScreenState extends ConsumerState<MyComplaintsScreen> {
                   c.establishmentName!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

@@ -57,7 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         builder: (ctx) => AlertDialog(
           title: const Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.primary),
+              Icon(Icons.check_circle, color: AppColors.primaryContainer),
               SizedBox(width: 8),
               Text('Compte créé'),
             ],
@@ -72,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Navigator.of(ctx).pop();
                 context.go('/login');
               },
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primaryContainer),
               child: const Text('Se connecter'),
             ),
           ],
@@ -96,134 +97,125 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PublicAuthLayout(
-      title: 'Créer un compte',
-      subtitle: 'Compte usager pour déposer et suivre vos plaintes.',
-      showLogo: false,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return StitchAuthLayout(
+      icon: Icons.person_add_alt_1,
+      title: 'Créer votre compte',
+      subtitle: 'Rejoignez la plateforme pour déposer et suivre vos plaintes en toute sécurité.',
+      footer: Column(
+        children: [
+          const Text(
+            'Déjà un compte ?',
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => context.go('/login'),
+            icon: const Icon(Icons.login),
+            label: const Text('Se connecter'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryContainer,
+              side: const BorderSide(color: AppColors.primaryContainer),
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _firstNameCtrl,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(labelText: 'Prénom'),
-                        validator: (v) =>
-                            (v ?? '').trim().isEmpty ? 'Requis' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lastNameCtrl,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(labelText: 'Nom'),
-                        validator: (v) =>
-                            (v ?? '').trim().isEmpty ? 'Requis' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (v) {
-                    final s = (v ?? '').trim();
-                    if (s.isEmpty) return 'Email requis';
-                    if (!s.contains('@')) return 'Email invalide';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Téléphone (optionnel)',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                    hintText: '+229 XX XX XX XX',
+                Expanded(
+                  child: AuthTextField(
+                    controller: _firstNameCtrl,
+                    label: 'Prénom',
+                    icon: Icons.badge_outlined,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => (v ?? '').trim().isEmpty ? 'Requis' : null,
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordCtrl,
-                  obscureText: _obscure,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscure ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                    ),
-                  ),
-                  validator: (v) {
-                    if ((v ?? '').length < 8) return 'Minimum 8 caractères';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _confirmCtrl,
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirmer le mot de passe',
-                    prefixIcon: Icon(Icons.lock_outlined),
-                  ),
-                  validator: (v) {
-                    if (v != _passwordCtrl.text) {
-                      return 'Les mots de passe ne correspondent pas';
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) => _submit(),
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Créer mon compte'),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: const Text('Déjà un compte ? Se connecter'),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/'),
-                  child: Text(
-                    'Retour à l\'accueil',
-                    style: TextStyle(color: AppColors.textMuted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AuthTextField(
+                    controller: _lastNameCtrl,
+                    label: 'Nom',
+                    icon: Icons.badge_outlined,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => (v ?? '').trim().isEmpty ? 'Requis' : null,
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            AuthTextField(
+              controller: _emailCtrl,
+              label: 'Adresse email',
+              icon: Icons.mail_outline,
+              hint: 'exemple@email.bj',
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: (v) {
+                final s = (v ?? '').trim();
+                if (s.isEmpty) return 'Email requis';
+                if (!s.contains('@')) return 'Email invalide';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            AuthTextField(
+              controller: _phoneCtrl,
+              label: 'Téléphone (optionnel)',
+              icon: Icons.phone_outlined,
+              hint: '+229 XX XX XX XX',
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
+            AuthTextField(
+              controller: _passwordCtrl,
+              label: 'Mot de passe',
+              icon: Icons.lock_outline,
+              hint: 'Minimum 8 caractères',
+              obscureText: _obscure,
+              textInputAction: TextInputAction.next,
+              suffix: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+              validator: (v) => (v ?? '').length < 8 ? 'Minimum 8 caractères' : null,
+            ),
+            const SizedBox(height: 16),
+            AuthTextField(
+              controller: _confirmCtrl,
+              label: 'Confirmer le mot de passe',
+              icon: Icons.lock_reset,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              validator: (v) {
+                if (v != _passwordCtrl.text) return 'Les mots de passe ne correspondent pas';
+                return null;
+              },
+              onFieldSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _loading ? null : _submit,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.how_to_reg),
+              label: Text(_loading ? 'Création…' : 'Créer mon compte'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                minimumSize: const Size.fromHeight(48),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -53,7 +53,7 @@ export default function PlaintesListPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
           <h1 className="page-title">Gestion des plaintes</h1>
-          <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>{count} dossier(s) répertorié(s)</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{count} dossier(s) répertorié(s)</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {hasScope && (
@@ -70,10 +70,10 @@ export default function PlaintesListPage() {
       </div>
 
       {/* Filters */}
-      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', boxShadow: 'none' }}>
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+            <FiSearch style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
             <input className="form-input" style={{ paddingLeft: '2.5rem' }}
               placeholder="N° de ticket, titre..." value={filters.search}
               onChange={e => setFilter('search', e.target.value)} />
@@ -125,22 +125,22 @@ export default function PlaintesListPage() {
               </thead>
               <tbody>
                 {complaints.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     Aucun dossier trouvé.
                   </td></tr>
                 ) : complaints.map(c => (
                   <tr key={c.id}>
                     <td style={{ verticalAlign: 'middle' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#111' }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                         {c.ticket_number}
                       </span>
                       {c.is_overdue && <span className="badge badge-escaladee" style={{ marginLeft: '0.5rem' }}>RETARD</span>}
                     </td>
                     <td style={{ maxWidth: 250 }}>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: 600, color: '#111' }}>{c.title}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#666' }}>{c.category_name}</div>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{c.title}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.category_name}</div>
                     </td>
-                    <td style={{ fontSize: '0.8rem', color: '#444', maxWidth: 150 }}>
+                    <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: 150 }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.establishment_name || '—'}
                       </div>
@@ -148,11 +148,11 @@ export default function PlaintesListPage() {
                     <td><StatusBadge status={c.status} /></td>
                     <td><PriorityBadge priority={c.priority} /></td>
                     <td>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,119,182,0.07)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,76,76,0.07)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
                         {c.channel_display}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.75rem', color: '#4A6080' }}>
+                    <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {new Date(c.created_at).toLocaleDateString('fr-FR')}
                     </td>
                     <td>

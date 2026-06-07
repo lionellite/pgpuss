@@ -1,0 +1,325 @@
+<!DOCTYPE html><html class="light" lang="fr"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PGP-USS Bénin - Plateforme de Gestion des Plaintes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Atkinson+Hyperlegible+Next:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#86d4d3",
+                    "surface-tint": "#096969",
+                    "primary": "#004c4c",
+                    "inverse-surface": "#213145",
+                    "primary-fixed-dim": "#86d4d3",
+                    "emergency-red": "#D32F2F",
+                    "border-light": "#E2E8F0",
+                    "surface-bright": "#f8f9ff",
+                    "on-tertiary-fixed": "#341100",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-container": "#874c2b",
+                    "priority-p1": "#D32F2F",
+                    "tertiary-fixed-dim": "#ffb690",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary-fixed-variant": "#6e3819",
+                    "on-primary-fixed": "#002020",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#cbdbf5",
+                    "priority-p5": "#78909C",
+                    "on-primary-fixed-variant": "#004f4f",
+                    "error": "#ba1a1a",
+                    "secondary-container": "#91f78e",
+                    "outline-variant": "#bec9c8",
+                    "primary-container": "#006666",
+                    "on-tertiary-container": "#ffc8ad",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface": "#0b1c30",
+                    "on-error": "#ffffff",
+                    "secondary": "#006e1c",
+                    "secondary-fixed-dim": "#78dc77",
+                    "background": "#f8f9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#3f4948",
+                    "on-background": "#0b1c30",
+                    "on-secondary-container": "#00731e",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary": "#ffffff",
+                    "surface-gray": "#F8FAFC",
+                    "tertiary": "#6a3516",
+                    "priority-p2": "#F57C00",
+                    "inverse-on-surface": "#eaf1ff",
+                    "priority-p4": "#1976D2",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#005313",
+                    "surface": "#f8f9ff",
+                    "on-primary-container": "#93e1e0",
+                    "secondary-fixed": "#94f990",
+                    "outline": "#6f7979",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "stack-lg": "32px",
+                    "stack-md": "16px",
+                    "container-max": "1280px",
+                    "stack-sm": "8px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Atkinson Hyperlegible Next"],
+                    "body-md": ["Inter"],
+                    "caption": ["Inter"],
+                    "headline-md": ["Atkinson Hyperlegible Next"],
+                    "headline-lg": ["Atkinson Hyperlegible Next"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Atkinson Hyperlegible Next"],
+                    "title-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .menu-open {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-surface-gray font-body-md text-on-surface">
+<!-- Mobile Top Navigation Bar -->
+<nav class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface-container-lowest shadow-sm border-b border-border-light max-w-container-max mx-auto">
+<div class="flex items-center gap-2">
+<span class="text-title-lg font-title-lg font-bold text-primary">PGP-USS Bénin</span>
+</div>
+<button class="p-2 text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" id="menu-toggle">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</nav>
+<!-- Mobile Side Drawer (Burger Menu) -->
+<div class="fixed inset-0 z-[60] bg-black/50 hidden" id="mobile-menu">
+<div class="absolute right-0 top-0 h-full w-4/5 bg-surface-container-lowest p-6 flex flex-col gap-6 menu-open">
+<div class="flex justify-between items-center">
+<span class="text-title-lg font-title-lg font-bold text-primary">Menu</span>
+<button class="p-2 text-on-surface-variant" id="menu-close">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-4">
+<a class="text-primary font-bold text-body-lg border-b-2 border-primary pb-1 self-start" href="#">Accueil</a>
+<a class="text-on-surface-variant text-body-lg hover:text-primary transition-colors" href="#">Comment ça marche</a>
+<a class="text-on-surface-variant text-body-lg hover:text-primary transition-colors" href="#">Statistiques</a>
+<a class="text-on-surface-variant text-body-lg hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+<div class="mt-auto flex flex-col gap-4">
+<button class="w-full bg-primary-container text-on-primary-container font-label-md py-4 rounded-xl shadow-sm active:scale-95 transition-transform duration-150">DÉPOSER UNE PLAINTE</button>
+<button class="w-full border border-primary text-primary font-label-md py-4 rounded-xl active:scale-95 transition-transform duration-150">SE CONNECTER</button>
+</div>
+</div>
+</div>
+<main class="flex flex-col gap-stack-lg pb-stack-lg">
+<!-- Hero Section Mobile Optimized -->
+<section class="px-margin-mobile pt-stack-md flex flex-col gap-6">
+<div class="relative w-full aspect-[16/9] rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A clean and professional medical consultation room in a modern Beninese healthcare facility. The environment is bright with natural light, featuring high-quality clinical equipment and organized administrative areas. The aesthetic is authoritative yet accessible, using a palette of deep teals and soft whites to instill trust and transparency for citizens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrqMVXayYNV3mCzjV-SW426EaBabr547oqAzweMqVpX1uVCMz3nxssTvtNOJS3ZGkrwG4p5KWe3nXY79hfxjIEXsLYBSLGWuTeNAkehhoZ5RajQQRV6fCD_do4VFCu73-5_PpcVlJzAf4GfPLbLP-_1rHKTt_JDHACR7j1i3st5ndOMwixF-Mf29mMozlf0oGTL3cs5r5pwE_yFfG5-g4O0vRULRRC2mgGxvqkbWfjS98OrwhTwoVbx83FAU3q1fUvriN4WKJzYf8">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex flex-col justify-end p-4">
+<h1 class="text-headline-lg-mobile font-headline-lg-mobile text-white">Votre voix pour un meilleur système de santé.</h1>
+</div>
+</div>
+<!-- Urgent Call Action -->
+<a class="flex items-center justify-between bg-emergency-red text-white p-4 rounded-xl shadow-md active:scale-95 transition-transform" href="tel:136">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">phone_in_talk</span>
+<div>
+<p class="font-label-md text-white/90">Besoin d'aide immédiate ?</p>
+<p class="font-headline-md leading-none">Ligne Verte 136</p>
+</div>
+</div>
+<span class="material-symbols-outlined">arrow_forward</span>
+</a>
+<!-- Primary Thumb-Friendly Actions -->
+<div class="grid grid-cols-1 gap-4">
+<button class="flex items-center justify-center gap-3 bg-primary text-white font-label-md py-5 rounded-xl shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+                    DÉPOSER UNE PLAINTE
+                </button>
+<button class="flex items-center justify-center gap-3 border-2 border-primary text-primary font-label-md py-5 rounded-xl active:scale-95 transition-transform">
+<span class="material-symbols-outlined">track_changes</span>
+                    SUIVRE MA PLAINTE
+                </button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2">
+  <button class="flex items-center justify-center border-2 border-primary text-primary font-label-md py-4 rounded-xl active:scale-95 transition-transform">
+    SE CONNECTER
+  </button>
+  <button class="flex items-center justify-center bg-primary text-white font-label-md py-4 rounded-xl shadow-md active:scale-95 transition-transform">
+    S'INSCRIRE
+  </button>
+</div></section>
+<!-- Stats Quick Access (Bento Minimal) -->
+<section class="px-margin-mobile">
+<h2 class="text-title-lg font-title-lg text-on-surface mb-4">Aujourd'hui sur la plateforme</h2>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white p-4 rounded-xl border border-border-light shadow-sm flex flex-col gap-1 border-l-4 border-l-priority-p4">
+<span class="text-headline-md font-headline-md text-primary">1,240</span>
+<span class="text-caption text-on-surface-variant">Plaintes traitées</span>
+</div>
+<div class="bg-white p-4 rounded-xl border border-border-light shadow-sm flex flex-col gap-1 border-l-4 border-l-secondary">
+<span class="text-headline-md font-headline-md text-secondary">92%</span>
+<span class="text-caption text-on-surface-variant">Satisfaction</span>
+</div>
+</div>
+</section>
+<!-- How It Works Carousel -->
+<section class="flex flex-col gap-4">
+<div class="px-margin-mobile flex justify-between items-end">
+<h2 class="text-title-lg font-title-lg text-on-surface">Comment ça marche ?</h2>
+<a class="text-label-md text-primary hover:underline" href="#">Voir tout</a>
+</div>
+<div class="flex overflow-x-auto gap-4 px-margin-mobile hide-scroll snap-x snap-mandatory">
+<!-- Step 1 -->
+<div class="min-w-[280px] snap-center bg-white p-6 rounded-xl border border-border-light shadow-sm flex flex-col gap-4">
+<div class="w-12 h-12 bg-primary-container/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit_document</span>
+</div>
+<div>
+<h3 class="font-title-lg text-primary mb-2">1. Soumission</h3>
+<p class="text-body-md text-on-surface-variant">Remplissez le formulaire en ligne ou appelez le 136 pour enregistrer votre grief.</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="min-w-[280px] snap-center bg-white p-6 rounded-xl border border-border-light shadow-sm flex flex-col gap-4">
+<div class="w-12 h-12 bg-primary-container/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+</div>
+<div>
+<h3 class="font-title-lg text-primary mb-2">2. Analyse</h3>
+<p class="text-body-md text-on-surface-variant">Nos équipes qualifient la plainte et l'orientent vers le service concerné.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="min-w-[280px] snap-center bg-white p-6 rounded-xl border border-border-light shadow-sm flex flex-col gap-4">
+<div class="w-12 h-12 bg-primary-container/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</div>
+<div>
+<h3 class="font-title-lg text-primary mb-2">3. Résolution</h3>
+<p class="text-body-md text-on-surface-variant">Une réponse concrète vous est apportée sous 15 jours maximum.</p>
+</div>
+</div>
+</div>
+<!-- Progress indicator dots -->
+<div class="flex justify-center gap-2 mt-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+</div>
+</section>
+<!-- Citizen Trust Section -->
+<section class="px-margin-mobile">
+<div class="bg-surface-container rounded-2xl p-6 flex flex-col gap-4">
+<h2 class="text-headline-md font-headline-md text-primary">Protection de vos données</h2>
+<p class="text-body-md text-on-surface-variant">Toutes vos plaintes sont traitées de manière strictement confidentielle et sécurisée par le Ministère de la Santé.</p>
+<div class="flex items-center gap-2 text-secondary font-label-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                    Certifié conforme aux normes nationales
+                </div>
+</div>
+</section>
+</main>
+<!-- Footer Mobile -->
+<footer class="w-full py-stack-lg px-margin-mobile flex flex-col items-center gap-gutter bg-surface-container border-t border-border-light">
+<div class="text-headline-md font-headline-md text-primary">PGP-USS Bénin</div>
+<div class="flex flex-wrap justify-center gap-x-6 gap-y-3">
+<a class="text-on-surface-variant text-label-md hover:text-primary underline" href="#">Mentions Légales</a>
+<a class="text-on-surface-variant text-label-md hover:text-primary underline" href="#">Politique de Confidentialité</a>
+<a class="text-on-surface-variant text-label-md hover:text-primary underline" href="#">Portail Gouvernemental</a>
+</div>
+<div class="text-center">
+<p class="text-caption text-on-surface-variant">© 2024 Ministère de la Santé du Bénin.</p>
+<p class="text-caption text-on-surface-variant">Tous droits réservés.</p>
+</div>
+</footer>
+<!-- Bottom Navigation Bar for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full h-16 bg-surface-container-lowest border-t border-border-light flex justify-around items-center z-[55] px-4">
+<a class="flex flex-col items-center gap-1 text-primary font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] uppercase tracking-wider">Accueil</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="text-[10px] uppercase tracking-wider">Déposer</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px] uppercase tracking-wider">Suivre</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] uppercase tracking-wider">Profil</span>
+</a>
+</nav>
+<div class="h-16"></div> <!-- Spacer for bottom nav -->
+<script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const menuClose = document.getElementById('menu-close');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.remove('hidden');
+        });
+
+        menuClose.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+
+        mobileMenu.addEventListener('click', (e) => {
+            if (e.target === mobileMenu) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    </script>
+
+
+</body></html>

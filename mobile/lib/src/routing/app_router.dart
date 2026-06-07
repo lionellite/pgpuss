@@ -55,7 +55,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (_, _) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
-      GoRoute(path: '/track', builder: (_, _) => const TrackScreen()),
+      GoRoute(
+        path: '/track',
+        builder: (_, state) => TrackScreen(
+          initialTicket: state.uri.queryParameters['ticket'],
+        ),
+      ),
       GoRoute(path: '/deposit-public', builder: (_, _) => const DepositScreen()),
 
       ShellRoute(

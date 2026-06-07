@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../api/complaints_api.dart';
 import '../../../models/track_result.dart';
 import '../../theme.dart';
 import '../../widgets/app_chrome.dart';
+import '../../widgets/a11y_widgets.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/timeline_widget.dart';
 
 class TrackScreen extends ConsumerStatefulWidget {
-  const TrackScreen({super.key});
+  const TrackScreen({super.key, this.initialTicket});
+
+  final String? initialTicket;
 
   @override
   ConsumerState<TrackScreen> createState() => _TrackScreenState();
@@ -17,9 +21,19 @@ class TrackScreen extends ConsumerStatefulWidget {
 
 class _TrackScreenState extends ConsumerState<TrackScreen> {
   final _ticketCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   TrackResult? _result;
   String? _error;
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTicket != null && widget.initialTicket!.isNotEmpty) {
+      _ticketCtrl.text = widget.initialTicket!;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+    }
+  }
 
   @override
   void dispose() {
@@ -28,22 +42,25 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
   }
 
   Future<void> _search() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final ticket = _ticketCtrl.text.trim().toUpperCase();
-    if (ticket.isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;
       _error = null;
       _result = null;
     });
+
     try {
       final result = await ref.read(complaintsApiProvider).track(ticket);
-      setState(() => _result = result);
+      if (mounted) setState(() => _result = result);
     } catch (_) {
-      setState(() => _error =
-          'Aucune plainte trouvée avec ce numéro de ticket.');
+      if (mounted) {
+        setState(() => _error = 'Aucune plainte trouvée avec ce numéro de ticket.');
+      }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -54,217 +71,249 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
       fallbackLocation: '/',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Entrez votre numéro de ticket',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-            ),
-            const SizedBox(height: 16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SectionHeader(
+                title: 'Recherche par ticket',
+                subtitle: 'Consultez l\'état d\'avancement de votre dossier. Aucune connexion requise.',
+              ),
 
-            // Search
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ticketCtrl,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(
-                      hintText: 'PGP-2026-AB1234',
-                      prefixIcon: Icon(Icons.search),
+              Semantics(
+                label: 'Formulaire de recherche de plainte',
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _ticketCtrl,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          labelText: 'Numéro de ticket',
+                          hintText: 'PGP-2026-AB1234',
+                          prefixIcon: Icon(Icons.confirmation_number_outlined),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Veuillez entrer un numéro de ticket';
+                          }
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _search(),
+                      ),
                     ),
-                    onSubmitted: (_) => _search(),
+                    const SizedBox(width: 12),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: FilledButton(
+                        onPressed: _loading ? null : _search,
+                        child: _loading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Rechercher'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              if (_loading)
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: Center(
+                    child: Semantics(
+                      label: 'Recherche en cours',
+                      child: const CircularProgressIndicator(),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _loading ? null : _search,
-                  child: _loading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+
+              if (_error != null) ...[
+                const SizedBox(height: 20),
+                Semantics(
+                  liveRegion: true,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.danger),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: AppColors.danger),
                           ),
-                        )
-                      : const Text('RECHERCHER'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
 
-            // Error
-            if (_error != null)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.danger.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.danger),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: AppColors.danger),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Result
-            if (_result != null) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Ticket & Badges
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (_result != null) ...[
+                const SizedBox(height: 24),
+                Semantics(
+                  label: 'Résultat de la recherche pour le ticket ${_result!.ticketNumber}',
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'N° de ticket',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey[500],
-                                  fontWeight: FontWeight.w700,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Numéro de ticket',
+                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                            color: AppColors.textMuted,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _result!.ticketNumber,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _result!.ticketNumber,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
-                                  letterSpacing: 1,
-                                ),
-                              ),
+                              StatusBadge(status: _result!.status),
                             ],
                           ),
-                          StatusBadge(status: _result!.status),
+                          const SizedBox(height: 16),
+                          Text(
+                            _result!.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (_result!.categoryName != null &&
+                              _result!.categoryName!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Catégorie : ${_result!.categoryName}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                          if (_result!.description != null &&
+                              _result!.description!.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _result!.description!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          _infoRow('Établissement',
+                              _result!.establishmentName ?? 'Non spécifié'),
+                          if (_result!.establishmentAddress != null &&
+                              _result!.establishmentAddress!.isNotEmpty)
+                            _infoRow('Adresse', _result!.establishmentAddress!),
+                          if (_result!.createdAt != null)
+                            _infoRow(
+                              'Date de dépôt',
+                              _formatDate(_result!.createdAt!),
+                            ),
+                          if (_result!.infoRequestOpen) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.warning.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                _result!.infoRequestNotes?.isNotEmpty == true
+                                    ? 'Complément demandé : ${_result!.infoRequestNotes}'
+                                    : 'Un complément d\'information est demandé pour cette plainte.',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                          if (_result!.timeline != null &&
+                              _result!.timeline!.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            const SectionHeader(title: 'Historique du traitement'),
+                            TimelineWidget(entries: _result!.timeline!),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _result!.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (_result!.categoryName != null &&
-                          _result!.categoryName!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Catégorie : ${_result!.categoryName}',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                        ),
-                      ],
-                      if (_result!.description != null &&
-                          _result!.description!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _result!.description!,
-                          style: TextStyle(fontSize: 14, color: Colors.grey[800], height: 1.4),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      _infoRow('Établissement',
-                          _result!.establishmentName ?? 'Non spécifié'),
-                      if (_result!.establishmentAddress != null &&
-                          _result!.establishmentAddress!.isNotEmpty)
-                        _infoRow('Adresse', _result!.establishmentAddress!),
-                      if (_result!.createdAt != null)
-                        _infoRow(
-                          'Date de dépôt',
-                          _formatDate(_result!.createdAt!),
-                        ),
-                      if (_result!.infoRequestOpen) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            _result!.infoRequestNotes?.isNotEmpty == true
-                                ? 'Complément demandé: ${_result!.infoRequestNotes}'
-                                : 'Un complément d\'information est demandé pour cette plainte.',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
-                      ],
-
-                      // Timeline
-                      if (_result!.timeline != null &&
-                          _result!.timeline!.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        Text(
-                          'HISTORIQUE DU TRAITEMENT',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey[500],
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TimelineWidget(entries: _result!.timeline!),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
 
-            // Info box
-            if (_result == null && _error == null)
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.secondary.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline,
-                        color: AppColors.secondary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Le suivi par numéro de ticket est public : aucune connexion n'est requise. Conservez le numéro reçu lors du dépôt.",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                        ),
+              if (_result == null && _error == null && !_loading)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.15),
                       ),
                     ),
-                  ],
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.primary),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Le suivi par numéro de ticket est public. Conservez le numéro reçu lors du dépôt de votre plainte.',
+                            style: TextStyle(fontSize: 13, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/deposit-public'),
+                icon: const Icon(Icons.edit_note_outlined),
+                label: const Text('Déposer une nouvelle plainte'),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -280,9 +329,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
             width: 120,
             child: Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AppColors.textMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -296,6 +345,6 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
   }
 
   String _formatDate(DateTime dt) {
-    return '${dt.day}/${dt.month}/${dt.year}';
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
   }
 }
