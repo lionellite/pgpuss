@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.conf import settings
 from .models import Complaint, ComplaintStatus, ComplaintChannel
+from .openwa_client import OpenWAClient
+from .whatsapp_parser import parse_incoming_message, verify_openwa_signature
 import os
 
 
@@ -10,21 +12,30 @@ def _get_verify_token(env_key: str, fallback: str) -> str:
     return os.environ.get(env_key) or getattr(settings, env_key, None) or fallback
 
 
-def _extract_text(value: dict) -> str:
-    # Meta payloads: text.message / messages[].text.body, etc.
-    if not isinstance(value, dict):
-        return ""
-    text = value.get("text")
-    if isinstance(text, dict):
-        return text.get("body") or ""
-    if isinstance(text, str):
-        return text
-    return ""
+def _get_openwa_webhook_secret() -> str:
+    return os.environ.get("OPENWA_WEBHOOK_SECRET") or getattr(settings, "OPENWA_WEBHOOK_SECRET", "") or ""
+
+
+def _send_whatsapp_confirmation(chat_id: str | None, ticket_number: str) -> None:
+    if not chat_id:
+        return
+
+    client = OpenWAClient()
+    if not client.is_configured:
+        return
+
+    site_name = getattr(settings, "SITE_NAME", "PGP-USS")
+    message = (
+        f"Votre plainte a bien été enregistrée sur {site_name}.\n"
+        f"Numéro de ticket : {ticket_number}\n"
+        "Conservez ce numéro pour suivre l'avancement de votre dossier."
+    )
+    client.send_text(chat_id, message)
 
 
 class WhatsAppWebhookView(APIView):
     """
-    Webhook WhatsApp (Meta Cloud API / Twilio).
+    Webhook WhatsApp (OpenWA / Meta Cloud API / Twilio).
 
     - GET: vérification webhook (Meta)
     - POST: réception messages et création de plainte si déclencheur détecté
@@ -42,41 +53,39 @@ class WhatsAppWebhookView(APIView):
         return Response("Forbidden", status=403)
 
     def post(self, request):
+        raw_body = request.body
+        secret = _get_openwa_webhook_secret()
+        signature = request.headers.get("X-OpenWA-Signature")
+
+        if secret and not verify_openwa_signature(raw_body, signature, secret):
+            return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
+
         data = request.data or {}
+        incoming = parse_incoming_message(data)
+        if not incoming:
+            return Response({"status": "ignored"})
 
-        # 1) Meta WhatsApp Cloud API shape
-        # entry[].changes[].value.messages[] (text.body) + contacts[] (wa_id)
-        sender = None
-        message = ""
-        try:
-            entry = (data.get("entry") or [])[0]
-            change = (entry.get("changes") or [])[0]
-            value = change.get("value") or {}
-            msg = (value.get("messages") or [])[0] if value.get("messages") else None
-            if msg:
-                sender = msg.get("from") or sender
-                message = _extract_text(msg)
-        except Exception:
-            # 2) Fallback: format simplifié {from, text}
-            sender = data.get("from") or sender
-            message = data.get("text") or message
+        if "PLAINTE" not in (incoming.message or "").upper():
+            return Response({"status": "received"})
 
-        sender = sender or "Inconnu"
+        complaint = Complaint.objects.create(
+            title=f"Plainte WhatsApp de {incoming.sender}",
+            description=incoming.message or "",
+            channel=ComplaintChannel.CHATBOT,
+            status=ComplaintStatus.SOUMISE,
+            complainant_phone=incoming.sender,
+        )
+        complaint.perform_nlp_analysis()
+        complaint.save()
 
-        # Création de plainte via WhatsApp
-        if "PLAINTE" in (message or "").upper():
-            complaint = Complaint.objects.create(
-                title=f"Plainte WhatsApp de {sender}",
-                description=message or "",
-                channel=ComplaintChannel.CHATBOT,
-                status=ComplaintStatus.SOUMISE,
-                complainant_phone=sender
-            )
-            complaint.perform_nlp_analysis()
-            complaint.save()
-            return Response({"message": "Plainte enregistrée via WhatsApp", "ticket": complaint.ticket_number})
+        _send_whatsapp_confirmation(incoming.chat_id, complaint.ticket_number)
 
-        return Response({"status": "received"})
+        return Response({
+            "message": "Plainte enregistrée via WhatsApp",
+            "ticket": complaint.ticket_number,
+            "source": incoming.source,
+        })
+
 
 class FacebookWebhookView(APIView):
     """
