@@ -1,13 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   FiFileText, FiUsers, FiLogOut, FiMenu,
   FiHome, FiTrendingUp, FiBell, FiChevronRight,
-  FiLayers, FiMapPin, FiPhone, FiUser,
+  FiLayers, FiMapPin, FiPhone, FiUser, FiInbox,
 } from 'react-icons/fi'
 import GovFlagBar from '../components/GovFlagBar'
 import { ROLE_LABELS } from '../constants/roles'
+import { complaintsAPI } from '../api'
 
 const getNavItems = (role) => {
   const items = [
@@ -16,7 +17,10 @@ const getNavItems = (role) => {
   ]
 
   if (role === 'AGENT_CALL_CENTER') {
-    items.push({ to: '/deposer', icon: <FiPhone aria-hidden />, label: 'Saisie plainte 136' })
+    items.push(
+      { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Boîte sociale', socialInbox: true },
+      { to: '/deposer', icon: <FiPhone aria-hidden />, label: 'Saisie plainte 136' },
+    )
   }
 
   items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp aria-hidden />, label: 'Analytique' })
@@ -27,6 +31,7 @@ const getNavItems = (role) => {
 
   if (role === 'ADMIN_PLATEFORME') {
     items.push(
+      { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Boîte sociale', socialInbox: true },
       { to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' },
       { to: '/dashboard/etablissements', icon: <FiMapPin aria-hidden />, label: 'Établissements' },
       { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
@@ -39,6 +44,7 @@ const getNavItems = (role) => {
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -49,6 +55,30 @@ export default function DashboardLayout() {
 
   const isActive = (item) =>
     item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to)
+
+  // Polling du compteur de plaintes sociales en attente
+  const fetchPending = useCallback(() => {
+    if (!user || !['AGENT_CALL_CENTER', 'ADMIN_PLATEFORME'].includes(user.role)) return
+    complaintsAPI.callcenterSocialInbox({ completed: undefined })
+      .then(({ data }) => {
+        const list = Array.isArray(data) ? data : (data.results || [])
+        setPendingCount(list.filter(c => c.pending_call_center_completion).length)
+      })
+      .catch(() => {})
+  }, [user])
+
+  useEffect(() => {
+    fetchPending()
+    const interval = setInterval(fetchPending, 60_000) // refresh chaque minute
+    return () => clearInterval(interval)
+  }, [fetchPending])
+
+  // Rafraîchir le compteur quand on quitte la page social-inbox
+  useEffect(() => {
+    if (!location.pathname.includes('social-inbox')) {
+      fetchPending()
+    }
+  }, [location.pathname, fetchPending])
 
   const visibleItems = getNavItems(user?.role)
   const currentPage = visibleItems.find((i) => isActive(i))?.label || 'Tableau de bord'
@@ -88,13 +118,38 @@ export default function DashboardLayout() {
         <nav className="dashboard-nav">
           {visibleItems.map((item) => (
             <Link
-              key={item.to}
+              key={item.to + item.label}
               to={item.to}
               title={collapsed ? item.label : undefined}
               className={`dashboard-nav__link${isActive(item) ? ' is-active' : ''}`}
+              style={{ position: 'relative' }}
             >
               {item.icon}
               {!collapsed && item.label}
+              {/* Badge de comptage pour la boîte sociale */}
+              {item.socialInbox && pendingCount > 0 && (
+                <span
+                  aria-label={`${pendingCount} plainte(s) en attente`}
+                  style={{
+                    position: 'absolute',
+                    top: 6, right: collapsed ? 4 : 8,
+                    minWidth: 18, height: 18,
+                    background: 'linear-gradient(135deg,#ff9800,#f44336)',
+                    color: '#fff',
+                    borderRadius: 9,
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 4px',
+                    boxShadow: '0 2px 6px rgba(244,67,54,0.4)',
+                    lineHeight: 1,
+                    letterSpacing: 0,
+                    animation: 'pulse-badge 2s infinite',
+                  }}
+                >
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

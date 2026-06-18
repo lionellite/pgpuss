@@ -29,6 +29,7 @@ import UsersPage from './pages/dashboard/UsersPage'
 import ReferentialsAdminPage from './pages/dashboard/ReferentialsAdminPage'
 import EstablishmentsAdminPage from './pages/dashboard/EstablishmentsAdminPage'
 import InternalAgentsPage from './pages/dashboard/InternalAgentsPage'
+import CallCenterSocialInboxPage from './pages/dashboard/CallCenterSocialInboxPage'
 import { DASHBOARD_ROLES } from './constants/roles'
 
 function PrivateRoute({ children, roles }) {
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/dashboard/agents-internes" element={<PrivateRoute roles={['PFE']}><InternalAgentsPage /></PrivateRoute>} />
           <Route path="/dashboard/referentiels" element={<AdminPlateformeOnly><ReferentialsAdminPage /></AdminPlateformeOnly>} />
           <Route path="/dashboard/etablissements" element={<AdminPlateformeOnly><EstablishmentsAdminPage /></AdminPlateformeOnly>} />
+          <Route path="/dashboard/social-inbox" element={<PrivateRoute roles={['AGENT_CALL_CENTER', 'ADMIN_PLATEFORME']}><CallCenterSocialInboxPage /></PrivateRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

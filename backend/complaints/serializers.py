@@ -251,6 +251,7 @@ class ComplaintListSerializer(serializers.ModelSerializer):
             'category_name', 'establishment_name', 'is_unlisted_establishment', 'assigned_to_name',
             'call_center_agent_name', 'zone_sanitaire_name',
             'is_anonymous', 'is_overdue', 'attachment_count',
+            'pending_call_center_completion', 'social_source',
             'created_at', 'updated_at', 'deadline'
         ]
 
@@ -305,6 +306,9 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'resolution_accepted', 'resolution_ack_notes', 'resolution_ack_at',
             'resolution_validated', 'resolution_validated_at',
             'voice_file_url',
+            # Champs sociaux (WhatsApp / Facebook → Call Center)
+            'social_raw_message', 'social_source', 'social_sender_id',
+            'pending_call_center_completion', 'call_center_completed_at',
             'created_at', 'updated_at', 'registered_at', 'classified_at',
             'assigned_at', 'resolved_at', 'closed_at',
             'deadline', 'is_overdue',

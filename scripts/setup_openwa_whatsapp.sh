@@ -4,7 +4,7 @@ set -euo pipefail
 
 OPENWA_API_URL="${OPENWA_API_URL:-http://localhost:2785/api}"
 OPENWA_API_KEY="${OPENWA_API_KEY:-}"
-PGPUSS_WEBHOOK_URL="${PGPUSS_WEBHOOK_URL:-http://localhost:8000/api/complaints/webhooks/whatsapp/}"
+PGPUSS_WEBHOOK_URL="${PGPUSS_WEBHOOK_URL:-http://127.0.0.1:8000/api/complaints/webhooks/whatsapp/}"
 OPENWA_WEBHOOK_SECRET="${OPENWA_WEBHOOK_SECRET:-pgpuss_openwa_secret_change_me}"
 SESSION_NAME="${OPENWA_SESSION_NAME:-pgpuss-whatsapp}"
 
@@ -24,18 +24,19 @@ echo "==> Création de la session WhatsApp « ${SESSION_NAME} »..."
 session_response="$(curl -sS -X POST "${OPENWA_API_URL}/sessions" "${auth_header[@]}" \
   -d "{\"name\":\"${SESSION_NAME}\"}")"
 
-SESSION_ID="$(echo "$session_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('id',''))" 2>/dev/null || true)"
+SESSION_ID="$(echo "$session_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id', d.get('data', {}).get('id', '')))" 2>/dev/null || true)"
 
 if [[ -z "$SESSION_ID" ]]; then
   echo "Réponse OpenWA : $session_response"
   echo "Tentative de récupération d'une session existante..."
   SESSION_ID="$(curl -sS "${OPENWA_API_URL}/sessions" "${auth_header[@]}" | python3 -c "
 import sys, json
-data = json.load(sys.stdin).get('data', [])
+res = json.load(sys.stdin)
+data = res if isinstance(res, list) else res.get('data', [])
 name = '${SESSION_NAME}'
 for s in data:
     if s.get('name') == name:
-        print(s['id'])
+        print(s.get('id', ''))
         break
 " 2>/dev/null || true)"
 fi

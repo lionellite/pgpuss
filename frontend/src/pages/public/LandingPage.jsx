@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsAPI } from '../../api'
 
@@ -32,8 +32,27 @@ function formatStat(value, fallback = '—') {
   return String(value)
 }
 
+function useInView(options = {}) {
+  const ref = useRef(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true)
+        obs.disconnect()
+      }
+    }, { threshold: 0.1, ...options })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return [ref, inView]
+}
+
 export default function LandingPage() {
   const [stats, setStats] = useState(null)
+  const [kpiRef, kpiInView] = useInView()
 
   useEffect(() => {
     analyticsAPI.publicStats().then(({ data }) => setStats(data)).catch(() => {})
@@ -45,93 +64,102 @@ export default function LandingPage() {
     : '94%'
 
   return (
-    <div className="stitch-landing">
-      <section className="stitch-hero" aria-labelledby="hero-title">
-        <div className="stitch-hero__pattern" aria-hidden="true" />
-        <div className="page-container stitch-hero__grid">
-          <div>
-            <p className="stitch-hero__badge">
-              <span className="material-symbols-outlined material-symbols-outlined--filled" aria-hidden>verified_user</span>
+    <div className="lp-root">
+
+      {/* ── HERO ──────────────────────────────────────── */}
+      <section className="lp-hero" aria-labelledby="hero-title">
+        <div className="lp-hero__pattern" aria-hidden="true" />
+        <div className="page-container lp-hero__grid">
+          {/* Copy */}
+          <div className="lp-hero__copy">
+            <p className="lp-hero__badge">
+              <span className="material-symbols-outlined material-symbols-outlined--filled lp-hero__badge-icon" aria-hidden>verified_user</span>
               Plateforme Officielle du Ministère de la Santé
             </p>
-            <h1 id="hero-title" className="stitch-hero__title">
+            <h1 id="hero-title" className="lp-hero__title">
               Votre voix compte pour une meilleure santé au Bénin
             </h1>
-            <p className="stitch-hero__subtitle">
+            <p className="lp-hero__subtitle">
               Déposez une plainte, suivez son traitement en toute transparence et contribuez activement à l&apos;amélioration de nos services de santé nationaux.
             </p>
-            <div className="stitch-hero__actions">
-              <Link to="/deposer" className="stitch-hero__btn stitch-hero__btn--primary">
+            <div className="lp-hero__actions">
+              <Link to="/deposer" className="lp-btn lp-btn--primary lp-btn--lg">
                 <span className="material-symbols-outlined" aria-hidden>add_circle</span>
                 Déposer une plainte
               </Link>
-              <Link to="/suivi" className="stitch-hero__btn stitch-hero__btn--secondary">
+              <Link to="/suivi" className="lp-btn lp-btn--outline lp-btn--lg">
                 <span className="material-symbols-outlined" aria-hidden>search</span>
                 Suivre ma plainte
               </Link>
             </div>
           </div>
-          <div className="stitch-hero__visual" aria-hidden="true">
-            <div className="stitch-hero__blur stitch-hero__blur--1" />
-            <div className="stitch-hero__blur stitch-hero__blur--2" />
-            <div className="stitch-hero__image-wrap">
+          {/* Visual */}
+          <div className="lp-hero__visual" aria-hidden="true">
+            <div className="lp-hero__img-frame">
               <img
                 src="/img/hero-stitch-web.jpg"
-                alt=""
-                className="stitch-hero__image"
+                alt="Médecin béninois en consultation avec un patient dans un établissement de santé moderne"
+                className="lp-hero__img"
                 loading="eager"
               />
             </div>
+            <div className="lp-hero__glow lp-hero__glow--1" />
+            <div className="lp-hero__glow lp-hero__glow--2" />
           </div>
         </div>
       </section>
 
-      <section id="statistiques" className="stitch-kpi" aria-labelledby="stats-title">
+      {/* ── KPI ───────────────────────────────────────── */}
+      <section id="statistiques" className="lp-kpi" aria-labelledby="stats-title">
         <div className="page-container">
           <h2 id="stats-title" className="sr-only">Indicateurs publics</h2>
-          <div className="stitch-kpi__grid">
-            <article className="stitch-kpi__card stitch-kpi__card--primary">
-              <div className="stitch-kpi__icon-wrap">
-                <span className="material-symbols-outlined stitch-kpi__icon" aria-hidden>task_alt</span>
+          <div className="lp-kpi__grid" ref={kpiRef}>
+            {/* Card 1 */}
+            <article className={`lp-kpi__card lp-kpi__card--primary${kpiInView ? ' lp-kpi__card--visible' : ''}`} style={{ transitionDelay: '0ms' }}>
+              <div className="lp-kpi__icon-wrap lp-kpi__icon-wrap--primary">
+                <span className="material-symbols-outlined lp-kpi__icon" aria-hidden>task_alt</span>
               </div>
-              <p className="stitch-kpi__value">{formatStat(treated, '12 450+')}</p>
-              <p className="stitch-kpi__label">Plaintes traitées</p>
+              <p className="lp-kpi__value">{formatStat(treated, '12 450+')}</p>
+              <p className="lp-kpi__label">Plaintes traitées</p>
             </article>
-            <article className="stitch-kpi__card stitch-kpi__card--p4">
-              <div className="stitch-kpi__icon-wrap">
-                <span className="material-symbols-outlined stitch-kpi__icon" aria-hidden>timer</span>
+            {/* Card 2 */}
+            <article className={`lp-kpi__card lp-kpi__card--p4${kpiInView ? ' lp-kpi__card--visible' : ''}`} style={{ transitionDelay: '100ms' }}>
+              <div className="lp-kpi__icon-wrap lp-kpi__icon-wrap--p4">
+                <span className="material-symbols-outlined lp-kpi__icon lp-kpi__icon--p4" aria-hidden>timer</span>
               </div>
-              <p className="stitch-kpi__value">48 Heures</p>
-              <p className="stitch-kpi__label">Délai moyen de résolution</p>
+              <p className="lp-kpi__value">48 Heures</p>
+              <p className="lp-kpi__label">Délai moyen de résolution</p>
             </article>
-            <article className="stitch-kpi__card stitch-kpi__card--secondary">
-              <div className="stitch-kpi__icon-wrap">
-                <span className="material-symbols-outlined stitch-kpi__icon" aria-hidden>mood</span>
+            {/* Card 3 */}
+            <article className={`lp-kpi__card lp-kpi__card--secondary${kpiInView ? ' lp-kpi__card--visible' : ''}`} style={{ transitionDelay: '200ms' }}>
+              <div className="lp-kpi__icon-wrap lp-kpi__icon-wrap--secondary">
+                <span className="material-symbols-outlined lp-kpi__icon lp-kpi__icon--secondary" aria-hidden>mood</span>
               </div>
-              <p className="stitch-kpi__value">{satisfaction}</p>
-              <p className="stitch-kpi__label">Taux de satisfaction</p>
+              <p className="lp-kpi__value">{satisfaction}</p>
+              <p className="lp-kpi__label">Taux de satisfaction</p>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="comment" className="stitch-steps" aria-labelledby="how-title">
+      {/* ── COMMENT ÇA MARCHE ─────────────────────────── */}
+      <section id="comment" className="lp-steps" aria-labelledby="how-title">
         <div className="page-container">
-          <div className="stitch-steps__header">
-            <h2 id="how-title" className="stitch-steps__title">Comment ça marche ?</h2>
-            <p className="stitch-steps__lead">
+          <div className="lp-steps__header">
+            <h2 id="how-title" className="lp-steps__title">Comment ça marche ?</h2>
+            <p className="lp-steps__lead">
               Un processus structuré en 3 étapes pour garantir que chaque voix est entendue et chaque problème résolu.
             </p>
           </div>
-          <div className="stitch-steps__grid">
-            <div className="stitch-steps__connector" aria-hidden="true" />
+          <div className="lp-steps__grid">
+            <div className="lp-steps__connector" aria-hidden="true" />
             {STEPS.map((s) => (
-              <article key={s.step} className="stitch-step">
-                <div className="stitch-step__num" aria-hidden="true">{s.step}</div>
-                <div className="stitch-step__card">
-                  <span className="material-symbols-outlined stitch-step__icon" aria-hidden>{s.icon}</span>
-                  <h3 className="stitch-step__title">{s.title}</h3>
-                  <p className="stitch-step__desc">{s.desc}</p>
+              <article key={s.step} className="lp-step">
+                <div className="lp-step__num" aria-hidden="true">{s.step}</div>
+                <div className="lp-step__card">
+                  <span className="material-symbols-outlined lp-step__icon" aria-hidden>{s.icon}</span>
+                  <h3 className="lp-step__title">{s.title}</h3>
+                  <p className="lp-step__desc">{s.desc}</p>
                 </div>
               </article>
             ))}
@@ -139,29 +167,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="stitch-hotline" aria-labelledby="hotline-title">
-        <div className="stitch-hotline__bg-icon" aria-hidden="true">
+      {/* ── HOTLINE ───────────────────────────────────── */}
+      <section className="lp-hotline" aria-labelledby="hotline-title">
+        <div className="lp-hotline__bg-icon" aria-hidden="true">
           <span className="material-symbols-outlined">phone_in_talk</span>
         </div>
-        <div className="page-container stitch-hotline__inner">
-          <div>
-            <h2 id="hotline-title" className="stitch-hotline__title">
+        <div className="page-container lp-hotline__inner">
+          <div className="lp-hotline__copy">
+            <h2 id="hotline-title" className="lp-hotline__title">
               Besoin d&apos;une assistance immédiate ?
             </h2>
-            <p className="stitch-hotline__text">
+            <p className="lp-hotline__text">
               Nos agents sont à votre écoute 24h/24 et 7j/7 pour vous accompagner dans vos démarches de santé ou recueillir vos alertes sanitaires.
             </p>
           </div>
-          <div className="stitch-hotline__card">
-            <span className="stitch-hotline__label">Ligne Verte Gratuite</span>
-            <a href="tel:136" className="stitch-hotline__number">
+          <div className="lp-hotline__card">
+            <span className="lp-hotline__label">Ligne Verte Gratuite</span>
+            <a href="tel:136" className="lp-hotline__number">
               <span className="material-symbols-outlined" aria-hidden>call</span>
               136
             </a>
-            <p className="stitch-hotline__hint">Appel gratuit depuis tous les opérateurs au Bénin</p>
+            <p className="lp-hotline__hint">Appel gratuit depuis tous les opérateurs au Bénin</p>
           </div>
         </div>
       </section>
+
     </div>
   )
 }

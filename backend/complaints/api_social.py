@@ -74,6 +74,12 @@ class WhatsAppWebhookView(APIView):
             channel=ComplaintChannel.CHATBOT,
             status=ComplaintStatus.SOUMISE,
             complainant_phone=incoming.sender,
+            # Champs sociaux — seront complétés par l'agent call center
+            social_raw_message=incoming.message or "",
+            social_source=incoming.source or "whatsapp",
+            social_sender_id=incoming.sender,
+            pending_call_center_completion=True,
+            needs_call_center_assistance=True,
         )
         complaint.perform_nlp_analysis()
         complaint.save()
@@ -126,6 +132,12 @@ class FacebookWebhookView(APIView):
                         channel=ComplaintChannel.CHATBOT,
                         status=ComplaintStatus.SOUMISE,
                         complainant_name=f"FB:{sender_id}",
+                        # Champs sociaux — seront complétés par l'agent call center
+                        social_raw_message=text,
+                        social_source="facebook",
+                        social_sender_id=sender_id,
+                        pending_call_center_completion=True,
+                        needs_call_center_assistance=True,
                     )
                     complaint.perform_nlp_analysis()
                     complaint.save()

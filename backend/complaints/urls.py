@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, api_social
+from . import views, api_social, views_callcenter
 
 urlpatterns = [
     # Categories
@@ -51,4 +51,9 @@ urlpatterns = [
     # Social & Mobile APIs
     path('webhooks/whatsapp/', api_social.WhatsAppWebhookView.as_view(), name='webhook_whatsapp'),
     path('webhooks/facebook/', api_social.FacebookWebhookView.as_view(), name='webhook_facebook'),
+
+    # Call Center — boîte de réception des plaintes sociales
+    path('callcenter/social-inbox/', views_callcenter.SocialComplaintInboxView.as_view(), name='callcenter_social_inbox'),
+    path('callcenter/social-inbox/<uuid:pk>/', views_callcenter.SocialComplaintDetailView.as_view(), name='callcenter_social_detail'),
+    path('callcenter/social-inbox/<uuid:pk>/complete/', views_callcenter.SocialComplaintCompleteView.as_view(), name='callcenter_social_complete'),
 ]

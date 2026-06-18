@@ -172,6 +172,31 @@ class Complaint(models.Model):
     public_access_code_hash = models.CharField(max_length=128, blank=True)
     public_access_code_expires_at = models.DateTimeField(null=True, blank=True)
 
+    # Plainte issue d'un canal social (WhatsApp / Facebook) — complétion par le call center
+    social_raw_message = models.TextField(
+        blank=True,
+        help_text='Message brut reçu via WhatsApp ou Facebook Messenger',
+    )
+    social_source = models.CharField(
+        max_length=20, blank=True,
+        help_text='Source sociale : whatsapp | facebook | openwa | meta | …',
+    )
+    social_sender_id = models.CharField(
+        max_length=100, blank=True,
+        help_text='Identifiant de l\'expéditeur sur le canal social (numéro, ID FB…)',
+    )
+    pending_call_center_completion = models.BooleanField(
+        default=False,
+        help_text=(
+            'Vrai si la plainte a été reçue via un chatbot social et attend '
+            'qu\'un agent call center complète les champs manquants avant de la finaliser.'
+        ),
+    )
+    call_center_completed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Date à laquelle l\'agent call center a finalisé la plainte sociale.',
+    )
+
     VOICE_DESCRIPTION_PLACEHOLDER = 'Message vocal joint à la plainte.'
     
     # Deadline

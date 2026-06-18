@@ -116,6 +116,11 @@ export const complaintsAPI = {
   updateDocument: (complaintId, docId, data) =>
     api.patch(`/complaints/${complaintId}/documents/${docId}/`, data),
   categories: () => api.get('/complaints/categories/'),
+
+  // Call Center — boîte de réception des plaintes sociales
+  callcenterSocialInbox: (params) => api.get('/complaints/callcenter/social-inbox/', { params }),
+  callcenterSocialDetail: (id) => api.get(`/complaints/callcenter/social-inbox/${id}/`),
+  callcenterSocialComplete: (id, data) => api.post(`/complaints/callcenter/social-inbox/${id}/complete/`, data),
 }
 
 // Establishments

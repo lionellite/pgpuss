@@ -135,10 +135,24 @@ export default function PlaintesListPage() {
                         {c.ticket_number}
                       </span>
                       {c.is_overdue && <span className="badge badge-escaladee" style={{ marginLeft: '0.5rem' }}>RETARD</span>}
+                      {c.pending_call_center_completion && (
+                        <span style={{
+                          display: 'inline-block', marginLeft: '0.5rem',
+                          fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em',
+                          background: 'linear-gradient(90deg,#ff9800,#f57c00)',
+                          color: '#fff', borderRadius: 4, padding: '1px 4px',
+                        }}>
+                          À COMPLÉTER
+                        </span>
+                      )}
                     </td>
                     <td style={{ maxWidth: 250 }}>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{c.title}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.category_name}</div>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {c.title}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {c.category_name || (c.pending_call_center_completion && '—')}
+                      </div>
                     </td>
                     <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: 150 }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -149,7 +163,9 @@ export default function PlaintesListPage() {
                     <td><PriorityBadge priority={c.priority} /></td>
                     <td>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,76,76,0.07)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
-                        {c.channel_display}
+                        {c.channel === 'CHATBOT' && c.social_source ? 
+                          c.social_source.charAt(0).toUpperCase() + c.social_source.slice(1) 
+                          : c.channel_display}
                       </span>
                     </td>
                     <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
