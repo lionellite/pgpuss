@@ -63,7 +63,7 @@ export default function MainLayout() {
       <header className="site-header" role="banner">
         <div className="site-header__inner">
           <Link to="/" className="site-brand">
-            <span className="material-symbols-outlined site-brand__icon material-symbols-outlined--filled" aria-hidden>account_balance</span>
+            <img src="/logo.png" alt="PGP-USS Logo" className="site-brand__logo" width={32} height={32} style={{ objectFit: 'contain', marginRight: '8px' }} />
             <span className="site-brand__name">PGP-USS Bénin</span>
           </Link>
 
@@ -239,7 +239,7 @@ export default function MainLayout() {
           <div className="site-footer__grid">
             <div>
               <div className="site-brand" style={{ marginBottom: '1rem' }}>
-                <span className="material-symbols-outlined site-brand__icon material-symbols-outlined--filled" aria-hidden>account_balance</span>
+                <img src="/logo.png" alt="PGP-USS Logo" width={32} height={32} style={{ objectFit: 'contain', marginRight: '8px' }} />
                 <span className="site-brand__name">PGP-USS</span>
               </div>
               <p className="site-footer__text">

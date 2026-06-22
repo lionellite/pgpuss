@@ -4,7 +4,7 @@ set -euo pipefail
 
 OPENWA_API_URL="${OPENWA_API_URL:-http://localhost:2785/api}"
 OPENWA_API_KEY="${OPENWA_API_KEY:-}"
-PGPUSS_WEBHOOK_URL="${PGPUSS_WEBHOOK_URL:-http://127.0.0.1:8000/api/complaints/webhooks/whatsapp/}"
+PGPUSS_WEBHOOK_URL="${PGPUSS_WEBHOOK_URL:-https://pgpuss.vercel.app//api/complaints/webhooks/whatsapp/}"
 OPENWA_WEBHOOK_SECRET="${OPENWA_WEBHOOK_SECRET:-pgpuss_openwa_secret_change_me}"
 SESSION_NAME="${OPENWA_SESSION_NAME:-pgpuss-whatsapp}"
 

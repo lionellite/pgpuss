@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PGP-USS Bénin - Plateforme de Gestion des Plaintes</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed": "#002204",
+                    "secondary-fixed-dim": "#78dc77",
+                    "background": "#f8f9ff",
+                    "secondary-container": "#91f78e",
+                    "on-primary-fixed": "#002020",
+                    "on-tertiary-fixed-variant": "#6e3819",
+                    "surface-tint": "#096969",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#d3e4fe",
+                    "on-primary": "#ffffff",
+                    "primary-container": "#006666",
+                    "surface-container-high": "#dce9ff",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#ffc8ad",
+                    "error": "#ba1a1a",
+                    "secondary": "#006e1c",
+                    "priority-p1": "#D32F2F",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface-variant": "#3f4948",
+                    "on-primary-fixed-variant": "#004f4f",
+                    "on-primary-container": "#93e1e0",
+                    "outline": "#6f7979",
+                    "surface-dim": "#cbdbf5",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#00731e",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#874c2b",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface": "#f8f9ff",
+                    "priority-p5": "#78909C",
+                    "surface-container-low": "#eff4ff",
+                    "border-light": "#E2E8F0",
+                    "inverse-on-surface": "#eaf1ff",
+                    "priority-p2": "#F57C00",
+                    "on-surface": "#0b1c30",
+                    "secondary-fixed": "#94f990",
+                    "primary": "#004c4c",
+                    "inverse-primary": "#86d4d3",
+                    "inverse-surface": "#213145",
+                    "outline-variant": "#bec9c8",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#005313",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#341100",
+                    "surface-container": "#e5eeff",
+                    "surface-gray": "#F8FAFC",
+                    "priority-p4": "#1976D2",
+                    "primary-fixed-dim": "#86d4d3",
+                    "tertiary-fixed-dim": "#ffb690",
+                    "surface-bright": "#f8f9ff",
+                    "primary-fixed": "#a2f0ef",
+                    "emergency-red": "#D32F2F",
+                    "priority-p3": "#FBC02D",
+                    "tertiary": "#6a3516"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "margin-mobile": "16px",
+                    "stack-sm": "8px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "margin-desktop": "32px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Atkinson Hyperlegible Next"],
+                    "headline-lg": ["Atkinson Hyperlegible Next"],
+                    "caption": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg-mobile": ["Atkinson Hyperlegible Next"],
+                    "display-lg": ["Atkinson Hyperlegible Next"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #f8f9ff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bento-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+        }
+        .nav-active {
+            color: #004c4c;
+            font-weight: 600;
+        }
+        /* Mobile-first constraints */
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 480px;
+                margin: 0 auto;
+                box-shadow: 0 0 40px rgba(0,0,0,0.1);
+                min-height: 100vh;
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background">
+<div class="app-container min-h-screen pb-24 relative flex flex-col bg-surface-container-lowest">
+<!-- Emergency Banner -->
+<div class="bg-emergency-red text-white py-2 px-4 flex items-center justify-between sticky top-0 z-[60]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">emergency</span>
+<span class="font-label-md text-label-md">Urgence : Appelez le 136 (Ligne Verte)</span>
+</div>
+<a class="bg-white text-emergency-red rounded-full px-3 py-1 text-label-md font-bold" href="tel:136">Appeler</a>
+</div>
+<!-- Top Bar -->
+<header class="px-margin-mobile py-stack-md flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-headline-md text-primary text-[18px]">PGP-USS</span>
+<span class="text-caption font-caption text-on-surface-variant">République du Bénin</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">person</span>
+</button>
+</header>
+<!-- Welcome Message -->
+<section class="px-margin-mobile mt-4 mb-stack-md">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface text-center leading-tight">
+                Bienvenue sur la plateforme de gestion des plaintes des usagers des services de santé
+            </h1>
+</section>
+<!-- Hero Image Container -->
+<div class="px-margin-mobile mb-stack-lg">
+<div class="relative w-full aspect-[16/9] rounded-xl overflow-hidden shadow-lg border border-border-light">
+<img alt="Consultation médicale" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLsL3sBMyy47MeBWVErVXqHVp2LY7MhBPUinxmpSsFC0xZ1pzasB9xvtc4XJhnT_d8c7vUVnHCasrF1DAaSHYTMngc7lB_UurRKzyBtKBkMpVxiYWwhrS9bHN56bwjIIDLCDqsLwA3Mw-vXgI02I1eslPH_UKUCs6LBUGn4yjx9lM7sVctReUWz-JsL-V9RPvyusvYJP1NV_Fe-uu_gmp6aF5yML2Qn30FBvtKpuKMfDkqca9LFYDaUjHg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+</div>
+</div>
+<!-- Primary Actions -->
+<section class="px-margin-mobile flex flex-col gap-stack-md mb-stack-lg">
+<button class="w-full bg-primary-container text-white py-4 rounded-lg font-label-md text-body-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3">
+<span class="material-symbols-outlined">add_circle</span>
+                Déposer une plainte
+            </button>
+<button class="w-full border-2 border-primary-container text-primary-container py-4 rounded-lg font-label-md text-body-lg active:scale-95 transition-transform flex items-center justify-center gap-3">
+<span class="material-symbols-outlined">search</span>
+                Suivre ma plainte
+            </button>
+</section>
+<!-- Statistics Bento Grid -->
+<section class="px-margin-mobile mb-stack-lg">
+<h2 class="font-title-lg text-title-lg mb-4 flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined">insights</span>
+                Transparence et Chiffres
+            </h2>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container p-4 rounded-xl flex flex-col justify-between border border-border-light">
+<span class="text-caption font-caption text-on-surface-variant">Plaintes traitées</span>
+<span class="text-headline-md font-headline-md text-primary mt-2">1,248</span>
+<div class="flex items-center text-[10px] text-secondary font-bold mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        +12% cette semaine
+                    </div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col justify-between border border-border-light">
+<span class="text-caption font-caption text-on-surface-variant">Satisfaction</span>
+<span class="text-headline-md font-headline-md text-secondary mt-2">94%</span>
+<div class="flex gap-1 mt-1">
+<span class="material-symbols-outlined text-secondary text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="col-span-2 bg-white p-4 rounded-xl border-l-4 border-l-priority-p4 shadow-sm border border-border-light flex items-center justify-between">
+<div>
+<span class="text-caption font-caption text-on-surface-variant">Délai moyen de résolution</span>
+<div class="text-headline-md font-headline-md text-on-surface mt-1">4.2 Jours</div>
+</div>
+<div class="w-12 h-12 rounded-full bg-priority-p4/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-priority-p4">timer</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Process Section -->
+<section class="px-margin-mobile mb-10">
+<h2 class="font-title-lg text-title-lg mb-6 text-primary">Comment ça marche ?</h2>
+<div class="space-y-6 relative">
+<!-- Vertical Line -->
+<div class="absolute left-[19px] top-4 bottom-4 w-0.5 bg-outline-variant"></div>
+<!-- Step 1 -->
+<div class="flex gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">1</div>
+<div class="flex-1 bg-white p-4 rounded-xl border border-border-light shadow-sm">
+<h3 class="font-label-md text-label-md text-primary mb-1">Signalement</h3>
+<p class="text-caption font-caption text-on-surface-variant">Remplissez le formulaire en ligne ou via la ligne 136 pour enregistrer votre plainte officielle.</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">2</div>
+<div class="flex-1 bg-white p-4 rounded-xl border border-border-light shadow-sm">
+<h3 class="font-label-md text-label-md text-primary mb-1">Instruction</h3>
+<p class="text-caption font-caption text-on-surface-variant">Nos équipes analysent votre dossier et contactent l'établissement de santé concerné sous 48h.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 shadow-md">3</div>
+<div class="flex-1 bg-white p-4 rounded-xl border border-border-light shadow-sm">
+<h3 class="font-label-md text-label-md text-primary mb-1">Résolution</h3>
+<p class="text-caption font-caption text-on-surface-variant">Vous recevez une notification dès que la solution est validée et le litige clos.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="px-margin-mobile py-stack-lg bg-surface-container flex flex-col items-center gap-4 text-center">
+<div class="text-primary font-headline-md text-headline-md">PGP-USS Bénin</div>
+<div class="flex flex-wrap justify-center gap-3">
+<a class="text-caption font-caption text-on-surface-variant underline" href="#">Mentions Légales</a>
+<a class="text-caption font-caption text-on-surface-variant underline" href="#">Politique de Confidentialité</a>
+</div>
+<p class="text-caption font-caption text-outline opacity-70">© 2024 Ministère de la Santé du Bénin. Tous droits réservés.</p>
+</footer>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-border-light flex items-center justify-around px-2 z-[100] md:max-w-[480px] md:mx-auto">
+<a class="flex flex-col items-center gap-1 nav-active transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] font-label-md">Accueil</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-[10px] font-label-md">Aide</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-label-md">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">mail</span>
+<span class="text-[10px] font-label-md">Contact</span>
+</a>
+</nav>
+</div>
+<script>
+        // Light micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.classList.add('opacity-80');
+            });
+            btn.addEventListener('touchend', () => {
+                btn.classList.remove('opacity-80');
+            });
+        });
+
+        // Sticky header color change on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('bg-white/80', 'backdrop-blur-md', 'shadow-sm');
+            } else {
+                header.classList.remove('bg-white/80', 'backdrop-blur-md', 'shadow-sm');
+            }
+        });
+    </script>
+</body></html>

@@ -55,7 +55,7 @@ export default function LandingPage() {
   const [kpiRef, kpiInView] = useInView()
 
   useEffect(() => {
-    analyticsAPI.publicStats().then(({ data }) => setStats(data)).catch(() => {})
+    analyticsAPI.publicStats().then(({ data }) => setStats(data)).catch(() => { })
   }, [])
 
   const treated = stats?.resolved_complaints ?? stats?.total_complaints
@@ -67,44 +67,54 @@ export default function LandingPage() {
     <div className="lp-root">
 
       {/* ── HERO ──────────────────────────────────────── */}
-      <section className="lp-hero" aria-labelledby="hero-title">
+      <section className="lp-hero" aria-labelledby="hero-display-title">
         <div className="lp-hero__pattern" aria-hidden="true" />
-        <div className="page-container lp-hero__grid">
-          {/* Copy */}
-          <div className="lp-hero__copy">
-            <p className="lp-hero__badge">
-              <span className="material-symbols-outlined material-symbols-outlined--filled lp-hero__badge-icon" aria-hidden>verified_user</span>
-              Plateforme Officielle du Ministère de la Santé
-            </p>
-            <h1 id="hero-title" className="lp-hero__title">
-              Votre voix compte pour une meilleure santé au Bénin
+        <div className="lp-hero__container">
+          {/* Grand titre centré (au-dessus de la grille) */}
+          <div className="lp-hero__display-wrap">
+            <h1 id="hero-display-title" className="lp-hero__display-title">
+              Bienvenue sur la plateforme de gestion des plaintes des usagers des services de santé
             </h1>
-            <p className="lp-hero__subtitle">
-              Déposez une plainte, suivez son traitement en toute transparence et contribuez activement à l&apos;amélioration de nos services de santé nationaux.
-            </p>
-            <div className="lp-hero__actions">
-              <Link to="/deposer" className="lp-btn lp-btn--primary lp-btn--lg">
-                <span className="material-symbols-outlined" aria-hidden>add_circle</span>
-                Déposer une plainte
-              </Link>
-              <Link to="/suivi" className="lp-btn lp-btn--outline lp-btn--lg">
-                <span className="material-symbols-outlined" aria-hidden>search</span>
-                Suivre ma plainte
-              </Link>
-            </div>
           </div>
-          {/* Visual */}
-          <div className="lp-hero__visual" aria-hidden="true">
-            <div className="lp-hero__img-frame">
-              <img
-                src="/img/hero-stitch-web.jpg"
-                alt="Médecin béninois en consultation avec un patient dans un établissement de santé moderne"
-                className="lp-hero__img"
-                loading="eager"
-              />
+
+          {/* Grille 2 colonnes : copy gauche + image droite */}
+          <div className="lp-hero__grid">
+            {/* Copy */}
+            <div className="lp-hero__copy">
+              <p className="lp-hero__badge">
+                <span className="material-symbols-outlined material-symbols-outlined--filled lp-hero__badge-icon" aria-hidden>verified_user</span>
+                Plateforme Officielle du Ministère de la Santé
+              </p>
+              <h2 id="hero-title" className="lp-hero__title">
+                Votre voix compte pour une meilleure santé au Bénin
+              </h2>
+              <p className="lp-hero__subtitle">
+                Déposez une plainte, suivez son traitement en toute transparence et contribuez activement à l&apos;amélioration de nos services de santé nationaux.
+              </p>
+              <div className="lp-hero__actions">
+                <Link to="/deposer" className="lp-btn lp-btn--primary lp-btn--lg">
+                  <span className="material-symbols-outlined" aria-hidden>add_circle</span>
+                  Déposer une plainte
+                </Link>
+                <Link to="/suivi" className="lp-btn lp-btn--outline lp-btn--lg">
+                  <span className="material-symbols-outlined" aria-hidden>search</span>
+                  Suivre ma plainte
+                </Link>
+              </div>
             </div>
-            <div className="lp-hero__glow lp-hero__glow--1" />
-            <div className="lp-hero__glow lp-hero__glow--2" />
+            {/* Visual */}
+            <div className="lp-hero__visual" aria-hidden="true">
+              <div className="lp-hero__img-frame">
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBGTrQNYQyO0U1bbj8O8X4R-Sh2RyEfwjEQscyc4kFDSpZEGFUVOpaJGDDaCr4DFvCOmXdocbg5RNeIlLpOUCQHOjuH_CHsZxSwviBlJSlYjN8g7n6VBA7PkSY08CU19Tkwgsf1llajim-EUaP-AUaqlc1vLS0CXVZD8weGa8J9RMO3Gs9OjilabYz-Wy5r7sIGoTbExogITJxQZFfAkH-MzaMskJ0qXCIvRE4VQOugiWWE9Evy929MWoQXnu-FwN0QvSiHzajPF4"
+                  alt="Médecin béninois en consultation avec un patient dans un établissement de santé moderne"
+                  className="lp-hero__img"
+                  loading="eager"
+                />
+              </div>
+              <div className="lp-hero__glow lp-hero__glow--1" />
+              <div className="lp-hero__glow lp-hero__glow--2" />
+            </div>
           </div>
         </div>
       </section>
