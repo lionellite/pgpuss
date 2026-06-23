@@ -6,8 +6,8 @@ services:
     container_name: pgpuss-backend
     env_file:
       - .env
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     restart: unless-stopped
     # Pas besoin de volumes bind-mount en production
     # La commande CMD est définie dans le Dockerfile (gunicorn)
@@ -44,6 +44,7 @@ services:
       - WEBHOOK_TIMEOUT=10000
       - WEBHOOK_MAX_RETRIES=3
       - QUEUE_ENABLED=false
+      - API_MASTER_KEY=${OPENWA_API_KEY}
     volumes:
       - openwa_data:/app/data
     restart: unless-stopped
