@@ -25,4 +25,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Commande par défaut (sera surchargée par docker-compose)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]

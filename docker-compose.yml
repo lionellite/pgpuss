@@ -1,44 +1,55 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=pgpuss_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5433:5432"
-
   backend:
     build: ./backend
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_NAME=pgpuss_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DEBUG=1
-      - FB_VERIFY_TOKEN=mon_secret_jeton_2025
-    depends_on:
-      - db
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py seed_benin_workflow &&
-             python manage.py runserver 0.0.0.0:8000"
+    container_name: pgpuss-backend
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    restart: unless-stopped
+    # Pas besoin de volumes bind-mount en production
+    # La commande CMD est définie dans le Dockerfile (gunicorn)
 
   frontend:
     build: ./frontend
+    container_name: pgpuss-frontend
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - backend
+      - openwa
+    restart: unless-stopped
+
+  openwa:
+    build:
+      context: ./OpenWA
+      dockerfile: Dockerfile
+    container_name: pgpuss-openwa
+    ports:
+      - "2785:2785"
+      - "2886:80"
+    environment:
+      - NODE_ENV=production
+      - PORT=2785
+      - DATABASE_TYPE=sqlite
+      - DATABASE_NAME=/app/data/openwa.sqlite
+      - DATABASE_SYNCHRONIZE=true
+      - ENGINE_TYPE=whatsapp-web.js
+      - SESSION_DATA_PATH=/app/data/sessions
+      - PUPPETEER_HEADLESS=true
+      - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu
+      - STORAGE_TYPE=local
+      - STORAGE_LOCAL_PATH=/app/data/media
+      - WEBHOOK_TIMEOUT=10000
+      - WEBHOOK_MAX_RETRIES=3
+      - QUEUE_ENABLED=false
+    volumes:
+      - openwa_data:/app/data
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
-  postgres_data:
+  openwa_data:
