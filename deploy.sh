@@ -17,6 +17,10 @@ docker compose down
 echo "4. Démarrage des conteneurs en arrière-plan..."
 docker compose up -d
 
+echo "4b. Nettoyage des verrous Chromium (SingletonLock) d'OpenWA..."
+# Parfois, un arrêt brutal laisse un fichier de verrouillage qui empêche Chromium de démarrer
+docker compose exec -T openwa find /app/data -name "SingletonLock" -delete 2>/dev/null || true
+
 echo "5. Exécution des migrations de base de données..."
 docker compose exec -T backend python manage.py migrate
 
