@@ -29,7 +29,6 @@ services:
     container_name: pgpuss-openwa
     ports:
       - "2785:2785"
-      - "2886:80"
     environment:
       - NODE_ENV=production
       - PORT=2785
@@ -50,6 +49,17 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  openwa-dashboard:
+    build:
+      context: ./OpenWA/dashboard
+      dockerfile: Dockerfile
+    container_name: pgpuss-openwa-dashboard
+    ports:
+      - "2886:80"
+    depends_on:
+      - openwa
+    restart: unless-stopped
 
 volumes:
   openwa_data:
