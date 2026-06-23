@@ -6,7 +6,7 @@ echo "   Déploiement PGP-USS sur Contabo VPS"
 echo "=========================================="
 
 echo "1. Mise à jour du code (optionnel)..."
-# git pull origin main
+git pull origin master
 
 echo "2. Construction des images Docker..."
 docker compose build
