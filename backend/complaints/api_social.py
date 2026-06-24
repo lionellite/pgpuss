@@ -65,32 +65,11 @@ class WhatsAppWebhookView(APIView):
         if not incoming:
             return Response({"status": "ignored"})
 
-        if "PLAINTE" not in (incoming.message or "").upper():
-            return Response({"status": "received"})
+        # Délégation au moteur conversationnel WhatsApp (bot_engine)
+        from .bot_engine import handle_incoming_message
+        handle_incoming_message(incoming)
 
-        complaint = Complaint.objects.create(
-            title=f"Plainte WhatsApp de {incoming.sender}",
-            description=incoming.message or "",
-            channel=ComplaintChannel.CHATBOT,
-            status=ComplaintStatus.SOUMISE,
-            complainant_phone=incoming.sender,
-            # Champs sociaux — seront complétés par l'agent call center
-            social_raw_message=incoming.message or "",
-            social_source=incoming.source or "whatsapp",
-            social_sender_id=incoming.sender,
-            pending_call_center_completion=True,
-            needs_call_center_assistance=True,
-        )
-        complaint.perform_nlp_analysis()
-        complaint.save()
-
-        _send_whatsapp_confirmation(incoming.chat_id, complaint.ticket_number)
-
-        return Response({
-            "message": "Plainte enregistrée via WhatsApp",
-            "ticket": complaint.ticket_number,
-            "source": incoming.source,
-        })
+        return Response({"status": "received"})
 
 
 class FacebookWebhookView(APIView):

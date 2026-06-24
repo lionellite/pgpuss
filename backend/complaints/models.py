@@ -434,3 +434,29 @@ class RoleWorkflowPermission(models.Model):
 
     def __str__(self):
         return self.role
+
+
+class WhatsAppSession(models.Model):
+    """
+    State machine session for WhatsApp chatbot.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    phone_number = models.CharField(max_length=50, unique=True)
+    state = models.CharField(max_length=50, default='START')
+    draft_data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Session WhatsApp'
+        verbose_name_plural = 'Sessions WhatsApp'
+
+    def __str__(self):
+        return f"{self.phone_number} - {self.state}"
+
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        # Session expires after 24 hours of inactivity
+        return timezone.now() > self.updated_at + timedelta(hours=24)
