@@ -174,7 +174,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 # File upload limits (Vercel serverless : corps de requête ~4,5 Mo max, VPS: 50 Mo max)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
-VERCEL_MAX_UPLOAD_BYTES = int(os.environ.get('VERCEL_MAX_UPLOAD_BYTES', str(4 * 1024 * 1024)))
+VERCEL_MAX_UPLOAD_BYTES = int(os.environ.get('VERCEL_MAX_UPLOAD_BYTES', str(50 * 1024 * 1024)))
 # Création plainte sans génération de document ni gros multipart (recommandé sur Vercel)
 FAST_COMPLAINT_CREATE = os.environ.get('FAST_COMPLAINT_CREATE', '').lower() in (
     '1', 'true', 'yes',
