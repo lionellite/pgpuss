@@ -138,6 +138,61 @@ function InboxCard({ complaint, selected, onSelect }) {
   )
 }
 
+/* ─── Assign Zone Form ──────────────────────────────────────────────────── */
+function AssignZoneForm({ complaint, zones, onSuccess, onCancel }) {
+  const [zoneId, setZoneId] = useState('')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!zoneId) {
+      toast.error('Sélectionnez une zone sanitaire')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await complaintsAPI.callcenterAssignZone(complaint.id, {
+        zone_sanitaire: zoneId,
+        agent_notes: notes.trim() || undefined,
+      })
+      toast.success('Plainte orientée vers la zone sanitaire')
+      onSuccess()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erreur lors de l\'orientation')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+        Orientez cette plainte vers le PFZS de la zone sanitaire concernée lorsque l&apos;établissement n&apos;est pas identifié.
+      </p>
+      <select className="form-select" value={zoneId} onChange={e => setZoneId(e.target.value)} required>
+        <option value="">Choisir une zone sanitaire…</option>
+        {zones.map(z => (
+          <option key={z.id} value={z.id}>{z.name} {z.region_name ? `(${z.region_name})` : ''}</option>
+        ))}
+      </select>
+      <textarea
+        className="form-input"
+        style={{ minHeight: 60, resize: 'vertical' }}
+        placeholder="Notes pour le PFZS (optionnel)"
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+      />
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={submitting}>
+          {submitting ? 'Envoi…' : 'Orienter vers la zone'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 /* ─── Complete Form ─────────────────────────────────────────────────────── */
 function CompleteForm({ complaint, categories, establishments, onSuccess, onCancel }) {
   const [form, setForm] = useState({
@@ -325,11 +380,13 @@ function CompleteForm({ complaint, categories, establishments, onSuccess, onCanc
 }
 
 /* ─── Detail Panel ──────────────────────────────────────────────────────── */
-function DetailPanel({ complaint, categories, establishments, onComplete, onClose }) {
+function DetailPanel({ complaint, categories, establishments, zones, onComplete, onClose }) {
   const [showForm, setShowForm] = useState(false)
+  const [showZoneForm, setShowZoneForm] = useState(false)
 
   const handleSuccess = () => {
     setShowForm(false)
+    setShowZoneForm(false)
     onComplete()
   }
 
@@ -417,22 +474,43 @@ function DetailPanel({ complaint, categories, establishments, onComplete, onClos
         {/* Formulaire de complétion */}
         {complaint.pending_call_center_completion && (
           <>
-            {!showForm ? (
-              <button
-                type="button"
-                onClick={() => setShowForm(true)}
-                style={{
-                  width: '100%', padding: '0.875rem', border: 'none', borderRadius: 10,
-                  background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                  color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(0,76,76,0.3)',
-                }}
-              >
-                <FiCheckCircle />
-                Compléter et finaliser la plainte
-              </button>
-            ) : (
+            {!showForm && !showZoneForm && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    width: '100%', padding: '0.875rem', border: 'none', borderRadius: 10,
+                    background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                    color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(0,76,76,0.3)',
+                  }}
+                >
+                  <FiCheckCircle />
+                  Compléter et finaliser la plainte
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowZoneForm(true)}
+                  className="btn btn-secondary"
+                  style={{ width: '100%' }}
+                >
+                  Orienter vers une zone sanitaire (PFZS)
+                </button>
+              </div>
+            )}
+            {showZoneForm && (
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <AssignZoneForm
+                  complaint={complaint}
+                  zones={zones}
+                  onSuccess={handleSuccess}
+                  onCancel={() => setShowZoneForm(false)}
+                />
+              </div>
+            )}
+            {showForm && (
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                 <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
                   Remplissez les champs manquants
@@ -465,6 +543,7 @@ export default function CallCenterSocialInboxPage() {
   const [ordering, setOrdering] = useState('-created_at')
   const [categories, setCategories] = useState([])
   const [establishments, setEstablishments] = useState([])
+  const [zones, setZones] = useState([])
 
   const loadInbox = useCallback(() => {
     setLoading(true)
@@ -483,6 +562,7 @@ export default function CallCenterSocialInboxPage() {
   useEffect(() => {
     complaintsAPI.categories().then(({ data }) => setCategories(Array.isArray(data) ? data : (data.results || []))).catch(() => {})
     establishmentsAPI.list({ page_size: 500 }).then(({ data }) => setEstablishments(Array.isArray(data) ? data : (data.results || []))).catch(() => {})
+    establishmentsAPI.zones().then(({ data }) => setZones(Array.isArray(data) ? data : (data.results || data || []))).catch(() => {})
   }, [])
 
   const pending = inbox.filter(c => c.pending_call_center_completion)
@@ -608,6 +688,7 @@ export default function CallCenterSocialInboxPage() {
               complaint={selected}
               categories={categories}
               establishments={establishments}
+              zones={zones}
               onComplete={handleComplete}
               onClose={() => setSelected(null)}
             />

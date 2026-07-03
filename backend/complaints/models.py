@@ -113,6 +113,14 @@ class Complaint(models.Model):
         max_length=500, blank=True,
         help_text="Adresse ou localisation si établissement saisi manuellement",
     )
+    referred_zone_sanitaire = models.ForeignKey(
+        'establishments.ZoneSanitaire',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='referred_complaints',
+        help_text="Zone sanitaire orientée par le call center (établissement inconnu).",
+    )
 
     # Assignment
     assigned_to = models.ForeignKey(

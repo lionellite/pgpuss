@@ -154,13 +154,29 @@ La réponse inclut : statut, priorité, date de dépôt, dernières étapes du w
 
 | État | Contenu |
 |------|---------|
-| Établissement | Nom de l'hôpital / centre |
+| **Département** | Liste des départements (régions) du référentiel |
+| **Établissement** | Hôpitaux/centres filtrés par département (+ pagination) |
+| **Service** | Service concerné si disponible (optionnel) |
+| **Saisie manuelle** | Si établissement absent du référentiel (option `0`) |
 | Catégorie | 1–7 (soins, médicaments, facturation…) |
 | Titre | Titre court |
 | Description | **Texte ou message vocal** 🎤 |
-| Pièces jointes | Photos, PDF, documents (max 5) — « terminé » ou « passer » |
+| Pièces jointes | Photos, PDF, documents (max 5) |
 | Identité | Anonyme (1) ou nom complet (2) |
 | Confirmation | Récapitulatif puis validation |
+
+#### Routage automatique
+
+| Cas | Destination |
+|-----|-------------|
+| Établissement **référencé** (FK) | **PFE** de l'établissement (notification immédiate) |
+| Établissement **saisi manuellement** | **Call Center 136** (`pending_call_center_completion=True`) |
+
+Le call center peut :
+- **Finaliser** la plainte en rattachent un établissement du référentiel → routage PFE
+- **Orienter vers une zone sanitaire** → notification du **PFZS** concerné
+
+Ce routage s'applique à **tous les canaux** (web, mobile, WhatsApp).
 
 À la confirmation :
 - Création d'une plainte (canal `CHATBOT`, statut `SOUMISE`)

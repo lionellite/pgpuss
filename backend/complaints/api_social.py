@@ -120,6 +120,8 @@ class FacebookWebhookView(APIView):
                     )
                     complaint.perform_nlp_analysis()
                     complaint.save()
+                    from .routing import apply_complaint_routing
+                    apply_complaint_routing(complaint, skip_history=True)
                     created.append(complaint.ticket_number)
 
         return Response({"status": "EVENT_RECEIVED", "tickets": created}, status=200)

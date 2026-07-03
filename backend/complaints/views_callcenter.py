@@ -29,7 +29,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
 from accounts.models import UserRole
-from establishments.models import Establishment
+from establishments.models import Establishment, ZoneSanitaire
 from .models import (
     Category,
     Complaint,
@@ -38,6 +38,7 @@ from .models import (
     ComplaintStatus,
 )
 from .serializers import ComplaintDetailSerializer
+from .routing import apply_complaint_routing, notify_pfzs_for_zone
 
 
 # ---------------------------------------------------------------------------
@@ -191,12 +192,14 @@ class SocialComplaintInboxView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Complaint.objects.filter(
-            channel=ComplaintChannel.CHATBOT,
-        ).select_related('category', 'establishment', 'call_center_agent')
+            pending_call_center_completion=True,
+        ).select_related('category', 'establishment', 'call_center_agent', 'referred_zone_sanitaire')
 
         include_completed = self.request.query_params.get('completed', 'false').lower() == 'true'
-        if not include_completed:
-            qs = qs.filter(pending_call_center_completion=True)
+        if include_completed:
+            qs = Complaint.objects.all().select_related(
+                'category', 'establishment', 'call_center_agent', 'referred_zone_sanitaire',
+            )
 
         source = self.request.query_params.get('source', '').strip().lower()
         if source:
@@ -222,10 +225,9 @@ class SocialComplaintDetailView(APIView):
         complaint = get_object_or_404(
             Complaint.objects.select_related(
                 'category', 'subcategory', 'establishment', 'service',
-                'assigned_to', 'complainant', 'call_center_agent',
+                'assigned_to', 'complainant', 'call_center_agent', 'referred_zone_sanitaire',
             ).prefetch_related('attachments', 'history'),
             pk=pk,
-            channel=ComplaintChannel.CHATBOT,
         )
         serializer = ComplaintDetailSerializer(complaint, context={'request': request})
         data = serializer.data
@@ -259,11 +261,7 @@ class SocialComplaintCompleteView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsCallCenterAgent]
 
     def post(self, request, pk):
-        complaint = get_object_or_404(
-            Complaint,
-            pk=pk,
-            channel=ComplaintChannel.CHATBOT,
-        )
+        complaint = get_object_or_404(Complaint, pk=pk)
 
         if not complaint.pending_call_center_completion:
             return Response(
@@ -339,6 +337,8 @@ class SocialComplaintCompleteView(APIView):
 
         complaint.save(update_fields=list(set(update_fields)))
 
+        apply_complaint_routing(complaint, actor=request.user, skip_history=True)
+
         # Historique
         agent_notes = data.get('agent_notes', '').strip()
         ComplaintHistory.objects.create(
@@ -364,3 +364,62 @@ class SocialComplaintCompleteView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class CallCenterAssignZoneSerializer(serializers.Serializer):
+    zone_sanitaire = serializers.PrimaryKeyRelatedField(queryset=ZoneSanitaire.objects.filter(is_active=True))
+    agent_notes = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class CallCenterAssignZoneView(APIView):
+    """
+    POST /complaints/callcenter/social-inbox/<pk>/assign-zone/
+
+    Oriente une plainte non référencée vers le PFZS de la zone sanitaire concernée.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsCallCenterAgent]
+
+    def post(self, request, pk):
+        complaint = get_object_or_404(Complaint, pk=pk)
+        if not complaint.pending_call_center_completion:
+            return Response(
+                {'error': 'Cette plainte n\'est plus en attente de traitement call center.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = CallCenterAssignZoneSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        zone = serializer.validated_data['zone_sanitaire']
+        notes = (serializer.validated_data.get('agent_notes') or '').strip()
+
+        complaint.referred_zone_sanitaire = zone
+        complaint.pending_call_center_completion = False
+        complaint.call_center_agent = request.user
+        complaint.call_center_completed_at = timezone.now()
+        complaint.save(update_fields=[
+            'referred_zone_sanitaire',
+            'pending_call_center_completion',
+            'call_center_agent',
+            'call_center_completed_at',
+        ])
+
+        notify_pfzs_for_zone(complaint, zone)
+
+        ComplaintHistory.objects.create(
+            complaint=complaint,
+            action='Orientation vers zone sanitaire (Call Center)',
+            new_status=complaint.status,
+            actor=request.user,
+            notes=(
+                f"Plainte orientée vers la zone sanitaire {zone.name} "
+                f"par {request.user.full_name}."
+                + (f"\n\nNotes : {notes}" if notes else '')
+            ),
+        )
+
+        return Response({
+            'message': f'Plainte orientée vers la zone {zone.name}.',
+            'ticket_number': complaint.ticket_number,
+            'zone_sanitaire': str(zone.id),
+            'zone_sanitaire_name': zone.name,
+        })

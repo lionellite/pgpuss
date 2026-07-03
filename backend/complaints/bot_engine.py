@@ -11,7 +11,22 @@ from .models import (
     ComplaintHistory,
     Category,
 )
-from .openwa_client import OpenWAClient
+from establishments.models import Establishment, Service
+from .routing import apply_complaint_routing
+from .whatsapp_establishments import (
+    MANUAL_CHOICE,
+    NEXT_PAGE_CHOICE,
+    establishment_summary,
+    format_establishments_prompt,
+    format_regions_prompt,
+    format_services_prompt,
+    get_establishment_page,
+    get_services,
+    resolve_establishment_choice,
+    resolve_region_choice,
+    resolve_service_choice,
+    search_establishments,
+)
 from .whatsapp_media import apply_draft_media_to_complaint
 from .whatsapp_parser import (
     WhatsAppIncomingMessage,
@@ -131,19 +146,150 @@ def process_state(session: WhatsAppSession, incoming: WhatsAppIncomingMessage, p
                 "Entrez votre numéro de ticket (ex: PGP-2026-AB1234) pour consulter l'état de votre plainte."
             )
         if text == "1" or _matches_any(text_lower, COMPLAINT_KEYWORDS) or text_lower in ("bonjour", "salut", "hello"):
-            session.state = "AWAITING_ESTABLISHMENT"
+            session.state = "AWAITING_REGION"
+            session.draft_data = data
             session.save()
             return (
                 "Nous allons enregistrer votre plainte.\n\n"
-                "Dans quel hôpital ou centre de santé l'incident s'est-il produit ?\n"
-                "(Tapez simplement le nom de l'établissement)"
+                + format_regions_prompt()
             )
         return get_welcome_text()
 
+    elif state == "AWAITING_REGION":
+        if not get_regions_available():
+            session.state = "AWAITING_MANUAL_ESTABLISHMENT"
+            session.save()
+            return "Quel est le nom de l'hôpital ou centre de santé concerné ?"
+
+        resolved = resolve_region_choice(text)
+        if resolved == MANUAL_CHOICE:
+            session.state = "AWAITING_MANUAL_ESTABLISHMENT"
+            session.draft_data = data
+            session.save()
+            return "Quel est le nom de l'hôpital ou centre de santé concerné ?"
+        if resolved is None:
+            return format_regions_prompt() + "\n\nRépondez par le numéro du département ou 0 pour saisie manuelle."
+
+        data["region_id"] = str(resolved.id)
+        data["region_name"] = resolved.name
+        data["establishment_page"] = 0
+        session.draft_data = data
+        session.state = "AWAITING_ESTABLISHMENT"
+        session.save()
+        establishments, total = get_establishment_page(data["region_id"], 0)
+        if not establishments:
+            session.state = "AWAITING_MANUAL_ESTABLISHMENT"
+            session.save()
+            return (
+                f"Aucun établissement référencé dans {resolved.name}.\n"
+                "Quel est le nom de l'hôpital ou centre de santé concerné ?"
+            )
+        data["_establishments_cache"] = [{"id": str(e.id), "name": e.name} for e in establishments]
+        session.draft_data = data
+        session.save()
+        return format_establishments_prompt(resolved.name, establishments, 0, total)
+
     elif state == "AWAITING_ESTABLISHMENT":
+        region_id = data.get("region_id")
+        region_name = data.get("region_name", "")
+        page = int(data.get("establishment_page") or 0)
+        establishments, total = get_establishment_page(region_id, page)
+
+        resolved = resolve_establishment_choice(text, establishments)
+        if resolved is None and len(text) >= 2:
+            matches = search_establishments(region_id, text)
+            if len(matches) == 1:
+                resolved = matches[0]
+            elif len(matches) > 1:
+                data["_establishments_cache"] = [{"id": str(e.id), "name": e.name} for e in matches]
+                session.draft_data = data
+                session.save()
+                return (
+                    f"Plusieurs établissements correspondent à « {text} » :\n\n"
+                    + format_establishments_prompt(region_name, matches, 0, len(matches))
+                )
+
+        if resolved == MANUAL_CHOICE:
+            session.state = "AWAITING_MANUAL_ESTABLISHMENT"
+            session.draft_data = data
+            session.save()
+            return "Quel est le nom de l'hôpital ou centre de santé concerné ?"
+        if resolved == NEXT_PAGE_CHOICE:
+            page += 1
+            establishments, total = get_establishment_page(region_id, page)
+            if not establishments:
+                page -= 1
+                return "Fin de la liste. Choisissez un numéro ou tapez 0 pour saisie manuelle."
+            data["establishment_page"] = page
+            data["_establishments_cache"] = [{"id": str(e.id), "name": e.name} for e in establishments]
+            session.draft_data = data
+            session.save()
+            return format_establishments_prompt(region_name, establishments, page, total)
+        if resolved == "prev":
+            page = max(0, page - 1)
+            establishments, total = get_establishment_page(region_id, page)
+            data["establishment_page"] = page
+            data["_establishments_cache"] = [{"id": str(e.id), "name": e.name} for e in establishments]
+            session.draft_data = data
+            session.save()
+            return format_establishments_prompt(region_name, establishments, page, total)
+        if resolved is None:
+            return (
+                format_establishments_prompt(region_name, establishments, page, total)
+                + "\n\nChoix invalide. Répondez par le numéro, 0 (manuel), 99 (page suivante)."
+            )
+
+        data["establishment_id"] = str(resolved.id)
+        data["establishment_name"] = resolved.name
+        data.pop("establishment_name_manual", None)
+        session.draft_data = data
+        services = get_services(data["establishment_id"])
+        if services:
+            data["_services_cache"] = [{"id": str(s.id), "name": s.name} for s in services]
+            session.state = "AWAITING_SERVICE"
+            session.save()
+            return format_services_prompt(resolved.name, services)
+        session.state = "AWAITING_CATEGORY"
+        session.save()
+        return get_category_text()
+
+    elif state == "AWAITING_SERVICE":
+        services = get_services(data.get("establishment_id", ""))
+        if not services:
+            session.state = "AWAITING_CATEGORY"
+            session.save()
+            return get_category_text()
+
+        resolved = resolve_service_choice(text, services)
+        if resolved == "skip" or resolved is None:
+            if resolved is None and text not in ("0", "passer"):
+                return format_services_prompt(data.get("establishment_name", ""), services) + "\n\nChoix invalide."
+        elif isinstance(resolved, Service) or hasattr(resolved, "id"):
+            data["service_id"] = str(resolved.id)
+            data["service_name"] = resolved.name
+
+        session.draft_data = data
+        session.state = "AWAITING_CATEGORY"
+        session.save()
+        return get_category_text()
+
+    elif state == "AWAITING_MANUAL_ESTABLISHMENT":
         if len(text) < 2:
-            return "Veuillez entrer un nom d'établissement valide."
-        data["establishment"] = text
+            return "Veuillez entrer un nom d'établissement valide (min. 2 caractères)."
+        data["establishment_name_manual"] = text
+        data.pop("establishment_id", None)
+        data.pop("establishment_name", None)
+        session.draft_data = data
+        session.state = "AWAITING_MANUAL_ADDRESS"
+        session.save()
+        return (
+            "Souhaitez-vous préciser l'adresse ou la localisation ?\n"
+            "Envoyez l'adresse ou tapez *passer* pour continuer."
+        )
+
+    elif state == "AWAITING_MANUAL_ADDRESS":
+        if text_lower not in ("passer", "skip", "non", "0") and len(text) >= 2:
+            data["establishment_address_manual"] = text
         session.draft_data = data
         session.state = "AWAITING_CATEGORY"
         session.save()
@@ -268,16 +414,28 @@ def process_state(session: WhatsAppSession, incoming: WhatsAppIncomingMessage, p
     elif state == "CONFIRMATION":
         if "1" in text or "oui" in text_lower or "confirme" in text_lower or "valide" in text_lower:
             try:
-                ticket_number, warnings = create_complaint_from_data(data, phone)
+                ticket_number, warnings, route = create_complaint_from_data(data, phone)
                 session.delete()
                 lines = [
                     "✅ Votre plainte a été enregistrée avec succès !",
                     "",
                     f"Votre numéro de ticket est : *{ticket_number}*",
                     "",
-                    "Conservez-le précieusement pour suivre l'avancement de votre dossier.",
-                    "Pour consulter le statut, renvoyez ce numéro de ticket sur WhatsApp.",
                 ]
+                if route == "call_center":
+                    lines.append(
+                        "Votre dossier sera traité par le *Call Center 136* "
+                        "pour qualification de l'établissement."
+                    )
+                else:
+                    lines.append(
+                        "Votre plainte a été transmise au *point focal* de l'établissement concerné."
+                    )
+                lines.extend([
+                    "",
+                    "Conservez votre numéro de ticket pour suivre l'avancement.",
+                    "Pour consulter le statut, renvoyez ce numéro sur WhatsApp.",
+                ])
                 if warnings:
                     lines.append("")
                     lines.append("⚠️ Certains fichiers n'ont pas pu être enregistrés :")
@@ -320,7 +478,7 @@ def build_confirmation_text(data: dict) -> str:
 
     lines = [
         "📋 *Voici le récapitulatif de votre plainte :*",
-        f"🏥 Établissement : {data.get('establishment', '')}",
+        f"🏥 Établissement : {establishment_summary(data)}",
         f"🏷️ Catégorie : {data.get('category', '')}",
         f"📌 Titre : {data.get('title', '')}",
         f"📝 Description : {desc_short}",
@@ -381,9 +539,16 @@ def build_tracking_response(ticket_number: str) -> str:
     return "\n".join(lines)
 
 
-def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str]]:
+def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str], str]:
     cat_name = data.get("category", "")
     cat_obj = Category.objects.filter(name__icontains=cat_name).first()
+
+    establishment = None
+    service = None
+    if data.get("establishment_id"):
+        establishment = Establishment.objects.filter(pk=data["establishment_id"]).first()
+    if data.get("service_id"):
+        service = Service.objects.filter(pk=data["service_id"]).first()
 
     complaint = Complaint.objects.create(
         title=data.get("title", "Plainte WhatsApp"),
@@ -394,7 +559,10 @@ def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str]]:
         is_anonymous=data.get("is_anonymous", False),
         complainant_name=data.get("name", "") if not data.get("is_anonymous") else "",
         complainant_phone=phone,
-        establishment_name_manual=data.get("establishment", ""),
+        establishment=establishment,
+        service=service,
+        establishment_name_manual=data.get("establishment_name_manual", ""),
+        establishment_address_manual=data.get("establishment_address_manual", ""),
         social_raw_message=data.get("description", ""),
         social_source="whatsapp",
         social_sender_id=phone,
@@ -410,10 +578,17 @@ def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str]]:
     )
 
     warnings = apply_draft_media_to_complaint(complaint, data)
-    return complaint.ticket_number, warnings
+    route = apply_complaint_routing(complaint, skip_history=True)
+    return complaint.ticket_number, warnings, route
+
+
+def get_regions_available() -> bool:
+    from .whatsapp_establishments import get_regions
+    return bool(get_regions())
 
 
 def _send_text(chat_id: str, text: str) -> None:
+    from .openwa_client import OpenWAClient
     client = OpenWAClient()
     if client.is_configured:
         client.send_text(chat_id, text)

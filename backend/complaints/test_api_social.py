@@ -103,12 +103,12 @@ class WhatsAppBotEngineTests(TestCase):
             **kwargs,
         )
 
-    def test_start_menu_then_establishment(self):
+    def test_start_menu_then_region(self):
         session = WhatsAppSession.objects.create(phone_number=self.phone, state="START")
         response = process_state(session, self.incoming("1"), self.phone)
-        self.assertIn("hôpital", response.lower())
+        self.assertIn("département", response.lower())
         session.refresh_from_db()
-        self.assertEqual(session.state, "AWAITING_ESTABLISHMENT")
+        self.assertEqual(session.state, "AWAITING_REGION")
 
     def test_tracking_unknown_ticket(self):
         response = build_tracking_response("PGP-2026-ZZ9999")
@@ -126,18 +126,21 @@ class WhatsAppBotEngineTests(TestCase):
         self.assertIn("Soumise", response)
 
     @patch("complaints.bot_engine.apply_draft_media_to_complaint", return_value=[])
-    def test_create_complaint_with_voice_draft(self, _mock_media):
+    @patch("complaints.bot_engine.apply_complaint_routing", return_value="pfe")
+    def test_create_complaint_with_voice_draft(self, _mock_route, _mock_media):
         data = {
-            "establishment": "CHU Cotonou",
+            "establishment_id": str(__import__('uuid').uuid4()),
+            "establishment_name": "CHU Test",
             "category": "Autre",
             "title": "Test vocal",
             "description": "Plainte vocale",
             "is_anonymous": True,
             "voice": {"mimetype": "audio/ogg", "data": "YWJj", "filename": "v.ogg"},
         }
-        ticket, warnings = create_complaint_from_data(data, self.phone)
+        ticket, warnings, route = create_complaint_from_data(data, self.phone)
         self.assertTrue(ticket.startswith("PGP-"))
         self.assertEqual(warnings, [])
+        self.assertEqual(route, "pfe")
         self.assertEqual(Complaint.objects.filter(ticket_number=ticket).count(), 1)
 
 
@@ -145,7 +148,7 @@ class WhatsAppWebhookTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    @patch("complaints.bot_engine.OpenWAClient.send_text")
+    @patch("complaints.bot_engine._send_text")
     def test_openwa_webhook_starts_bot_flow(self, mock_send):
         payload = {
             "event": "message.received",
@@ -167,7 +170,7 @@ class WhatsAppWebhookTests(TestCase):
         self.assertTrue(WhatsAppSession.objects.filter(phone_number="22997123456").exists())
         mock_send.assert_called_once()
 
-    @patch("complaints.bot_engine.OpenWAClient.send_text")
+    @patch("complaints.bot_engine._send_text")
     def test_openwa_webhook_tracks_ticket(self, mock_send):
         Complaint.objects.create(
             title="Suivi test",
@@ -191,7 +194,7 @@ class WhatsAppWebhookTests(TestCase):
         self.assertIn("PGP-2026-AB1234", sent_text)
         self.assertIn("Soumise", sent_text)
 
-    @patch("complaints.bot_engine.OpenWAClient.send_text")
+    @patch("complaints.bot_engine._send_text")
     def test_meta_webhook_starts_bot(self, mock_send):
         payload = {
             "entry": [{
@@ -210,7 +213,7 @@ class WhatsAppWebhookTests(TestCase):
         self.assertEqual(Complaint.objects.count(), 0)
         mock_send.assert_called_once()
 
-    @patch("complaints.bot_engine.OpenWAClient.send_text")
+    @patch("complaints.bot_engine._send_text")
     def test_simple_fallback_starts_bot(self, mock_send):
         response = self.client.post(
             "/api/complaints/webhooks/whatsapp/",

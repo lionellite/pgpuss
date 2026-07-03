@@ -121,6 +121,7 @@ export const complaintsAPI = {
   callcenterSocialInbox: (params) => api.get('/complaints/callcenter/social-inbox/', { params }),
   callcenterSocialDetail: (id) => api.get(`/complaints/callcenter/social-inbox/${id}/`),
   callcenterSocialComplete: (id, data) => api.post(`/complaints/callcenter/social-inbox/${id}/complete/`, data),
+  callcenterAssignZone: (id, data) => api.post(`/complaints/callcenter/social-inbox/${id}/assign-zone/`, data),
 }
 
 // Establishments

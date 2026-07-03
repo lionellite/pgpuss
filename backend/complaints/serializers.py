@@ -226,6 +226,10 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
             actor=complaint.complainant,
             notes=f'Plainte déposée via {complaint.get_channel_display()}.'
         )
+
+        from .routing import apply_complaint_routing
+        apply_complaint_routing(complaint, actor=complaint.complainant)
+
         return complaint
 
 

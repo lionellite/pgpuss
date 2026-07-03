@@ -56,4 +56,5 @@ urlpatterns = [
     path('callcenter/social-inbox/', views_callcenter.SocialComplaintInboxView.as_view(), name='callcenter_social_inbox'),
     path('callcenter/social-inbox/<uuid:pk>/', views_callcenter.SocialComplaintDetailView.as_view(), name='callcenter_social_detail'),
     path('callcenter/social-inbox/<uuid:pk>/complete/', views_callcenter.SocialComplaintCompleteView.as_view(), name='callcenter_social_complete'),
+    path('callcenter/social-inbox/<uuid:pk>/assign-zone/', views_callcenter.CallCenterAssignZoneView.as_view(), name='callcenter_assign_zone'),
 ]

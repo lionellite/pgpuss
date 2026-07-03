@@ -87,14 +87,20 @@ def filter_complaints_for_user(user, qs):
 
     if role == UserRole.PFZS:
         if user.zone_sanitaire_id:
-            return qs.filter(establishment__zone_sanitaire_id=user.zone_sanitaire_id)
+            return qs.filter(
+                Q(establishment__zone_sanitaire_id=user.zone_sanitaire_id) |
+                Q(referred_zone_sanitaire_id=user.zone_sanitaire_id)
+            )
         return qs.none()
 
     if role == UserRole.PNUSS:
         if user.establishment_id:
             return qs.filter(establishment_id=user.establishment_id)
         if user.zone_sanitaire_id:
-            return qs.filter(establishment__zone_sanitaire_id=user.zone_sanitaire_id)
+            return qs.filter(
+                Q(establishment__zone_sanitaire_id=user.zone_sanitaire_id) |
+                Q(referred_zone_sanitaire_id=user.zone_sanitaire_id)
+            )
         if user.departement:
             return qs.filter(establishment__region__name=user.departement)
         return qs  # national : toutes les plaintes
@@ -111,7 +117,10 @@ def filter_complaints_for_user(user, qs):
         if user.establishment_id:
             return qs.filter(establishment_id=user.establishment_id)
         if user.zone_sanitaire_id:
-            return qs.filter(establishment__zone_sanitaire_id=user.zone_sanitaire_id)
+            return qs.filter(
+                Q(establishment__zone_sanitaire_id=user.zone_sanitaire_id) |
+                Q(referred_zone_sanitaire_id=user.zone_sanitaire_id)
+            )
         if user.departement:
             return qs.filter(establishment__region__name=user.departement)
         return qs  # auditeur national
