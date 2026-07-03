@@ -13,6 +13,7 @@ export default function PlaintesListPage() {
   const [page, setPage] = useState(1)
   const [count, setCount] = useState(0)
   const [filters, setFilters] = useState({ search: '', status: '', priority: '', channel: '', zone_sanitaire: '' })
+  const [ordering, setOrdering] = useState('-created_at')
   const [zones, setZones] = useState([])
   const [scope, setScope] = useState('default')
   const PAGE_SIZE = 20
@@ -35,6 +36,7 @@ export default function PlaintesListPage() {
       channel: filters.channel || undefined,
       zone_sanitaire: filters.zone_sanitaire || undefined,
       scope: hasScope ? scope : undefined,
+      ordering,
       page,
       page_size: PAGE_SIZE,
     }).then(({ data }) => {
@@ -42,7 +44,7 @@ export default function PlaintesListPage() {
       setCount(data.count || (data.results || data).length)
     }).catch(() => setComplaints([]))
     .finally(() => setLoading(false))
-  }, [filters, page, scope])
+  }, [filters, page, scope, ordering])
 
   useEffect(() => { load() }, [load])
 
@@ -102,6 +104,14 @@ export default function PlaintesListPage() {
               {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
             </select>
           )}
+          <select className="form-select" style={{ width: 'auto', minWidth: 180 }}
+            value={ordering} onChange={e => { setOrdering(e.target.value); setPage(1) }}
+            aria-label="Tri des plaintes">
+            <option value="-created_at">Plus récentes d&apos;abord</option>
+            <option value="created_at">Plus anciennes d&apos;abord</option>
+            <option value="-updated_at">Dernière mise à jour</option>
+            <option value="-priority">Priorité (P1 → P5)</option>
+          </select>
         </div>
       </div>
 

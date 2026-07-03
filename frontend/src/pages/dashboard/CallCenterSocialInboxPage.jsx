@@ -462,6 +462,7 @@ export default function CallCenterSocialInboxPage() {
   const [showCompleted, setShowCompleted] = useState(false)
   const [sourceFilter, setSourceFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [ordering, setOrdering] = useState('-created_at')
   const [categories, setCategories] = useState([])
   const [establishments, setEstablishments] = useState([])
 
@@ -470,11 +471,12 @@ export default function CallCenterSocialInboxPage() {
     complaintsAPI.callcenterSocialInbox({
       completed: showCompleted ? 'true' : undefined,
       source: sourceFilter || undefined,
+      ordering,
     })
       .then(({ data }) => setInbox(Array.isArray(data) ? data : (data.results || [])))
       .catch(() => setInbox([]))
       .finally(() => setLoading(false))
-  }, [showCompleted, sourceFilter])
+  }, [showCompleted, sourceFilter, ordering])
 
   useEffect(() => { loadInbox() }, [loadInbox])
 
@@ -555,6 +557,12 @@ export default function CallCenterSocialInboxPage() {
           <option value="">Tous canaux</option>
           <option value="whatsapp">WhatsApp</option>
           <option value="facebook">Facebook</option>
+        </select>
+        <select className="form-select" style={{ width: 'auto', minWidth: 170 }}
+          value={ordering} onChange={e => setOrdering(e.target.value)}
+          aria-label="Tri des plaintes sociales">
+          <option value="-created_at">Plus récentes</option>
+          <option value="created_at">Plus anciennes</option>
         </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', userSelect: 'none' }}>
           <input type="checkbox" checked={showCompleted} onChange={e => setShowCompleted(e.target.checked)} style={{ accentColor: 'var(--color-primary)' }} />

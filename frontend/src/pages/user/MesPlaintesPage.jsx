@@ -12,14 +12,15 @@ export default function MesPlaintesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [ordering, setOrdering] = useState('-created_at')
 
   useEffect(() => {
     setLoading(true)
-    complaintsAPI.list({ search, status: statusFilter || undefined })
+    complaintsAPI.list({ search, status: statusFilter || undefined, ordering })
       .then(({ data }) => setComplaints(data.results || data))
       .catch(() => setComplaints([]))
       .finally(() => setLoading(false))
-  }, [search, statusFilter])
+  }, [search, statusFilter, ordering])
 
   return (
     <div style={{ padding: '2rem 0' }}>
@@ -50,6 +51,12 @@ export default function MesPlaintesPage() {
             <option value="EN_TRAITEMENT">Investigation</option>
             <option value="RESOLUE">Résolue</option>
             <option value="CLOTUREE">Clôturée</option>
+          </select>
+          <select className="form-select" style={{ width: 'auto', minWidth: 180 }}
+            value={ordering} onChange={e => setOrdering(e.target.value)}
+            aria-label="Tri des plaintes">
+            <option value="-created_at">Plus récentes d&apos;abord</option>
+            <option value="created_at">Plus anciennes d&apos;abord</option>
           </select>
         </div>
 

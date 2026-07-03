@@ -101,6 +101,16 @@ class PhoneLoginView(APIView):
         user = serializer.validated_data['user']
 
         refresh = RefreshToken.for_user(user)
+        try:
+            from audit.services import log_auth_event
+            log_auth_event(
+                'Connexion réussie',
+                request=request,
+                actor=user,
+                metadata={'method': 'phone_or_email'},
+            )
+        except Exception:
+            pass
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh),
@@ -268,7 +278,19 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 {'error': "Modification réservée à l'administrateur plateforme ou au PFE."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        try:
+            from audit.services import log_user_event
+            log_user_event(
+                'Utilisateur modifié',
+                request=request,
+                actor=request.user,
+                target_user=target,
+                new_value={'role': target.role, 'is_active': target.is_active},
+            )
+        except Exception:
+            pass
+        return response
 
     def destroy(self, request, *args, **kwargs):
         """Soft-delete : désactive le compte sans le supprimer."""
@@ -290,6 +312,17 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         else:
             user.is_active = False
             user.save(update_fields=['is_active'])
+            try:
+                from audit.services import log_user_event
+                log_user_event(
+                    'Compte utilisateur désactivé',
+                    request=request,
+                    actor=request.user,
+                    target_user=user,
+                    new_value={'is_active': False},
+                )
+            except Exception:
+                pass
             return Response({'message': 'Compte désactivé.'})
 
 

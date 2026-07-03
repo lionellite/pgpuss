@@ -196,7 +196,8 @@ class ComplaintListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
     filterset_fields = ['status', 'priority', 'category', 'establishment', 'channel', 'is_anonymous']
     search_fields = ['ticket_number', 'title', 'description']
-    ordering_fields = ['created_at', 'updated_at', 'priority', 'status']
+    ordering_fields = ['created_at', 'updated_at', 'priority', 'status', 'ticket_number']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         qs = filter_complaints_for_user(self.request.user, Complaint.objects.all())

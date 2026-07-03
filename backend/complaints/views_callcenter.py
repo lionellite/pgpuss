@@ -202,7 +202,11 @@ class SocialComplaintInboxView(generics.ListAPIView):
         if source:
             qs = qs.filter(social_source__icontains=source)
 
-        return qs.order_by('created_at')  # les plus anciennes en premier (FIFO)
+        ordering = self.request.query_params.get('ordering', '-created_at')
+        allowed = {'created_at', '-created_at', 'updated_at', '-updated_at'}
+        if ordering not in allowed:
+            ordering = '-created_at'
+        return qs.order_by(ordering)
 
 
 class SocialComplaintDetailView(APIView):

@@ -173,4 +173,11 @@ export const analyticsAPI = {
   exportStats: (params) => api.get('/analytics/export/', { params, responseType: 'blob' }),
 }
 
+// Journal d'audit (lecture seule — admin + ministère)
+export const auditAPI = {
+  list: (params) => api.get('/audit/', { params }),
+  detail: (id) => api.get(`/audit/${id}/`),
+  verifyChain: (params) => api.get('/audit/verify-chain/', { params }),
+}
+
 export default api

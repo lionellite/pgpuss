@@ -135,8 +135,8 @@ class DashboardView(APIView):
             .order_by('-count')[:10]
         )
 
-        # Recent complaints
-        recent = ComplaintListSerializer(qs[:5], many=True).data
+        # Recent complaints (plus récentes en premier)
+        recent = ComplaintListSerializer(qs.order_by('-created_at')[:5], many=True).data
 
         return Response({
             'total_complaints': total,
@@ -216,6 +216,17 @@ class ExportStatsView(APIView):
             start, end = _period_range(period, year, value_int)
         except ValueError as exc:
             return Response({'error': str(exc)}, status=400)
+
+        try:
+            from audit.services import log_export_event
+            log_export_event(
+                'Export statistiques',
+                request=request,
+                actor=request.user,
+                metadata={'format': fmt, 'period': period, 'year': year, 'value': value_int},
+            )
+        except Exception:
+            pass
 
         qs = Complaint.objects.filter(created_at__gte=start, created_at__lt=end)
 

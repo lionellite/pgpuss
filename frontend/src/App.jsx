@@ -30,6 +30,7 @@ import ReferentialsAdminPage from './pages/dashboard/ReferentialsAdminPage'
 import EstablishmentsAdminPage from './pages/dashboard/EstablishmentsAdminPage'
 import InternalAgentsPage from './pages/dashboard/InternalAgentsPage'
 import CallCenterSocialInboxPage from './pages/dashboard/CallCenterSocialInboxPage'
+import AuditLogPage from './pages/dashboard/AuditLogPage'
 import { DASHBOARD_ROLES } from './constants/roles'
 
 function PrivateRoute({ children, roles }) {
@@ -53,6 +54,16 @@ function AdminPlateformeOnly({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="loading-center"><div className="spinner" /></div>
   if (!user || user.role !== 'ADMIN_PLATEFORME') return <Navigate to="/dashboard" replace />
+  return children
+}
+
+/** Journal d'audit : admin plateforme et ministère (lecture seule) */
+function AuditLogRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>
+  if (!user || !['ADMIN_PLATEFORME', 'CABINET'].includes(user.role)) {
+    return <Navigate to="/dashboard" replace />
+  }
   return children
 }
 
@@ -93,6 +104,7 @@ export default function App() {
           <Route path="/dashboard/referentiels" element={<AdminPlateformeOnly><ReferentialsAdminPage /></AdminPlateformeOnly>} />
           <Route path="/dashboard/etablissements" element={<AdminPlateformeOnly><EstablishmentsAdminPage /></AdminPlateformeOnly>} />
           <Route path="/dashboard/social-inbox" element={<PrivateRoute roles={['AGENT_CALL_CENTER', 'ADMIN_PLATEFORME']}><CallCenterSocialInboxPage /></PrivateRoute>} />
+          <Route path="/dashboard/journal-audit" element={<AuditLogRoute><AuditLogPage /></AuditLogRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

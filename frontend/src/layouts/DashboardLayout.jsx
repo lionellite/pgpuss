@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   FiFileText, FiUsers, FiLogOut, FiMenu,
   FiHome, FiTrendingUp, FiBell, FiChevronRight,
-  FiLayers, FiMapPin, FiPhone, FiUser, FiInbox,
+  FiLayers, FiMapPin, FiPhone, FiUser, FiInbox, FiShield,
 } from 'react-icons/fi'
 import GovFlagBar from '../components/GovFlagBar'
 import { ROLE_LABELS } from '../constants/roles'
@@ -35,6 +35,13 @@ const getNavItems = (role) => {
       { to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' },
       { to: '/dashboard/etablissements', icon: <FiMapPin aria-hidden />, label: 'Établissements' },
       { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
+      { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: 'Journal d\'audit' },
+    )
+  }
+
+  if (role === 'CABINET') {
+    items.push(
+      { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: 'Journal d\'audit' },
     )
   }
 

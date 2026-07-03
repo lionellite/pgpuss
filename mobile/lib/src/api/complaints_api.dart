@@ -22,6 +22,7 @@ class ComplaintsApi {
     String? status,
     String? priority,
     String? channel,
+    String ordering = '-created_at',
     int pageSize = 20,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
@@ -29,6 +30,7 @@ class ComplaintsApi {
       queryParameters: {
         'page': page,
         'page_size': pageSize,
+        'ordering': ordering,
         if (search != null && search.isNotEmpty) 'search': search,
         if (status != null && status.isNotEmpty) 'status': status,
         if (priority != null && priority.isNotEmpty) 'priority': priority,

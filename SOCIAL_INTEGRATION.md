@@ -10,8 +10,9 @@ Ce document détaille comment connecter les canaux externes (WhatsApp, Facebook,
 
 ```
 WhatsApp (téléphone) ↔ OpenWA (NestJS) ──webhook──► PGP-USS backend
-                              ▲
-                              └── API REST (envoi de confirmations)
+                              ▲                         │
+                              │                         ├── bot_engine (chatbot)
+                              └── API REST              └── openwa_client (réponses)
 ```
 
 ### Démarrage local (sans Docker pour tout le projet)
@@ -67,15 +68,7 @@ OPENWA_WEBHOOK_SECRET=pgpuss_openwa_secret_change_me
 
 **Scanner le QR code** : http://localhost:2886
 
-**Tester** : envoyez « PLAINTE » au numéro WhatsApp connecté.
-
-### Démarrage rapide (Docker — stack complète, optionnel)
-
-Si vous utilisez déjà `docker compose up` pour db/backend/frontend, OpenWA reste **indépendant** :
-
-```bash
-docker compose -f docker-compose.openwa.yml up -d
-```
+**Tester** : envoyez « Bonjour » au numéro WhatsApp connecté pour démarrer le chatbot.
 
 ### Endpoint PGP-USS
 
@@ -88,10 +81,35 @@ OpenWA envoie les événements `message.received` au format :
   "event": "message.received",
   "sessionId": "sess_abc123",
   "data": {
+    "id": "true_22997123456@c.us_3EB0ABC123",
     "from": "22997123456@c.us",
     "chatId": "22997123456@c.us",
-    "body": "Je veux déposer une PLAINTE",
-    "isGroup": false
+    "body": "Bonjour",
+    "type": "chat",
+    "isGroup": false,
+    "hasMedia": false
+  }
+}
+```
+
+**Message vocal ou pièce jointe** (OpenWA inclut le média en base64) :
+
+```json
+{
+  "event": "message.received",
+  "sessionId": "sess_abc123",
+  "data": {
+    "from": "22997123456@c.us",
+    "chatId": "22997123456@c.us",
+    "body": "",
+    "type": "ptt",
+    "hasMedia": true,
+    "isGroup": false,
+    "media": {
+      "mimetype": "audio/ogg; codecs=opus",
+      "filename": "voice.ogg",
+      "data": "<base64>"
+    }
   }
 }
 ```
@@ -105,13 +123,62 @@ OpenWA envoie les événements `message.received` au format :
 | `OPENWA_SESSION_ID` | ID de la session WhatsApp connectée |
 | `OPENWA_WEBHOOK_SECRET` | Secret HMAC pour vérifier les webhooks entrants |
 | `WA_VERIFY_TOKEN` | Token Meta (conservé pour compatibilité GET webhook) |
+| `CLOUDINARY_URL` | Stockage des médias WhatsApp en production (obligatoire sur Vercel) |
 
-### Logique métier
+### Logique métier — Chatbot conversationnel
 
-1. Un citoyen envoie un message WhatsApp contenant le mot **PLAINTE**
-2. OpenWA transmet l'événement au backend PGP-USS
-3. Un ticket est créé automatiquement (canal `CHATBOT`)
-4. Une confirmation avec le numéro de ticket est renvoyée via OpenWA (si configuré)
+Tout message entrant (hors groupes) déclenche le chatbot (`bot_engine.py`). Une session WhatsApp (`WhatsAppSession`) conserve l'état pendant **24 h**.
+
+#### Menu d'accueil
+
+```
+Bienvenue sur la plateforme PGP-USS Santé Bénin 🏥
+
+Que souhaitez-vous faire ?
+1. Déposer une plainte
+2. Suivre une plainte (avec votre numéro de ticket)
+
+Répondez par 1 ou 2.
+Vous pouvez aussi envoyer directement votre numéro de ticket (ex: PGP-2026-AB1234).
+```
+
+#### Suivi de plainte
+
+- Envoi direct du ticket `PGP-YYYY-XXXXXX`
+- Option **2** au menu, puis saisie du ticket
+- Mots-clés : « suivi », « statut », « ticket »…
+
+La réponse inclut : statut, priorité, date de dépôt, dernières étapes du workflow, demandes de complément éventuelles.
+
+#### Dépôt de plainte (étapes)
+
+| État | Contenu |
+|------|---------|
+| Établissement | Nom de l'hôpital / centre |
+| Catégorie | 1–7 (soins, médicaments, facturation…) |
+| Titre | Titre court |
+| Description | **Texte ou message vocal** 🎤 |
+| Pièces jointes | Photos, PDF, documents (max 5) — « terminé » ou « passer » |
+| Identité | Anonyme (1) ou nom complet (2) |
+| Confirmation | Récapitulatif puis validation |
+
+À la confirmation :
+- Création d'une plainte (canal `CHATBOT`, statut `SOUMISE`)
+- Upload des médias sur la plateforme (Cloudinary / stockage local)
+- Envoi du numéro de ticket via OpenWA
+- Entrée dans le journal d'audit immuable
+
+Commandes globales : `stop`, `annuler`, `quitter`, `menu` → annulation de la session.
+
+### Fichiers backend concernés
+
+| Fichier | Rôle |
+|---------|------|
+| `complaints/api_social.py` | Webhook WhatsApp / Facebook |
+| `complaints/bot_engine.py` | Machine à états du chatbot |
+| `complaints/whatsapp_parser.py` | Parsing messages, médias, tickets |
+| `complaints/whatsapp_media.py` | Upload vocal / PJ vers la plateforme |
+| `complaints/openwa_client.py` | Envoi des réponses WhatsApp |
 
 ### Configuration manuelle du webhook (OpenWA)
 
@@ -131,32 +198,52 @@ curl -X POST http://localhost:2785/api/sessions/<SESSION_ID>/webhooks \
 L'endpoint reste compatible avec l'ancien format Meta :
 
 - **GET** : vérification webhook (`hub.mode`, `hub.verify_token`, `hub.challenge`)
-- **POST Meta** : payload `entry[].changes[].value.messages[].text.body`
+- **POST Meta** : payload `entry[].changes[].value.messages[]`
 - **POST simplifié** : `{ "from": "...", "text": "..." }`
+
+> **Note Meta** : le parsing des types audio/image/document est préparé, mais le téléchargement des fichiers nécessite un appel API Meta supplémentaire (non implémenté).
 
 ## 2. Facebook Messenger
 
 L'endpoint est situé à : `/api/complaints/webhooks/facebook/`
 
 ### Validation du Webhook
+
 Facebook requiert une étape de vérification (GET) avant d'activer le webhook :
 - **Verify Token** : variable d'env **`FB_VERIFY_TOKEN`**
 - Le serveur répond avec le `hub.challenge` envoyé par Facebook.
 
 ### Réception des messages
-Les messages sont reçus via POST (format `entry[].messaging[]`). Si le texte contient "PLAINTE", une plainte est créée (canal `CHATBOT`) et un ticket est renvoyé dans la réponse.
+
+Les messages sont reçus via POST (format `entry[].messaging[]`). Si le texte contient « PLAINTE », une plainte est créée (canal `CHATBOT`) avec `pending_call_center_completion=True` pour complétion par le call center.
 
 ## 3. Application Mobile (Flutter / React Native)
 
 Les applications mobiles utilisent les mêmes APIs REST que le portail web.
 
 ### Authentification
+
 Utilisez le protocole **JWT** :
-1. POST `/api/auth/login/` pour obtenir les tokens.
+1. POST `/api/auth/login/phone/` pour obtenir les tokens.
 2. Ajoutez `Authorization: Bearer <token>` dans vos headers.
 
-### Endpoint dédié
-- **Mes plaintes** : `/api/complaints/mobile/my-complaints/` (GET) renvoie la liste filtrée pour l'utilisateur mobile.
+### Plaintes
 
-## 4. Notifications Push
+- **Liste** : `GET /api/complaints/` (filtrée par rôle, tri par défaut `-created_at`)
+- **Paramètre de tri** : `?ordering=-created_at` (plus récentes) ou `?ordering=created_at` (plus anciennes)
+- **Création** : `POST /api/complaints/create/`
+- **Médias différés** : `POST /api/complaints/{id}/deposit-media/`
+- **Suivi public** : `GET /api/complaints/track/{ticket_number}/`
+
+## 4. Journal d'audit immuable
+
+Toutes les actions sensibles (plaintes, connexions, modifications utilisateurs, exports) sont enregistrées dans un journal **append-only** avec chaîne de hachage.
+
+- **API** : `GET /api/audit/` (lecture seule)
+- **Accès** : `ADMIN_PLATEFORME`, `CABINET` (ministère)
+- **Vérification d'intégrité** : `GET /api/audit/verify-chain/`
+- **Interface** : `/dashboard/journal-audit`
+
+## 5. Notifications Push
+
 Pour les notifications push réelles, nous recommandons l'utilisation de **Firebase Cloud Messaging (FCM)**. La structure est prête dans le modèle `Notification` (type='PUSH').
