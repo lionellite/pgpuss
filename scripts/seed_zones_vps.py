@@ -2,10 +2,8 @@
 Seed des 34 zones sanitaires officielles du Bénin.
 Décret n° 2022-148 du 02 mars 2022.
 
-Copiez-collez ce fichier sur le VPS puis exécutez :
-  docker compose exec backend python manage.py shell < /scripts/seed_zones_vps.py
-OU copiez le contenu et collez-le dans :
-  docker compose exec backend python manage.py shell
+Usage (depuis le VPS):
+  docker exec -i pgpuss-backend python manage.py shell < /root/pgpuss/scripts/seed_zones_vps.py
 """
 from establishments.models import Region, ZoneSanitaire, Establishment, EstablishmentType
 
@@ -21,67 +19,78 @@ for name, code in REGIONS_DATA:
     region_map[code] = r
 
 ZONES_DATA = [
-    # (nom, code, region_code, communes, hôpital_de_zone, type_hôpital)
     # ALIBORI
-    ("Zone Sanitaire Banikoara", "ZS-ALI-1", "ALI", "Banikoara", "Hôpital de Zone de Banikoara", "HZ"),
-    ("Zone Sanitaire Gogounou/Ségbana", "ZS-ALI-2", "ALI", "Gogounou, Ségbana", "Hôpital de Zone de Gogounou", "HZ"),
-    ("Zone Sanitaire Kandi/Malanville/Karimama", "ZS-ALI-3", "ALI", "Kandi, Malanville, Karimama", "Hôpital de Zone de Kandi", "HZ"),
-    # ATACORA
-    ("Zone Sanitaire Cobly/Boukoumbé/Matéri/Tanguiéta", "ZS-ATA-1", "ATA", "Cobly, Boukoumbé, Matéri, Tanguiéta", "Hôpital Saint-Jean de Dieu de Tanguiéta", "HZ"),
-    ("Zone Sanitaire Kérou/Kouandé/Péhunco", "ZS-ATA-2", "ATA", "Kérou, Kouandé, Péhunco", "Hôpital de Zone de Kouandé", "HZ"),
-    ("Zone Sanitaire Djougou/Copargo/Ouaké", "ZS-ATA-3", "ATA", "Djougou, Copargo, Ouaké", "Hôpital de Zone de Djougou", "HZ"),
-    # ATLANTIQUE
-    ("Zone Sanitaire Abomey-Calavi/So-Ava", "ZS-ATL-1", "ATL", "Abomey-Calavi, So-Ava", "Hôpital de Zone d'Abomey-Calavi", "HZ"),
-    ("Zone Sanitaire Allada/Kpomassè/Toffo", "ZS-ATL-2", "ATL", "Allada, Kpomassè, Toffo", "Hôpital de Zone d'Allada", "HZ"),
-    ("Zone Sanitaire Ouidah/Kpomassè", "ZS-ATL-3", "ATL", "Ouidah, Kpomassè", "Hôpital de Zone de Ouidah", "HZ"),
-    ("Zone Sanitaire Tori-Bossito/Zê", "ZS-ATL-4", "ATL", "Tori-Bossito, Zê", "Centre de Santé de Tori-Bossito", "CS"),
+    ("Zone Sanitaire Malanville-Karimama", "ZS-ALI-1", "ALI", "Malanville, Karimama", "Hôpital de Zone de Malanville", "HZ"),
+    ("Zone Sanitaire Kandi-Gogounou-Ségbana", "ZS-ALI-2", "ALI", "Kandi, Gogounou, Ségbana", "Hôpital de Zone de Kandi", "HZ"),
+    ("Zone Sanitaire Banikoara", "ZS-ALI-3", "ALI", "Banikoara", "Hôpital de Zone de Banikoara", "HZ"),
+    
     # BORGOU
-    ("Zone Sanitaire Parakou/N'Dali", "ZS-BOR-1", "BOR", "Parakou, N'Dali", "CHU de Parakou", "CHU"),
-    ("Zone Sanitaire Bembéréké/Sinendé", "ZS-BOR-2", "BOR", "Bembéréké, Sinendé", "Hôpital de Zone de Bembéréké", "HZ"),
-    ("Zone Sanitaire Nikki/Kalalé/Pèrèrè", "ZS-BOR-3", "BOR", "Nikki, Kalalé, Pèrèrè", "Hôpital de Zone de Nikki", "HZ"),
+    ("Zone Sanitaire Bembèrèkè-Sinendé", "ZS-BOR-1", "BOR", "Bembèrèkè, Sinendé", "Hôpital de Zone de Bembèrèkè", "HZ"),
+    ("Zone Sanitaire Nikki-Kalalé-Pèrèrè", "ZS-BOR-2", "BOR", "Nikki, Kalalé, Pèrèrè", "Hôpital de Zone de Nikki", "HZ"),
+    ("Zone Sanitaire Parakou-N'Dali", "ZS-BOR-3", "BOR", "Parakou, N'Dali", "CHU de Parakou", "CHU"),
     ("Zone Sanitaire Tchaourou", "ZS-BOR-4", "BOR", "Tchaourou", "Hôpital de Zone de Tchaourou", "HZ"),
-    # COLLINES
-    ("Zone Sanitaire Dassa-Zoumè/Glazoué", "ZS-COL-1", "COL", "Dassa-Zoumè, Glazoué", "Hôpital de Zone de Dassa-Zoumè", "HZ"),
-    ("Zone Sanitaire Bantè/Savalou", "ZS-COL-2", "COL", "Bantè, Savalou", "Hôpital de Zone de Savalou", "HZ"),
-    ("Zone Sanitaire Ouèssè/Savè", "ZS-COL-3", "COL", "Ouèssè, Savè", "Hôpital de Zone de Savè", "HZ"),
-    # COUFFO
-    ("Zone Sanitaire Aplahoué/Djakotomè/Dogbo", "ZS-COU-1", "COU", "Aplahoué, Djakotomè, Dogbo", "Hôpital de Zone d'Aplahoué", "HZ"),
-    ("Zone Sanitaire Klouékanmè/Lalo/Toviklin", "ZS-COU-2", "COU", "Klouékanmè, Lalo, Toviklin", "Hôpital de Zone de Klouékanmè", "HZ"),
+    
+    # ATACORA
+    ("Zone Sanitaire Tanguiéta-Cobly-Matéri", "ZS-ATA-1", "ATA", "Tanguiéta, Cobly, Matéri", "Hôpital Saint-Jean de Dieu de Tanguiéta", "HZ"),
+    ("Zone Sanitaire Natitingou-Boukoumbé-Toucountounai", "ZS-ATA-2", "ATA", "Natitingou, Boukoumbé, Toucountounai", "CHR Atacora-Donga", "CHR"),
+    ("Zone Sanitaire Kouandé-Oussa-Péhunco-Kérou", "ZS-ATA-3", "ATA", "Kouandé, Oussa, Péhunco, Kérou", "Hôpital de Zone de Kouandé", "HZ"),
+    
     # DONGA
     ("Zone Sanitaire Bassila", "ZS-DON-1", "DON", "Bassila", "Hôpital de Zone de Bassila", "HZ"),
-    ("Zone Sanitaire Natitingou/Boukoumbé", "ZS-DON-2", "DON", "Natitingou, Boukoumbé", "CHR Atacora-Donga (Natitingou)", "CHR"),
-    # LITTORAL
-    ("Zone Sanitaire Cotonou 1/2/3", "ZS-LIT-1", "LIT", "Cotonou 1er, Cotonou 2e, Cotonou 3e", "CHU de Cotonou (CNHU-HKM)", "CHU"),
-    ("Zone Sanitaire Cotonou 4/5/6", "ZS-LIT-2", "LIT", "Cotonou 4e, Cotonou 5e, Cotonou 6e", "Hôpital de la Mère et de l'Enfant - Lagune", "HZ"),
-    # MONO
-    ("Zone Sanitaire Lokossa/Athiémé", "ZS-MON-1", "MON", "Lokossa, Athiémé", "Hôpital de Zone de Lokossa", "HZ"),
-    ("Zone Sanitaire Comè/Bopa/Grand-Popo/Houéyogbé", "ZS-MON-2", "MON", "Comè, Bopa, Grand-Popo, Houéyogbé", "Hôpital de Zone de Comè", "HZ"),
-    # OUÉMÉ
-    ("Zone Sanitaire Porto-Novo/Aguégués/Sèmè-Kpodji", "ZS-OUE-1", "OUE", "Porto-Novo, Aguégués, Sèmè-Kpodji", "CHD Ouémé-Plateau (Porto-Novo)", "CHR"),
-    ("Zone Sanitaire Adjohoun/Dangbo/Bonou", "ZS-OUE-2", "OUE", "Adjohoun, Dangbo, Bonou", "Hôpital de Zone d'Adjohoun", "HZ"),
-    ("Zone Sanitaire Akpro-Missérété/Avrankou/Adjarra", "ZS-OUE-3", "OUE", "Akpro-Missérété, Avrankou, Adjarra", "Hôpital de Zone d'Akpro-Missérété", "HZ"),
-    ("Zone Sanitaire Ifangni/Sakété/Kétou/Pobè", "ZS-OUE-4", "OUE", "Ifangni, Sakété, Kétou, Pobè", "Hôpital de Zone de Sakété", "HZ"),
-    # PLATEAU
-    ("Zone Sanitaire Adja-Ouèrè/Kétou/Pobè", "ZS-PLA-1", "PLA", "Adja-Ouèrè, Kétou, Pobè", "Hôpital de Zone de Pobè", "HZ"),
-    ("Zone Sanitaire Ifangni/Sakété", "ZS-PLA-2", "PLA", "Ifangni, Sakété", "Hôpital de Zone d'Ifangni", "HZ"),
+    ("Zone Sanitaire Djougou-Copargo-Ouaké", "ZS-DON-2", "DON", "Djougou, Copargo, Ouaké", "Hôpital de Zone de Djougou", "HZ"),
+    
     # ZOU
-    ("Zone Sanitaire Abomey/Agbangnizoun/Zogbodomey", "ZS-ZOU-1", "ZOU", "Abomey, Agbangnizoun, Zogbodomey", "Hôpital de Zone d'Abomey", "HZ"),
-    ("Zone Sanitaire Bohicon/Zakpota/Zogbodomey", "ZS-ZOU-2", "ZOU", "Bohicon, Zakpota, Zogbodomey", "Hôpital de Zone de Bohicon", "HZ"),
-    ("Zone Sanitaire Covè/Ouinhi/Za-Kpota/Djidja", "ZS-ZOU-3", "ZOU", "Covè, Ouinhi, Za-Kpota, Djidja", "Hôpital de Zone de Covè", "HZ"),
+    ("Zone Sanitaire Djidja-Abomey-Agbangnizoun", "ZS-ZOU-1", "ZOU", "Djidja, Abomey, Agbangnizoun", "Hôpital de Zone d'Abomey", "HZ"),
+    ("Zone Sanitaire Bohicon-Zakpota-Zogbodomey", "ZS-ZOU-2", "ZOU", "Bohicon, Zakpota, Zogbodomey", "Hôpital de Zone de Bohicon", "HZ"),
+    ("Zone Sanitaire Covè-Ouinhi-Zangnado", "ZS-ZOU-3", "ZOU", "Covè, Ouinhi, Zangnado", "Hôpital de Zone de Covè", "HZ"),
+    
+    # COLLINES
+    ("Zone Sanitaire Dassa-Zoumè-Glazoué", "ZS-COL-1", "COL", "Dassa-Zoumè, Glazoué", "Hôpital de Zone de Dassa-Zoumè", "HZ"),
+    ("Zone Sanitaire Savalou-Bantè", "ZS-COL-2", "COL", "Savalou, Bantè", "Hôpital de Zone de Savalou", "HZ"),
+    ("Zone Sanitaire Savè-Ouèssè", "ZS-COL-3", "COL", "Savè, Ouèssè", "Hôpital de Zone de Savè", "HZ"),
+    
+    # MONO
+    ("Zone Sanitaire Lokossa-Athiémé", "ZS-MON-1", "MON", "Lokossa, Athiémé", "Hôpital de Zone de Lokossa", "HZ"),
+    ("Zone Sanitaire Comè-Bopa-Houéyogbé-Grand-Popo", "ZS-MON-2", "MON", "Comè, Bopa, Houéyogbé, Grand-Popo", "Hôpital de Zone de Comè", "HZ"),
+    
+    # COUFFO
+    ("Zone Sanitaire Aplahoué-Djakotomé-Dogbo", "ZS-COU-1", "COU", "Aplahoué, Djakotomé, Dogbo", "Hôpital de Zone d'Aplahoué", "HZ"),
+    ("Zone Sanitaire Klouékanmè-Toviklin-Lalo", "ZS-COU-2", "COU", "Klouékanmè, Toviklin, Lalo", "Hôpital de Zone de Klouékanmè", "HZ"),
+    
+    # OUÉMÉ
+    ("Zone Sanitaire Adjohoun-Bonou-Dangbo", "ZS-OUE-1", "OUE", "Adjohoun, Bonou, Dangbo", "Hôpital de Zone d'Adjohoun", "HZ"),
+    ("Zone Sanitaire Avrankou-Adjarra-Akpro-Missérété", "ZS-OUE-2", "OUE", "Avrankou, Adjarra, Akpro-Missérété", "Hôpital de Zone d'Akpro-Missérété", "HZ"),
+    ("Zone Sanitaire Porto-Novo-Aguégués-Sèmè-Podji", "ZS-OUE-3", "OUE", "Porto-Novo, Aguégués, Sèmè-Podji", "CHD Ouémé-Plateau", "CHR"),
+    
+    # PLATEAU
+    ("Zone Sanitaire Pobè-Kétou-Adja-Ouèrè", "ZS-PLA-1", "PLA", "Pobè, Kétou, Adja-Ouèrè", "Hôpital de Zone de Pobè", "HZ"),
+    ("Zone Sanitaire Sakété-Ifangni", "ZS-PLA-2", "PLA", "Sakété, Ifangni", "Hôpital de Zone de Sakété", "HZ"),
+    
+    # ATLANTIQUE
+    ("Zone Sanitaire Allada-Toffo-Zê", "ZS-ATL-1", "ATL", "Allada, Toffo, Zê", "Hôpital de Zone d'Allada", "HZ"),
+    ("Zone Sanitaire Abomey-Calavi-Sô-Ava", "ZS-ATL-2", "ATL", "Abomey-Calavi, Sô-Ava", "Hôpital de Zone d'Abomey-Calavi", "HZ"),
+    ("Zone Sanitaire Ouidah-Kpomassè-Tori-Bossito", "ZS-ATL-3", "ATL", "Ouidah, Kpomassè, Tori-Bossito", "Hôpital de Zone de Ouidah", "HZ"),
+    
+    # LITTORAL
+    ("Zone Sanitaire Cotonou 1 et 4", "ZS-LIT-1", "LIT", "Cotonou 1, Cotonou 4", "Centre de Santé Cotonou 1 et 4", "CS"),
+    ("Zone Sanitaire Cotonou 2 et 3", "ZS-LIT-2", "LIT", "Cotonou 2, Cotonou 3", "CHU de Cotonou (CNHU-HKM)", "CHU"),
+    ("Zone Sanitaire Cotonou 5", "ZS-LIT-3", "LIT", "Cotonou 5", "Hôpital de la Mère et de l'Enfant", "HZ"),
+    ("Zone Sanitaire Cotonou 6", "ZS-LIT-4", "LIT", "Cotonou 6", "Centre de Santé Cotonou 6", "CS"),
 ]
+
+# On vide les anciennes données pour être sûr de repartir à neuf
+ZoneSanitaire.objects.all().delete()
 
 zones_created = 0
 hospitals_created = 0
 
 for name, code, rcode, communes, hz_name, hz_type in ZONES_DATA:
     region = region_map[rcode]
-    z, created = ZoneSanitaire.objects.update_or_create(
+    z, _ = ZoneSanitaire.objects.update_or_create(
         code=code,
         defaults={"name": name, "region": region, "communes": communes, "is_active": True},
     )
-    if created:
-        zones_created += 1
-        print(f"  ✓ {name}")
+    zones_created += 1
 
     hz, hz_created = Establishment.objects.get_or_create(
         name=hz_name,
@@ -93,6 +102,4 @@ for name, code, rcode, communes, hz_name, hz_type in ZONES_DATA:
     if hz_created:
         hospitals_created += 1
 
-print(f"\n🎉 {zones_created} zones créées, {hospitals_created} hôpitaux créés")
-print(f"   Total zones : {ZoneSanitaire.objects.count()}")
-print(f"   Total hôpitaux : {Establishment.objects.count()}")
+print(f"🎉 {zones_created} zones créées (avec les bons noms !), {hospitals_created} hôpitaux créés")
