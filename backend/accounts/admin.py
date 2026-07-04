@@ -1,23 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from .models import User
-
-
-class CustomUserCreationForm(BaseUserCreationForm):
-    class Meta:
-        model = User
-        fields = ('email', 'phone', 'first_name', 'last_name', 'role', 'establishment', 'zone_sanitaire', 'departement')
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    add_form = CustomUserCreationForm
     list_display = ['email', 'first_name', 'last_name', 'role', 'establishment', 'zone_sanitaire', 'is_active', 'created_at']
     list_filter = ['role', 'is_active', 'created_at']
     search_fields = ['email', 'phone', 'first_name', 'last_name']
     ordering = ['-created_at']
-    autocomplete_fields = ['establishment', 'zone_sanitaire']
+    autocomplete_fields = ['establishment']
     fieldsets = (
         (None, {'fields': ('email', 'phone', 'password')}),
         ('Informations personnelles', {'fields': ('first_name', 'last_name', 'avatar')}),
