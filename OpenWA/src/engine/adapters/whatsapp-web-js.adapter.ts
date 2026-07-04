@@ -171,16 +171,49 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           };
         }
 
-        // Handle media
+        // Handle media — save to disk, send only metadata + local URL in webhook
+        // Avoids sending huge base64 blobs (~7MB per image) that kill the backend.
         if (msg.hasMedia) {
           try {
             const media = await msg.downloadMedia();
             if (media) {
-              incomingMessage.media = {
-                mimetype: media.mimetype,
-                filename: media.filename || undefined,
-                data: media.data,
-              };
+              // Save to the local media storage path and expose via a served URL
+              const fs = await import('fs');
+              const pathMod = await import('path');
+              const crypto = await import('crypto');
+
+              const ext = media.mimetype.split('/')[1]?.split(';')[0] || 'bin';
+              const filename = media.filename || `media_${crypto.randomBytes(8).toString('hex')}.${ext}`;
+              const storagePath = process.env.STORAGE_LOCAL_PATH || '/app/data/media';
+              const filePath = pathMod.default.join(storagePath, filename);
+
+              try {
+                // Ensure directory exists
+                if (!fs.default.existsSync(storagePath)) {
+                  fs.default.mkdirSync(storagePath, { recursive: true });
+                }
+                fs.default.writeFileSync(filePath, Buffer.from(media.data, 'base64'));
+
+                // Build a URL the backend can fetch — uses the OpenWA API port
+                const port = process.env.PORT || '2785';
+                const mediaUrl = `http://openwa:${port}/media/${filename}`;
+
+                incomingMessage.media = {
+                  mimetype: media.mimetype,
+                  filename: filename,
+                  data: undefined, // Do NOT include raw base64
+                  url: mediaUrl,
+                } as any;
+              } catch (writeError) {
+                this.logger.error('Error saving media to disk, falling back to base64', String(writeError));
+                // Fallback: only send if it's audio (small); skip large images
+                const isAudio = media.mimetype.startsWith('audio/');
+                incomingMessage.media = {
+                  mimetype: media.mimetype,
+                  filename: media.filename || undefined,
+                  data: isAudio ? media.data : undefined,
+                };
+              }
             }
           } catch (error) {
             this.logger.error('Error downloading media', String(error));

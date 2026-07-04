@@ -30,6 +30,30 @@ class InMemoryUpload:
 
 
 def _decode_media_payload(media: dict) -> InMemoryUpload | None:
+    """Décode un payload média WhatsApp.
+
+    Supporte deux modes :
+    - Ancien : base64 dans le champ ``data``
+    - Nouveau (recommandé) : URL locale OpenWA dans le champ ``url``
+    """
+    # --- Mode URL (fichier sauvegardé sur le disque OpenWA) ---
+    url = media.get("url")
+    if url:
+        try:
+            import urllib.request as _req
+            with _req.urlopen(url, timeout=30) as resp:
+                raw_bytes = resp.read()
+        except Exception as exc:
+            logger.warning("Impossible de télécharger le média depuis %s: %s", url, exc)
+            # Essaie le fallback base64 si présent
+            raw_bytes = None
+
+        if raw_bytes:
+            mimetype = (media.get("mimetype") or "application/octet-stream").strip()
+            filename = (media.get("filename") or "").strip() or _default_filename(mimetype)
+            return InMemoryUpload(raw_bytes, filename, mimetype)
+
+    # --- Mode base64 (rétrocompatibilité / audio court) ---
     raw = media.get("data")
     if not raw:
         return None
@@ -43,6 +67,7 @@ def _decode_media_payload(media: dict) -> InMemoryUpload | None:
     mimetype = (media.get("mimetype") or "application/octet-stream").strip()
     filename = (media.get("filename") or "").strip() or _default_filename(mimetype)
     return InMemoryUpload(data, filename, mimetype)
+
 
 
 def _default_filename(mimetype: str) -> str:

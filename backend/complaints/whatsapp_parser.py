@@ -17,7 +17,8 @@ TICKET_NUMBER_PATTERN = re.compile(r"PGP-\d{4}-[A-Z0-9]{6}", re.IGNORECASE)
 class WhatsAppMedia:
     mimetype: str
     filename: str | None = None
-    data: str | None = None  # base64
+    data: str | None = None  # base64 (audio) ou None quand url est présent
+    url: str | None = None   # URL locale OpenWA pour téléchargement différé
 
 
 @dataclass
@@ -61,13 +62,16 @@ def _parse_media_block(raw: dict | None) -> WhatsAppMedia | None:
         return None
     data = raw.get("data")
     mimetype = raw.get("mimetype")
-    if not data and not mimetype:
+    url = raw.get("url")  # URL locale OpenWA (nouvelle approche sans base64)
+    if not data and not mimetype and not url:
         return None
     return WhatsAppMedia(
         mimetype=(mimetype or "application/octet-stream").strip(),
         filename=raw.get("filename"),
         data=data,
+        url=url,
     )
+
 
 
 def parse_openwa_payload(data: dict) -> WhatsAppIncomingMessage | None:

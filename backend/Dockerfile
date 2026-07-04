@@ -25,4 +25,6 @@ COPY . /app/
 EXPOSE 8000
 
 # Commande par défaut (sera surchargée par docker-compose)
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+# --timeout 120s pour les gros payloads base64 (images WhatsApp)
+# --workers 2 pour traiter plusieurs requêtes en parallèle
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--max-requests", "500", "--max-requests-jitter", "50"]

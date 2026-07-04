@@ -159,11 +159,21 @@ async function bootstrap() {
     void bullBoardAuth.use(req, res, next);
   });
 
+  // Serve local media files (WhatsApp attachments saved by the adapter)
+  // so the backend can fetch them by URL instead of receiving huge base64 blobs.
+  const express = await import('express');
+  const mediaStoragePath = process.env.STORAGE_LOCAL_PATH || '/app/data/media';
+  if (!fs.existsSync(mediaStoragePath)) {
+    fs.mkdirSync(mediaStoragePath, { recursive: true });
+  }
+  app.use('/media', express.static(mediaStoragePath));
+
   const port = process.env.PORT || 2785;
   await app.listen(port);
 
   console.log(`🚀 OpenWA is running on: http://localhost:${port}`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+
 }
 
 void bootstrap();
