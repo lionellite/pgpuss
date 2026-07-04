@@ -21,10 +21,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie du projet
 COPY . /app/
 
+# Création des répertoires nécessaires et collectstatic
+# DJANGO_SECRET_KEY factice pour la phase de build uniquement
+RUN DJANGO_SECRET_KEY=build-only-secret \
+    python manage.py collectstatic --noinput --clear 2>/dev/null || \
+    mkdir -p /app/staticfiles
+
 # Port exposé
 EXPOSE 8000
 
-# Commande par défaut (sera surchargée par docker-compose)
+# Commande par défaut
 # --timeout 120s pour les gros payloads base64 (images WhatsApp)
 # --workers 2 pour traiter plusieurs requêtes en parallèle
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--max-requests", "500", "--max-requests-jitter", "50"]
+
