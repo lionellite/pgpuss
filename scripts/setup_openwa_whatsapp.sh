@@ -62,10 +62,27 @@ echo "==> QR Code WhatsApp (scannez avec votre téléphone) :"
 echo "   Dashboard : http://localhost:2886"
 echo "   API QR    : ${OPENWA_API_URL}/sessions/${SESSION_ID}/qr"
 echo ""
-echo "Ajoutez ces variables dans backend/.env ou docker-compose :"
-echo "  OPENWA_API_URL=${OPENWA_API_URL}"
-echo "  OPENWA_API_KEY=${OPENWA_API_KEY}"
-echo "  OPENWA_SESSION_ID=${SESSION_ID}"
-echo "  OPENWA_WEBHOOK_SECRET=${OPENWA_WEBHOOK_SECRET}"
+
+ENV_FILE=".env"
+if [[ -f "$ENV_FILE" ]]; then
+  echo "==> Mise à jour automatique de $ENV_FILE avec le nouveau SESSION_ID..."
+  # Remplacer la ligne OPENWA_SESSION_ID si elle existe, sinon l'ajouter
+  if grep -q "^OPENWA_SESSION_ID=" "$ENV_FILE"; then
+    sed -i "s/^OPENWA_SESSION_ID=.*/OPENWA_SESSION_ID=${SESSION_ID}/" "$ENV_FILE"
+  else
+    echo "OPENWA_SESSION_ID=${SESSION_ID}" >> "$ENV_FILE"
+  fi
+  echo "✓ $ENV_FILE mis à jour."
+  
+  echo "==> Redémarrage du backend pour appliquer le nouvel ID..."
+  docker compose restart backend || echo "Attention: échec du redémarrage du backend."
+else
+  echo "Ajoutez ces variables dans votre fichier .env ou docker-compose :"
+  echo "  OPENWA_API_URL=${OPENWA_API_URL}"
+  echo "  OPENWA_API_KEY=${OPENWA_API_KEY}"
+  echo "  OPENWA_SESSION_ID=${SESSION_ID}"
+  echo "  OPENWA_WEBHOOK_SECRET=${OPENWA_WEBHOOK_SECRET}"
+fi
+
 echo ""
 echo "Test : envoyez un message WhatsApp contenant le mot PLAINTE au numéro connecté."
