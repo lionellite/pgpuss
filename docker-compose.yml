@@ -8,6 +8,8 @@ services:
       - .env
     ports:
       - "8000:8000"
+    depends_on:
+      - redis
     restart: unless-stopped
     # Pas besoin de volumes bind-mount en production
     # La commande CMD est définie dans le Dockerfile (gunicorn)
@@ -62,5 +64,15 @@ services:
       - openwa
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: pgpuss-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 volumes:
   openwa_data:
+  redis_data:

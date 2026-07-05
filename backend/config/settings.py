@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
+    'drf_spectacular',
     # Local apps
     'accounts',
     'complaints',
@@ -90,6 +91,19 @@ DATABASES = {
     )
 }
 
+# Redis & Cache Settings
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -143,6 +157,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
@@ -156,6 +171,15 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+# Spectacular (Swagger/OpenAPI) Settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PGP-USS API',
+    'DESCRIPTION': 'Plateforme de Gestion des Plaintes des Usagers des Services de Santé - Bénin',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # CORS : accepter toutes les origines pour l'API REST (mobile + frontend)
