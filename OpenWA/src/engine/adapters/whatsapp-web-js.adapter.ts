@@ -203,7 +203,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
                   filename: filename,
                   data: undefined, // Do NOT include raw base64
                   url: mediaUrl,
-                } as any;
+                };
               } catch (writeError) {
                 this.logger.error('Error saving media to disk, falling back to base64', String(writeError));
                 // Fallback: only send if it's audio (small); skip large images

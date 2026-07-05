@@ -42,7 +42,8 @@ export interface IncomingMessage {
   media?: {
     mimetype: string;
     filename?: string;
-    data?: string; // base64
+    data?: string; // base64 (fallback audio court)
+    url?: string;  // URL locale OpenWA (fichier sauvegardé sur disque)
   };
   quotedMessage?: {
     id: string;

@@ -325,8 +325,11 @@ def process_state(session: WhatsAppSession, incoming: WhatsAppIncomingMessage, p
         )
 
     elif state == "AWAITING_DESCRIPTION":
-        if is_voice_message(incoming) and incoming.media and incoming.media.data:
-            data["voice"] = media_to_draft_dict(incoming.media)
+        # Message vocal : on accepte le type "ptt/audio" même si incoming.media est None
+        # (le fichier est sauvegardé côté OpenWA même si la référence n'est pas transmise)
+        if is_voice_message(incoming):
+            if incoming.media:
+                data["voice"] = media_to_draft_dict(incoming.media)
             if text:
                 data["description"] = text
             elif not data.get("description"):
@@ -335,7 +338,7 @@ def process_state(session: WhatsAppSession, incoming: WhatsAppIncomingMessage, p
             session.state = "AWAITING_MEDIA"
             session.save()
             return _media_step_prompt(data)
-        if is_attachment_message(incoming):
+        if is_attachment_message(incoming) or (incoming.has_media and not is_voice_message(incoming)):
             return (
                 "Pour déposer une pièce jointe, terminez d'abord la description.\n"
                 "Envoyez un texte ou un message vocal décrivant votre problème."
@@ -361,23 +364,34 @@ def process_state(session: WhatsAppSession, incoming: WhatsAppIncomingMessage, p
                 "2. Non, je vais donner mon nom complet"
             )
 
-        if is_attachment_message(incoming) and incoming.media and incoming.media.data:
-            attachments = list(data.get("attachments") or [])
-            if len(attachments) >= MAX_ATTACHMENTS:
+        # Pièce jointe : accepte si type connu (image/document/video) même si media=None
+        is_att = is_attachment_message(incoming) or (
+            incoming.has_media and not is_voice_message(incoming)
+        )
+        if is_att:
+            if incoming.media:
+                attachments = list(data.get("attachments") or [])
+                if len(attachments) >= MAX_ATTACHMENTS:
+                    return (
+                        f"Maximum {MAX_ATTACHMENTS} pièces jointes atteint.\n"
+                        "Tapez 'terminé' ou '1' pour continuer."
+                    )
+                attachments.append(media_to_draft_dict(incoming.media))
+                data["attachments"] = attachments
+                session.draft_data = data
+                session.save()
+                remaining = MAX_ATTACHMENTS - len(attachments)
                 return (
-                    f"Maximum {MAX_ATTACHMENTS} pièces jointes atteint.\n"
-                    "Tapez 'terminé' ou '1' pour continuer."
+                    f"✅ Pièce jointe reçue ({len(attachments)}/{MAX_ATTACHMENTS}).\n"
+                    f"Envoyez une autre pièce jointe ou tapez 'terminé' / '1' pour continuer"
+                    f" ({remaining} restante(s))."
                 )
-            attachments.append(media_to_draft_dict(incoming.media))
-            data["attachments"] = attachments
-            session.draft_data = data
-            session.save()
-            remaining = MAX_ATTACHMENTS - len(attachments)
-            return (
-                f"✅ Pièce jointe reçue ({len(attachments)}/{MAX_ATTACHMENTS}).\n"
-                f"Envoyez une autre pièce jointe ou tapez 'terminé' / '1' pour continuer"
-                f" ({remaining} restante(s))."
-            )
+            else:
+                # Fichier reçu mais non téléchargeable (taille, format)
+                return (
+                    "⚠️ Fichier reçu mais non lisible (format non supporté ?).\n"
+                    "Essayez un autre fichier ou tapez 'terminé' / '1' pour continuer."
+                )
 
         if is_voice_message(incoming):
             return (
