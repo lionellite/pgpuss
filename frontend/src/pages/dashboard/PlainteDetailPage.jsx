@@ -9,6 +9,7 @@ import ComplaintDocumentsEditor from '../../components/ComplaintDocumentsEditor'
 import toast from 'react-hot-toast'
 import { FiArrowLeft, FiUser, FiCheckCircle, FiLock, FiArrowUp, FiFileText, FiShield, FiXCircle, FiClock, FiBookOpen } from 'react-icons/fi'
 import { READ_ONLY_ROLES } from '../../constants/roles'
+import MediaViewer from '../../components/MediaViewer'
 
 export default function PlainteDetailPage() {
   const { id } = useParams()
@@ -364,46 +365,10 @@ export default function PlainteDetailPage() {
           <div className="glass-card" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Description</h3>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{complaint.description}</p>
-            {complaint.voice_file_url && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-muted)' }}>Message vocal déposé</div>
-                <audio controls src={complaint.voice_file_url} style={{ width: '100%', maxWidth: 420 }}>
-                  <track kind="captions" />
-                </audio>
-              </div>
-            )}
-            {complaint.attachments?.length > 0 && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Pièces jointes</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {complaint.attachments.map((att) => {
-                    const url = att.file_url || att.file
-                    const isAudio = (att.file_type || '').startsWith('audio/') || /\.(webm|mp3|m4a|wav|ogg)$/i.test(att.file_name || '')
-                    const isImage = (att.file_type || '').startsWith('image/')
-                    return (
-                      <div key={att.id} style={{ padding: '0.75rem', background: 'var(--bg-page)', borderRadius: 4, border: '1px solid var(--border-color)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                            {att.file_name}
-                          </a>
-                          <a className="btn btn-ghost btn-sm" href={url} download>
-                            Télécharger
-                          </a>
-                        </div>
-                        {isAudio && url && (
-                          <audio controls src={url} style={{ width: '100%', marginTop: '0.5rem' }}>
-                            <track kind="captions" />
-                          </audio>
-                        )}
-                        {isImage && url && (
-                          <img src={url} alt={att.file_name} style={{ maxWidth: '100%', marginTop: '0.5rem', borderRadius: 4 }} />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+            <MediaViewer
+              voiceUrl={complaint.voice_file_url}
+              attachments={complaint.attachments || []}
+            />
           </div>
           {complaint.resolution_notes && (
             <div className="glass-card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--color-primary)' }}>
