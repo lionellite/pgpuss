@@ -28,6 +28,7 @@ import AnalyticsPage from './pages/dashboard/AnalyticsPage'
 import UsersPage from './pages/dashboard/UsersPage'
 import ReferentialsAdminPage from './pages/dashboard/ReferentialsAdminPage'
 import EstablishmentsAdminPage from './pages/dashboard/EstablishmentsAdminPage'
+import ZonesSanitairesAdminPage from './pages/dashboard/ZonesSanitairesAdminPage'
 import InternalAgentsPage from './pages/dashboard/InternalAgentsPage'
 import CallCenterSocialInboxPage from './pages/dashboard/CallCenterSocialInboxPage'
 import AuditLogPage from './pages/dashboard/AuditLogPage'
@@ -103,6 +104,7 @@ export default function App() {
           <Route path="/dashboard/agents-internes" element={<PrivateRoute roles={['PFE']}><InternalAgentsPage /></PrivateRoute>} />
           <Route path="/dashboard/referentiels" element={<AdminPlateformeOnly><ReferentialsAdminPage /></AdminPlateformeOnly>} />
           <Route path="/dashboard/etablissements" element={<AdminPlateformeOnly><EstablishmentsAdminPage /></AdminPlateformeOnly>} />
+          <Route path="/dashboard/zones-sanitaires" element={<AdminPlateformeOnly><ZonesSanitairesAdminPage /></AdminPlateformeOnly>} />
           <Route path="/dashboard/social-inbox" element={<PrivateRoute roles={['AGENT_CALL_CENTER', 'ADMIN_PLATEFORME']}><CallCenterSocialInboxPage /></PrivateRoute>} />
           <Route path="/dashboard/journal-audit" element={<AuditLogRoute><AuditLogPage /></AuditLogRoute>} />
         </Route>

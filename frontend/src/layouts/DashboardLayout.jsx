@@ -34,6 +34,7 @@ const getNavItems = (role) => {
       { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Boîte sociale', socialInbox: true },
       { to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' },
       { to: '/dashboard/etablissements', icon: <FiMapPin aria-hidden />, label: 'Établissements' },
+      { to: '/dashboard/zones-sanitaires', icon: <FiMapPin aria-hidden />, label: 'Zones Sanitaires' },
       { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
       { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: 'Journal d\'audit' },
     )
@@ -51,6 +52,7 @@ const getNavItems = (role) => {
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
@@ -85,6 +87,8 @@ export default function DashboardLayout() {
     if (!location.pathname.includes('social-inbox')) {
       fetchPending()
     }
+    // Fermer le menu mobile au changement de page
+    setMobileOpen(false)
   }, [location.pathname, fetchPending])
 
   const visibleItems = getNavItems(user?.role)
@@ -98,8 +102,12 @@ export default function DashboardLayout() {
       <GovFlagBar />
 
       <div className="dashboard-body">
+        {/* Overlay mobile */}
+        {mobileOpen && (
+          <div className="dashboard-sidebar-overlay" onClick={() => setMobileOpen(false)} />
+        )}
       <aside
-        className={`dashboard-sidebar${collapsed ? ' is-collapsed' : ''}`}
+        className={`dashboard-sidebar${collapsed ? ' is-collapsed' : ''}${mobileOpen ? ' is-mobile-open' : ''}`}
         aria-label="Navigation du tableau de bord"
       >
         <div className="dashboard-sidebar__head">
@@ -182,7 +190,17 @@ export default function DashboardLayout() {
 
       <div className="dashboard-main">
         <header className="dashboard-topbar">
-          <span className="dashboard-topbar__title">{currentPage}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              type="button"
+              className="btn-icon mobile-menu-toggle"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Ouvrir le menu"
+            >
+              <FiMenu aria-hidden />
+            </button>
+            <span className="dashboard-topbar__title">{currentPage}</span>
+          </div>
           <div className="site-header__actions">
             <Link to="/espace/notifications" className="notif-link" aria-label="Notifications">
               <FiBell aria-hidden />

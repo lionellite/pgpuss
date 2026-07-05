@@ -182,6 +182,19 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
 
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Porto-Novo'
+# Délai max d'une tâche = 10 min (ex: upload Cloudinary de grosses vidéos)
+CELERY_TASK_SOFT_TIME_LIMIT = 540
+CELERY_TASK_TIME_LIMIT = 600
+# Réessayer 3 fois en cas d'échec, avec 60s de délai
+CELERY_TASK_MAX_RETRIES = 3
+
 # CORS : accepter toutes les origines pour l'API REST (mobile + frontend)
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',

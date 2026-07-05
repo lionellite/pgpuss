@@ -66,6 +66,19 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --omit=dev && npm cache clean --force
 
+# Patch whatsapp-web.js : canCheckStatusRankingPosterGating n'est plus une fonction
+# dans les versions récentes de WhatsApp Web. L'optional chaining évite le crash.
+RUN node -e "\
+const fs = require('fs');\
+const file = '/app/node_modules/whatsapp-web.js/src/util/Injected/Utils.js';\
+if (fs.existsSync(file)) {\
+  const c = fs.readFileSync(file, 'utf8');\
+  const p = c.replace(/\.canCheckStatusRankingPosterGating\(\)/g, '?.canCheckStatusRankingPosterGating?.()');\
+  fs.writeFileSync(file, p);\
+  console.log('✓ whatsapp-web.js patched');\
+} else { console.log('File not found, skipping patch'); }\
+"
+
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 

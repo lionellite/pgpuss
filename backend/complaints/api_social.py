@@ -61,15 +61,14 @@ class WhatsAppWebhookView(APIView):
             return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data or {}
-        incoming = parse_incoming_message(data)
-        if not incoming:
-            return Response({"status": "ignored"})
 
-        # Délégation au moteur conversationnel WhatsApp (bot_engine)
-        from .bot_engine import handle_incoming_message
-        handle_incoming_message(incoming)
+        # Délégation asynchrone au worker Celery via Redis
+        # → La réponse HTTP est renvoyée immédiatement (< 100ms)
+        # → Le traitement lourd (upload Cloudinary, parsing, DB) se fait en arrière-plan
+        from .tasks import process_whatsapp_webhook
+        process_whatsapp_webhook.delay(data)
 
-        return Response({"status": "received"})
+        return Response({"status": "queued"})
 
 
 class FacebookWebhookView(APIView):

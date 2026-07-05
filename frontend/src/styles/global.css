@@ -477,6 +477,8 @@ button, input, select, textarea {
   position: sticky;
   top: 0;
   height: 100vh;
+  z-index: 150;
+  transition: transform 0.3s ease, width 0.3s ease;
 }
 
 .dashboard-sidebar.is-collapsed {
@@ -578,6 +580,14 @@ button, input, select, textarea {
   position: sticky;
   top: 0;
   z-index: 50;
+}
+
+.mobile-menu-toggle {
+  display: none;
+}
+
+.dashboard-sidebar-overlay {
+  display: none;
 }
 
 .dashboard-topbar__title {
@@ -725,6 +735,33 @@ button, input, select, textarea {
 @media (max-width: 900px) {
   .hero__search {
     text-align: left;
+  }
+
+  .dashboard-sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    width: 260px; /* Fixed width on mobile */
+  }
+
+  .dashboard-sidebar.is-mobile-open {
+    transform: translateX(0);
+  }
+
+  .dashboard-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 140;
+    backdrop-filter: blur(2px);
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .dashboard-main {
+    width: 100%;
   }
 }
 

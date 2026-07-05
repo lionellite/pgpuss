@@ -2,8 +2,8 @@ from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
 
 from accounts.models import UserRole
-from .models import Establishment, Service
-from .serializers import EstablishmentSerializer, ServiceSerializer
+from .models import Establishment, Service, ZoneSanitaire
+from .serializers import EstablishmentSerializer, ServiceSerializer, ZoneSanitaireSerializer
 
 
 class IsAdminPlateforme(permissions.BasePermission):
@@ -45,4 +45,18 @@ class AdminServiceListCreateView(generics.ListCreateAPIView):
 class AdminServiceDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Service.objects.select_related("establishment")
     serializer_class = ServiceSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminPlateforme]
+
+
+class AdminZoneSanitaireListCreateView(generics.ListCreateAPIView):
+    queryset = ZoneSanitaire.objects.select_related("region").order_by("name")
+    serializer_class = ZoneSanitaireSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminPlateforme]
+    filterset_fields = ["region", "is_active"]
+    search_fields = ["name"]
+
+
+class AdminZoneSanitaireDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ZoneSanitaire.objects.select_related("region")
+    serializer_class = ZoneSanitaireSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminPlateforme]

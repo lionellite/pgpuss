@@ -146,6 +146,14 @@ export const adminEstablishmentsAPI = {
   serviceDelete: (serviceId) => api.delete(`/admin/establishments/services/${serviceId}/`),
 }
 
+/** Administration plateforme — zones sanitaires */
+export const adminZonesSanitairesAPI = {
+  list: (params) => api.get('/admin/establishments/zones/', { params }),
+  create: (data) => api.post('/admin/establishments/zones/', data),
+  update: (id, data) => api.patch(`/admin/establishments/zones/${id}/`, data),
+  delete: (id) => api.delete(`/admin/establishments/zones/${id}/`),
+}
+
 /** Priorités configurables et permissions par rôle */
 export const adminReferentialsAPI = {
   priorityLevels: () => api.get('/admin/priority-levels/'),

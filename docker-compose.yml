@@ -64,6 +64,17 @@ services:
       - openwa
     restart: unless-stopped
 
+  celery-worker:
+    build: ./backend
+    container_name: pgpuss-celery-worker
+    env_file:
+      - .env
+    command: celery -A config worker --loglevel=info --concurrency=2
+    depends_on:
+      - redis
+      - backend
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: pgpuss-redis
