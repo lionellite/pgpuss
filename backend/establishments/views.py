@@ -21,9 +21,13 @@ class ZoneSanitaireListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     filterset_fields = ['region', 'is_active']
     search_fields = ['name', 'communes']
+    # Les 34 zones sont peu nombreuses → on désactive la pagination
+    # pour que le frontend les reçoive toutes en un seul appel.
+    pagination_class = None
 
     def get_queryset(self):
-        return ZoneSanitaire.objects.filter(is_active=True).select_related('region')
+        return ZoneSanitaire.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
+
 
 
 @method_decorator(cache_page(60 * 5), name='dispatch')
