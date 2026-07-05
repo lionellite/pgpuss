@@ -13,7 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 def _max_bytes():
+    """Limite upload pour le mode serverless (Vercel) - 4 Mo par défaut."""
     return getattr(settings, 'VERCEL_MAX_UPLOAD_BYTES', 4 * 1024 * 1024)
+
+
+def _max_bytes_whatsapp():
+    """Limite upload pour les pièces jointes WhatsApp - 50 Mo par défaut sur VPS."""
+    return getattr(settings, 'WHATSAPP_MAX_UPLOAD_BYTES', 50 * 1024 * 1024)
 
 
 def _is_serverless():
@@ -125,14 +131,15 @@ def save_voice_file(complaint: Complaint, uploaded_file) -> Response | None:
     return None
 
 
-def save_attachment(complaint: Complaint, uploaded_file) -> Response | None:
+def save_attachment(complaint: Complaint, uploaded_file, from_whatsapp: bool = False) -> Response | None:
     missing = _require_cloudinary()
     if missing:
         return missing
 
-    if uploaded_file.size > _max_bytes():
+    max_size = _max_bytes_whatsapp() if from_whatsapp else _max_bytes()
+    if uploaded_file.size > max_size:
         return Response(
-            {'error': f'La pièce jointe ne doit pas dépasser {_max_bytes() // (1024 * 1024)} Mo.'},
+            {'error': f'La pièce jointe ne doit pas dépasser {max_size // (1024 * 1024)} Mo.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
     ct = getattr(uploaded_file, 'content_type', '') or ''
@@ -156,7 +163,9 @@ def save_attachment(complaint: Complaint, uploaded_file) -> Response | None:
     folder = f'attachments/{complaint.id}'
 
     if _cloudinary_url():
-        resource_type = 'video' if ct.startswith('audio/') else 'auto'
+        # video/ et audio/ → resource_type='video' (Cloudinary traite audio via video)
+        is_media = ct.startswith('audio/') or ct.startswith('video/')
+        resource_type = 'video' if is_media else 'auto'
         result = _cloudinary_upload(uploaded_file, folder=folder, resource_type=resource_type)
         att = Attachment(
             complaint=complaint,

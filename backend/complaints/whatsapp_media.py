@@ -114,7 +114,7 @@ def apply_draft_media_to_complaint(complaint: Complaint, draft_data: dict) -> li
         if not uploaded:
             warnings.append(f"Pièce jointe {idx} : fichier illisible.")
             continue
-        err = _response_error(save_attachment(complaint, uploaded))
+        err = _response_error(save_attachment(complaint, uploaded, from_whatsapp=True))
         if err:
             warnings.append(f"Pièce jointe {idx} : {err}")
 
