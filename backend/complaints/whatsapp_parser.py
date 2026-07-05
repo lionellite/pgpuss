@@ -217,4 +217,5 @@ def media_to_draft_dict(media: WhatsAppMedia) -> dict:
         "mimetype": media.mimetype,
         "filename": media.filename,
         "data": media.data,
+        "url": media.url,  # URL locale OpenWA pour téléchargement différé
     }
