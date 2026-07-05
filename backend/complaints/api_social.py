@@ -62,13 +62,27 @@ class WhatsAppWebhookView(APIView):
 
         data = request.data or {}
 
-        # Délégation asynchrone au worker Celery via Redis
-        # → La réponse HTTP est renvoyée immédiatement (< 100ms)
-        # → Le traitement lourd (upload Cloudinary, parsing, DB) se fait en arrière-plan
-        from .tasks import process_whatsapp_webhook
-        process_whatsapp_webhook.delay(data)
+        # Tentative de délégation asynchrone au worker Celery via Redis.
+        # Si Redis n'est pas disponible, on bascule sur le traitement synchrone
+        # pour ne jamais bloquer la réponse au webhook OpenWA.
+        try:
+            from .tasks import process_whatsapp_webhook
+            process_whatsapp_webhook.delay(data)
+            return Response({"status": "queued"})
+        except Exception as celery_err:
+            logger.warning(
+                "[Webhook] Celery indisponible (%s), basculement en mode synchrone.", celery_err
+            )
 
-        return Response({"status": "queued"})
+        # Mode synchrone de secours (si Redis/Celery est injoignable)
+        incoming = parse_incoming_message(data)
+        if not incoming:
+            return Response({"status": "ignored"})
+
+        from .bot_engine import handle_incoming_message
+        handle_incoming_message(incoming)
+
+        return Response({"status": "received"})
 
 
 class FacebookWebhookView(APIView):

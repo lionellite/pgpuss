@@ -100,6 +100,9 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 2,  # Timeout connexion : 2s max
+            "SOCKET_TIMEOUT": 2,
+            "IGNORE_EXCEPTIONS": True,  # Cache miss silencieux si Redis tombe
         }
     }
 }
@@ -194,6 +197,12 @@ CELERY_TASK_SOFT_TIME_LIMIT = 540
 CELERY_TASK_TIME_LIMIT = 600
 # Réessayer 3 fois en cas d'échec, avec 60s de délai
 CELERY_TASK_MAX_RETRIES = 3
+# Timeout broker : si Redis est injoignable, lever l'exception rapidement (fallback synchrone)
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'socket_timeout': 2,
+    'socket_connect_timeout': 2,
+    'max_retries': 1,
+}
 
 # CORS : accepter toutes les origines pour l'API REST (mobile + frontend)
 CORS_ALLOWED_ORIGINS = [
