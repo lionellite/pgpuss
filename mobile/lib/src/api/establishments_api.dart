@@ -17,14 +17,23 @@ class EstablishmentsApi {
   final Dio _dio;
 
   Future<Paginated<EstablishmentItem>> list({String? regionId}) async {
-    final res = await _dio.get<Map<String, dynamic>>(
+    final res = await _dio.get<dynamic>(
       '/api/establishments/',
       queryParameters: regionId != null && regionId.isNotEmpty
           ? {'region': regionId}
           : null,
     );
+    final data = res.data;
+    if (data is List) {
+      return Paginated(
+        count: data.length,
+        next: null,
+        previous: null,
+        results: data.whereType<Map<String, dynamic>>().map(EstablishmentItem.fromJson).toList(),
+      );
+    }
     return Paginated.fromJson(
-      res.data ?? const {},
+      (data as Map<String, dynamic>?) ?? const {},
       decode: EstablishmentItem.fromJson,
     );
   }
