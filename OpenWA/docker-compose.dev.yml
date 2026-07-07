@@ -8,11 +8,17 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: openwa-api
+    pids_limit: ${OPENWA_PIDS_LIMIT:-4096}
+    mem_limit: ${OPENWA_MEM_LIMIT:-4g}
     ports:
       - '127.0.0.1:2785:2785'
     environment:
       - NODE_ENV=development
       - PORT=2785
+      # XDG (fixes crashpad database issue)
+      - XDG_CONFIG_HOME=/tmp/.config
+      - XDG_CACHE_HOME=/tmp/.cache
+      - XDG_DATA_HOME=/tmp/.local/share
       - DATABASE_TYPE=sqlite
       - DATABASE_NAME=/app/data/openwa.sqlite
       - DATABASE_SYNCHRONIZE=true
@@ -27,6 +33,7 @@ services:
       - QUEUE_ENABLED=false
     volumes:
       - ./data:/app/data
+      - /tmp:/tmp:rw
     restart: unless-stopped
     healthcheck:
       test:
