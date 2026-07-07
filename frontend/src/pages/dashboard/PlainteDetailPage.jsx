@@ -122,6 +122,7 @@ export default function PlainteDetailPage() {
   const isPNUSS = user?.role === 'PNUSS'
   const isCallCenter = user?.role === 'AGENT_CALL_CENTER'
   const isReadOnly = READ_ONLY_ROLES.includes(user?.role)
+  const isEscalatedPastMe = complaint?.escalations?.length > 0 && complaint.escalations[0].from_user_role === user?.role
   const pfeAssignTargets = agents.filter(a =>
     a.role === 'AGENT_INTERNE' ||
     (a.role === 'PNUSS' && (!user?.establishment || a.establishment === user?.establishment))
@@ -264,7 +265,7 @@ export default function PlainteDetailPage() {
               </button>
             </div>
           )}
-          {isPFZS && complaint.status === 'ESCALADEE' && (
+          {isPFZS && complaint.status === 'ESCALADEE' && !isEscalatedPastMe && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
                 Accuser réception (PFZS)
@@ -285,9 +286,16 @@ export default function PlainteDetailPage() {
               <FiLock /> Clôturer
             </button>
           )}
+          {isPFZS && complaint.status === 'ESCALADEE' && isEscalatedPastMe && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('investigationLog')}>
+                <FiBookOpen /> Consulter Journal
+              </button>
+            </div>
+          )}
 
           {/* DDS Actions */}
-          {isDDS && complaint.status === 'ESCALADEE' && (
+          {isDDS && complaint.status === 'ESCALADEE' && !isEscalatedPastMe && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => openActionModal('ddsAssignInspector')}>
                 Affecter inspecteur
@@ -306,9 +314,16 @@ export default function PlainteDetailPage() {
               </button>
             </div>
           )}
+          {isDDS && complaint.status === 'ESCALADEE' && isEscalatedPastMe && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => openActionModal('investigationLog')}>
+                <FiBookOpen /> Consulter Journal
+              </button>
+            </div>
+          )}
 
           {/* DQSS / National Actions (UC37-UC41) */}
-          {isDQSS && complaint.status === 'ESCALADEE' && (
+          {isDQSS && complaint.status === 'ESCALADEE' && !isEscalatedPastMe && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => openActionModal('arbitrate')}>
                 <FiShield /> Arbitrer / Injonction

@@ -106,11 +106,16 @@ class ComplaintHistorySerializer(serializers.ModelSerializer):
 
 class EscalationSerializer(serializers.ModelSerializer):
     from_user_name = serializers.CharField(source='from_user.full_name', read_only=True, default=None)
+    from_user_role = serializers.CharField(source='from_user.role', read_only=True, default=None)
     to_user_name = serializers.CharField(source='to_user.full_name', read_only=True, default=None)
+    to_user_role = serializers.CharField(source='to_user.role', read_only=True, default=None)
 
     class Meta:
         model = Escalation
-        fields = ['id', 'complaint', 'from_user', 'from_user_name', 'to_user', 'to_user_name', 'reason', 'escalated_at']
+        fields = [
+            'id', 'complaint', 'from_user', 'from_user_name', 'from_user_role',
+            'to_user', 'to_user_name', 'to_user_role', 'reason', 'escalated_at'
+        ]
 
 
 class ComplaintCreateSerializer(serializers.ModelSerializer):
