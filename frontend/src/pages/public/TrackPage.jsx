@@ -47,11 +47,30 @@ export default function TrackPage() {
     runSearch()
   }
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    toast.success('Numéro copié dans le presse-papiers')
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        textArea.style.top = '0'
+        textArea.style.left = '0'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+      setCopied(true)
+      toast.success('Numéro copié dans le presse-papiers')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      console.error('Copy failed:', e)
+      toast.error("Erreur lors de la copie du ticket")
+    }
   }
 
   return (
@@ -138,6 +157,23 @@ export default function TrackPage() {
               <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
                 {result.description}
               </p>
+            )}
+            
+            {result.closure_report && (
+              <div style={{ 
+                background: 'var(--surface-container-low)', 
+                padding: '1.25rem', 
+                borderRadius: '8px', 
+                marginBottom: '1.5rem',
+                border: '1px solid var(--border)'
+              }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+                  Rapport de clôture
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {result.closure_report}
+                </p>
+              </div>
             )}
 
             <dl style={{ display: 'grid', gap: '0.75rem', fontSize: '0.875rem' }}>

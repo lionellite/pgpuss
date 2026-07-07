@@ -371,22 +371,34 @@ export default function DepotPage() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
             }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Votre numéro de ticket</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ fontWeight: 900, fontSize: '2.5rem', color: 'var(--color-primary)', letterSpacing: '0.1em' }}>
-                  {submitted.ticket_number}
-                </div>
-                <button
-                  onClick={() => handleCopy(submitted.ticket_number)}
-                  aria-label="Copier le numéro de ticket"
-                  style={{
-                    background: 'white', border: '1px solid var(--border-strong)',
-                    color: 'var(--text-primary)', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
-                </button>
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ fontWeight: 900, fontSize: '2.25rem', color: 'var(--color-primary)', letterSpacing: '0.08em', wordBreak: 'break-all' }}>
+                      {submitted.ticket_number}
+                    </div>
+                    <button
+                      onClick={() => handleCopy(submitted.ticket_number)}
+                      aria-label="Copier le numéro de ticket"
+                      style={{
+                        background: copied ? 'var(--color-success)' : 'var(--color-primary)', 
+                        border: 'none',
+                        color: 'white', 
+                        borderRadius: '8px', 
+                        padding: '0.75rem 1.25rem', 
+                        cursor: 'pointer',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        minWidth: '160px',
+                        minHeight: '48px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {copied ? <><FiCheck size={20} /> Copié !</> : <><FiCopy size={20} /> Copier</>}
+                    </button>
+                  </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={() => navigate(`/suivi?ticket=${submitted.ticket_number}`)}>
