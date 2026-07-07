@@ -177,9 +177,10 @@ class UserCreateView(generics.CreateAPIView):
         role = self.request.user.role
         if role == UserRole.ADMIN_PLATEFORME:
             return AdminUserUpdateSerializer
-        if role in [UserRole.PFE, UserRole.PFZS, UserRole.DDS]:
-            return PFEStaffCreateSerializer
-        if role == UserRole.PNUSS:
+        if role == UserRole.PNUSS and not self.request.user.establishment_id and not self.request.user.zone_sanitaire_id and not self.request.user.departement:
+            # PNUSS National can specify levels
+            return AdminUserUpdateSerializer
+        if role in [UserRole.PFE, UserRole.PFZS, UserRole.DDS, UserRole.PNUSS]:
             return PFEStaffCreateSerializer
         raise PermissionDenied("Création d'utilisateur non autorisée.")
 
@@ -198,6 +199,24 @@ class UserCreateView(generics.CreateAPIView):
                 user.save(update_fields=['password', 'must_change_password'])
             return Response({
                 'message': 'Utilisateur créé avec succès.',
+                'user': UserSerializer(user).data,
+            }, status=status.HTTP_201_CREATED)
+
+        if role == UserRole.PNUSS and not request.user.establishment_id and not request.user.zone_sanitaire_id and not request.user.departement:
+            target_role = request.data.get('role')
+            if target_role not in [UserRole.PNUSS, UserRole.AGENT_INTERNE]:
+                return Response({'error': "Vous ne pouvez créer que des agents PNUSS ou internes."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = AdminUserUpdateSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()
+            password = request.data.get('password')
+            if password:
+                user.set_password(password)
+                user.must_change_password = True
+                user.save(update_fields=['password', 'must_change_password'])
+            return Response({
+                'message': 'Utilisateur PNUSS créé avec succès.',
                 'user': UserSerializer(user).data,
             }, status=status.HTTP_201_CREATED)
 
@@ -243,7 +262,8 @@ class UserListView(generics.ListAPIView):
                 return User.objects.filter(establishment__zone_sanitaire=user.zone_sanitaire)
             if user.departement:
                 return User.objects.filter(establishment__region__name=user.departement)
-            return User.objects.select_related('establishment', 'zone_sanitaire').all()
+            # National PNUSS sees only PNUSS and AGENT_INTERNE
+            return User.objects.select_related('establishment', 'zone_sanitaire').filter(role__in=[UserRole.PNUSS, UserRole.AGENT_INTERNE])
         elif user.role == UserRole.AUDITEUR:
             return User.objects.filter(id=user.id)
         return User.objects.filter(id=user.id)

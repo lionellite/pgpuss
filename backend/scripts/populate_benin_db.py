@@ -243,30 +243,41 @@ DDS_USERS = [
 
 for email, first, last, dept in DDS_USERS:
     get_or_create_user(email, first, last, UserRole.DDS, departement=dept)
+    slug = email.split('@')[0].split('.')[1]
+    pnuss_email = f'pnuss.{slug}@sante.bj'
+    get_or_create_user(pnuss_email, 'PNUSS', f'DDS {dept}', UserRole.PNUSS, departement=dept)
 
 # ─── PFZS PAR ZONE SANITAIRE ─────────────────────────────────────────────────
 for code, zone in zones.items():
     slug = code.lower().replace('-', '').replace("'", '')
     email = f'pfzs.{slug}@sante.bj'
     get_or_create_user(email, 'PF', f'ZS-{zone.name[:20]}', UserRole.PFZS, zone=zone)
+    pnuss_email = f'pnuss.{slug}@sante.bj'
+    get_or_create_user(pnuss_email, 'PNUSS', f'ZS-{zone.name[:20]}', UserRole.PNUSS, zone=zone)
 
 # ─── PFE POUR ÉTABLISSEMENTS NATIONAUX ──────────────────────────────────────
 for code, est in national_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', est.name[:30], UserRole.PFE, establishment=est)
+    pnuss_email = f'pnuss.{slug}@sante.bj'
+    get_or_create_user(pnuss_email, 'PNUSS', est.name[:30], UserRole.PNUSS, establishment=est)
 
 # ─── PFE POUR CHD ─────────────────────────────────────────────────────────────
 for code, est in chd_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', f'{code}', UserRole.PFE, establishment=est)
+    pnuss_email = f'pnuss.{slug}@sante.bj'
+    get_or_create_user(pnuss_email, 'PNUSS', f'{code}', UserRole.PNUSS, establishment=est)
 
 # ─── PFE POUR HÔPITAUX DE ZONE ───────────────────────────────────────────────
 for code, est in hz_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', f'{code}', UserRole.PFE, establishment=est)
+    pnuss_email = f'pnuss.{slug}@sante.bj'
+    get_or_create_user(pnuss_email, 'PNUSS', f'{code}', UserRole.PNUSS, establishment=est)
 
 print(f'\n=== Peuplement terminé ===')
 print(f'  Régions   : {Region.objects.count()}')

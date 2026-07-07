@@ -363,10 +363,10 @@ class ComplaintAssignView(APIView):
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
-        if request.user.role != UserRole.PFE:
-             return Response({'error': "Seul le PFE peut affecter une plainte."}, status=403)
-        if complaint.status != ComplaintStatus.INSTRUITE:
-            return Response({'error': "La plainte doit être INSTRUITE avant affectation."}, status=400)
+        if request.user.role not in [UserRole.PFE, UserRole.PFZS, UserRole.DDS]:
+             return Response({'error': "Seul le PFE, PFZS ou DDS peut affecter une plainte."}, status=403)
+        if complaint.status not in [ComplaintStatus.INSTRUITE, ComplaintStatus.ESCALADEE]:
+            return Response({'error': "La plainte doit être INSTRUITE ou ESCALADEE avant affectation."}, status=400)
 
         serializer = ComplaintActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -374,16 +374,25 @@ class ComplaintAssignView(APIView):
         assigned_to_id = serializer.validated_data.get('assigned_to')
         if assigned_to_id:
             agent = get_object_or_404(User, pk=assigned_to_id)
-            allowed_roles = assignable_roles_for_pfe()
-            if agent.role not in allowed_roles:
+            if agent.role not in [UserRole.AGENT_INTERNE, UserRole.PNUSS]:
                 return Response({
                     'error': "Affectation possible uniquement vers un agent interne ou un représentant PNUSS."
                 }, status=400)
-            est_id = complaint.establishment_id or request.user.establishment_id
-            if est_id and agent.establishment_id and agent.establishment_id != est_id:
-                return Response({'error': "La personne affectée doit appartenir au même établissement."}, status=400)
-            if agent.role == UserRole.PNUSS and agent.establishment_id and est_id and agent.establishment_id != est_id:
-                return Response({'error': "Le représentant PNUSS doit être rattaché à cet établissement."}, status=400)
+                
+            # Vérifications d'appartenance selon le rôle de l'assignateur
+            if request.user.role == UserRole.PFE:
+                est_id = complaint.establishment_id or request.user.establishment_id
+                if est_id and agent.establishment_id and agent.establishment_id != est_id:
+                    return Response({'error': "La personne affectée doit appartenir au même établissement."}, status=400)
+            elif request.user.role == UserRole.PFZS:
+                zone_id = request.user.zone_sanitaire_id
+                if zone_id and agent.zone_sanitaire_id and agent.zone_sanitaire_id != zone_id:
+                     return Response({'error': "La personne affectée doit appartenir à la même zone sanitaire."}, status=400)
+            elif request.user.role == UserRole.DDS:
+                dept = request.user.departement
+                if dept and agent.departement and agent.departement != dept:
+                     return Response({'error': "La personne affectée doit appartenir au même département."}, status=400)
+
             label = 'Agent interne' if agent.role == UserRole.AGENT_INTERNE else 'Médiation PNUSS'
             old_status = complaint.status
             complaint.assigned_to = agent

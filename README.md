@@ -81,19 +81,19 @@ L'application est configurée pour être déployée sur Vercel.
 | Rôle | Email | Mot de passe |
 | :--- | :--- | :--- |
 | **Admin Plateforme** | admin@pgpuss.bj | `Pgpuss2026!` |
-| **PFE CNHU** | pfe.cnhu@pgpuss.bj | `Pgpuss2026!` |
-| **Agent interne** | agent.cnhu@pgpuss.bj | `Pgpuss2026!` |
-| **Direction établissement** | dir.cnhu@pgpuss.bj | `Pgpuss2026!` |
-| **DDS Littoral** | dds.littoral@pgpuss.bj | `Pgpuss2026!` |
-| **DQSS** | dqss@pgpuss.bj | `Pgpuss2026!` |
-| **Usager** | usager@pgpuss.bj | `Pgpuss2026!` |
+| **PFE CNHU-HKM** | pfe.cnhuhkm@sante.bj | `Pgpuss2026!` |
+| **PFE Hôpital de Zone (Suru-Léré)** | pfe.hzsul@sante.bj | `Pgpuss2026!` |
+| **PFE CHD Littoral** | pfe.chdli@sante.bj | `Pgpuss2026!` |
+| **PFZS Cotonou 1 (Akpakpa)** | pfzs.zscot1@sante.bj | `Pgpuss2026!` |
+| **DDS Littoral** | dds.littoral@sante.bj | `Pgpuss2026!` |
+| **DQSS (National)** | dqss@sante.bj | `Pgpuss2026!` |
+| **Cabinet du Ministère** | cabinet@sante.bj | `Pgpuss2026!` |
+| **Call Center 136** | callcenter136@pgpuss.bj | `Pgpuss2026!` |
 
-Liste complète : voir `UTILISATEURS_TESTS.md`. Après modification des comptes tests, synchroniser Supabase :
+Liste complète : voir `UTILISATEURS_TESTS.md`. Pour réinitialiser et repeupler la base de données :
 
 ```bash
-cd backend
-export DATABASE_URL="postgresql://..."   # URL pooler Supabase (port 6543)
-python manage.py shell < create_test_users.py
+bash backend/scripts/reset_and_populate.sh
 ```
 
 ---
