@@ -121,8 +121,15 @@ class DashboardView(APIView):
             .annotate(count=Count('id'))
             .order_by('month')
         )
-        # Serialize months
-        by_month = [{'month': m['month'].strftime('%Y-%m') if m['month'] else 'Inconnu', 'count': m['count']} for m in by_month]
+        # Serialize months (handle both datetime and string from SQLite)
+        def format_month(val):
+            if not val:
+                return 'Inconnu'
+            if hasattr(val, 'strftime'):
+                return val.strftime('%Y-%m')
+            return str(val)[:7]  # Handle string like '2026-07-01' or '2026-07'
+
+        by_month = [{'month': format_month(m['month']), 'count': m['count']} for m in by_month]
 
         # By channel
         by_channel = dict(qs.values_list('channel').annotate(count=Count('id')).values_list('channel', 'count'))

@@ -261,24 +261,18 @@ for code, est in national_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', est.name[:30], UserRole.PFE, establishment=est)
-    pnuss_email = f'pnuss.{slug}@sante.bj'
-    get_or_create_user(pnuss_email, 'PNUSS', est.name[:30], UserRole.PNUSS, establishment=est)
 
 # ─── PFE POUR CHD ─────────────────────────────────────────────────────────────
 for code, est in chd_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', f'{code}', UserRole.PFE, establishment=est)
-    pnuss_email = f'pnuss.{slug}@sante.bj'
-    get_or_create_user(pnuss_email, 'PNUSS', f'{code}', UserRole.PNUSS, establishment=est)
 
 # ─── PFE POUR HÔPITAUX DE ZONE ───────────────────────────────────────────────
 for code, est in hz_ests.items():
     slug = code.lower().replace('-', '')
     email = f'pfe.{slug}@sante.bj'
     get_or_create_user(email, 'PFE', f'{code}', UserRole.PFE, establishment=est)
-    pnuss_email = f'pnuss.{slug}@sante.bj'
-    get_or_create_user(pnuss_email, 'PNUSS', f'{code}', UserRole.PNUSS, establishment=est)
 
 print('\n--- Création des Catégories ---')
 CATEGORIES = [

@@ -244,8 +244,8 @@ class ComplaintListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
-    # Optimization: Use the annotated count if available, otherwise fallback to the subquery
-    attachment_count = serializers.IntegerField(source='attachments_count_annotated', read_only=True, default=0)
+    # Optimization: Use the annotated count if available, otherwise fallback to the count method
+    attachment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Complaint
@@ -269,6 +269,12 @@ class ComplaintListSerializer(serializers.ModelSerializer):
         if obj.establishment and obj.establishment.zone_sanitaire:
             return obj.establishment.zone_sanitaire.name
         return None
+
+    def get_attachment_count(self, obj):
+        if hasattr(obj, 'attachments_count_annotated'):
+            return obj.attachments_count_annotated
+        # Fallback for single instance serialization (e.g., just created)
+        return getattr(obj, 'attachments', None).count() if hasattr(obj, 'attachments') else 0
 
 
 class ComplaintDetailSerializer(serializers.ModelSerializer):
