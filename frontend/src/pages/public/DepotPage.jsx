@@ -78,7 +78,10 @@ export default function DepotPage() {
       setCategories(cats.data.results || cats.data)
       setEstablishments(ests.data.results || ests.data)
       setRegions(regs.data.results || regs.data)
-    }).catch(() => {})
+    }).catch((e) => {
+      console.error('Error loading data:', e)
+      toast.error("Erreur de chargement des données, veuillez actualiser la page")
+    })
   }, [])
 
   useEffect(() => {
@@ -202,11 +205,30 @@ export default function DepotPage() {
     }
   }
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    toast.success('Numéro de ticket copié !')
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        textArea.style.top = '0'
+        textArea.style.left = '0'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+      setCopied(true)
+      toast.success('Numéro de ticket copié !')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      console.error('Copy failed:', e)
+      toast.error("Erreur lors de la copie du ticket")
+    }
   }
 
   const canAdvanceStep = () => {

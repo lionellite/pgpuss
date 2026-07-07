@@ -169,6 +169,9 @@ class Complaint(models.Model):
     assigned_at = models.DateTimeField(null=True, blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Closure report
+    closure_report = models.TextField(blank=True, help_text="Rapport de clôture décrivant les actions menées et les résultats")
 
     # Plainte vocale (analphabétisme / accessibilité) — fichier audio déposé par l’usager
     voice_file = models.FileField(upload_to='complaints/voice/%Y/%m/', blank=True, null=True, max_length=255)

@@ -292,7 +292,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 'https://lh3.googleusercontent.com/aida/AP1WRLsL3sBMyy47MeBWVErVXqHVp2LY7MhBPUinxmpSsFC0xZ1pzasB9xvtc4XJhnT_d8c7vUVnHCasrF1DAaSHYTMngc7lB_UurRKzyBtKBkMpVxiYWwhrS9bHN56bwjIIDLCDqsLwA3Mw-vXgI02I1eslPH_UKUCs6LBUGn4yjx9lM7sVctReUWz-JsL-V9RPvyusvYJP1NV_Fe-uu_gmp6aF5yML2Qn30FBvtKpuKMfDkqca9LFYDaUjHg',
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/images/hero_consultation.jpg',
+                  'assets/images/hero-stitch-mobile.jpg',
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: AppColors.primary.withValues(alpha: 0.15),

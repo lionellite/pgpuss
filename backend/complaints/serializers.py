@@ -327,6 +327,7 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'registered_at', 'classified_at',
             'assigned_at', 'resolved_at', 'closed_at',
             'deadline', 'is_overdue',
+            'closure_report',
             'attachments', 'history', 'escalations'
         ]
 

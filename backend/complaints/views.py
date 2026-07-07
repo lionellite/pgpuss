@@ -263,6 +263,7 @@ class ComplaintTrackView(APIView):
                 complaint.establishment.address if complaint.establishment
                 else complaint.establishment_address_manual or None
             ),
+            'closure_report': complaint.closure_report if complaint.status == ComplaintStatus.CLOTUREE else None,
             'timeline': [
                 {
                     'action': h.action,
@@ -1097,23 +1098,24 @@ class ComplaintCloseView(APIView):
             if complaint.resolution_accepted is not True:
                 return Response({'error': "Clôture impossible : l'usager doit accepter la résolution."}, status=400)
 
-        # Notes de clôture obligatoires
-        notes = request.data.get('notes', '').strip()
-        if not notes:
-            return Response({'error': 'Le champ notes est obligatoire pour la clôture.'}, status=400)
-        if len(notes) < 30:
-            return Response({'error': 'Les notes de clôture doivent contenir au moins 30 caractères. '
-                                      'Décrivez les actions menées et les conclusions du dossier.'}, status=400)
+        # Rapport de clôture obligatoire
+        closure_report = request.data.get('closure_report', '').strip()
+        if not closure_report:
+            return Response({'error': 'Le rapport de clôture est obligatoire pour clore le dossier.'}, status=400)
+        if len(closure_report) < 50:
+            return Response({'error': 'Le rapport de clôture doit contenir au moins 50 caractères. '
+                                      'Décrivez les actions menées et les résultats obtenus.'}, status=400)
 
         old_status = complaint.status
         complaint.status = ComplaintStatus.CLOTUREE
         complaint.closed_at = timezone.now()
+        complaint.closure_report = closure_report
         complaint.save()
 
         ComplaintHistory.objects.create(
             complaint=complaint, action='Clôture définitive',
             old_status=old_status, new_status=ComplaintStatus.CLOTUREE,
-            actor=request.user, notes=notes
+            actor=request.user, notes=closure_report
         )
         generate_document(
             complaint=complaint,
@@ -1123,7 +1125,7 @@ class ComplaintCloseView(APIView):
                 "document": {
                     "title": "Fiche de clôture",
                     "closed_at": complaint.closed_at.isoformat() if complaint.closed_at else None,
-                    "motif": notes,
+                    "rapport": closure_report,
                     "satisfaction": complaint.resolution_ack_notes if complaint.resolution_accepted else None,
                 }
             },
