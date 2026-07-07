@@ -50,7 +50,7 @@ export default () => ({
     type: process.env.ENGINE_TYPE || 'whatsapp-web.js',
     puppeteer: {
       headless: process.env.PUPPETEER_HEADLESS !== 'false',
-      args: (process.env.PUPPETEER_ARGS || '--no-sandbox,--disable-setuid-sandbox').split(','),
+      args: (process.env.PUPPETEER_ARGS || '--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-accelerated-2d-canvas,--no-first-run,--no-zygote,--disable-gpu,--disable-features=DialMediaRouteProvider,IsolateOrigins,site-per-process,--remote-debugging-port=9222,--disable-web-security,--disable-features=VizDisplayCompositor').split(','),
     },
     sessionDataPath: process.env.SESSION_DATA_PATH || './data/sessions',
   },

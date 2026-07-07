@@ -79,8 +79,10 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
-        '--disable-features=DialMediaRouteProvider',
-        '--remote-debugging-port=9222'
+        '--disable-features=DialMediaRouteProvider,IsolateOrigins,site-per-process',
+        '--remote-debugging-port=9222',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
       ];
 
       // Add proxy configuration if provided
