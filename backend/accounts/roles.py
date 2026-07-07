@@ -79,7 +79,6 @@ def filter_complaints_for_user(user, qs):
 
     if role == UserRole.AGENT_CALL_CENTER:
         # L'agent voit : ses plaintes traitées + toutes les plaintes sociales en attente
-        from django.db.models import Q
         return qs.filter(
             Q(call_center_agent=user) |
             Q(pending_call_center_completion=True)
