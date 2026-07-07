@@ -517,7 +517,7 @@ export default function PlainteDetailPage() {
                   >
                     <option value="">Automatique / Non spécifié</option>
                     {agents
-                      .filter(a => ['PFZS', 'DDS', 'DQSS', 'CABINET', 'PNUSS', 'ADMIN_PLATEFORME'].includes(a.role))
+                      .filter(a => ['PFZS', 'DDS', 'DQSS', 'CABINET', 'ADMIN_PLATEFORME'].includes(a.role))
                       .map(a => (
                         <option key={a.id} value={a.id}>
                           {a.full_name} — {a.role}
