@@ -267,9 +267,6 @@ export default function PlainteDetailPage() {
           )}
           {isPFZS && complaint.status === 'ESCALADEE' && !isEscalatedPastMe && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => doAction('acknowledge')}>
-                Accuser réception (PFZS)
-              </button>
               <button className="btn btn-secondary btn-sm" onClick={() => openActionModal('investigationLog')}>
                 <FiBookOpen /> Instruire enquête
               </button>

@@ -268,7 +268,16 @@ if CLOUDINARY_URL:
         ],
         'cloudinary',
     ]
-    CLOUDINARY_STORAGE = {'CLOUDINARY_URL': CLOUDINARY_URL}
+    CLOUDINARY_STORAGE = {
+        'CLOUDINARY_URL': CLOUDINARY_URL,
+        'CLOUDINARY_STORAGE_EXTERNAL_PATHS': True,
+    }
+    # Make Cloudinary uploads public by default
+    import cloudinary
+    cloudinary.config(
+        secure=True,
+        upload_preset="public_upload" if os.environ.get('CLOUDINARY_UPLOAD_PRESET') else None
+    )
     # Médias sur Cloudinary ; fichiers statiques (admin) restent locaux pour collectstatic
     STORAGES['default'] = {
         'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
