@@ -39,7 +39,7 @@ services:
       - SESSION_DATA_PATH=/app/data/sessions
       - PUPPETEER_HEADLESS=true
       - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-software-rasterizer,--no-zygote
-      - DBUS_SESSION_BUS_ADDRESS=/dev/null
+      
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_PATH=/app/data/media
       - WEBHOOK_TIMEOUT=10000
