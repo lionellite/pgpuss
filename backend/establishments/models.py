@@ -50,13 +50,23 @@ class ZoneSanitaire(models.Model):
 
 
 class EstablishmentType(models.TextChoices):
-    CHU = 'CHU', 'Centre Hospitalier Universitaire'
-    CHR = 'CHR', 'Centre Hospitalier Régional'
-    HZ = 'HZ', 'Hôpital de Zone'
-    CS = 'CS', 'Centre de Santé'
+    CHU = 'CHU', 'Centre Hospitalier Universitaire (CHU/CNHU)'
+    CHD = 'CHD', 'Centre Hospitalier Départemental (CHD)'
+    HZ = 'HZ', 'Hôpital de Zone (HZ)'
+    CS = 'CS', 'Centre de Santé (CS/CSCOM/CSA)'
     PRIVE = 'PRIVE', 'Établissement Privé'
     PHARMACIE = 'PHARMACIE', 'Pharmacie'
     LABORATOIRE = 'LABORATOIRE', 'Laboratoire'
+
+
+class EstablishmentLevel(models.TextChoices):
+    """
+    Niveau dans la pyramide sanitaire béninoise.
+    Détermine le circuit d'escalade des plaintes.
+    """
+    PERIPHERAL = 'PERIPHERAL', 'Zone Périphérique (HZ, CS)'
+    CHD = 'CHD', 'Centre Hospitalier Départemental'
+    NATIONAL = 'NATIONAL', 'Établissement National (CNHU, HOMEL…)'
 
 
 class EstablishmentOperationalStatus(models.TextChoices):
@@ -71,6 +81,12 @@ class Establishment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=EstablishmentType.choices)
+    level = models.CharField(
+        max_length=20,
+        choices=EstablishmentLevel.choices,
+        default=EstablishmentLevel.PERIPHERAL,
+        help_text='Niveau dans la pyramide sanitaire (détermine le circuit d\'escalade).',
+    )
     region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='establishments')
     zone_sanitaire = models.ForeignKey(
         ZoneSanitaire,

@@ -1180,9 +1180,88 @@ class ComplaintReopenView(APIView):
         )
         return Response({"message": "Plainte rouverte."})
 
+def _resolve_escalation_target(complaint, user):
+    """
+    Résout automatiquement le prochain niveau d'escalade selon la pyramide
+    sanitaire béninoise et le type d'établissement concerné.
+
+    Chaînes d'escalade :
+      - PFE (zone périphérique) → PFZS → DDS → DQSS → CABINET
+      - PFE (CHD)               → DDS  → DQSS → CABINET
+      - PFE (national)          → DQSS → CABINET
+    """
+    from establishments.models import EstablishmentLevel
+
+    User = get_user_model()
+
+    establishment = complaint.establishment
+    est_level = getattr(establishment, 'level', EstablishmentLevel.PERIPHERAL) if establishment else EstablishmentLevel.PERIPHERAL
+
+    # ─── PFE ────────────────────────────────────────────────────────────
+    if user.role == UserRole.PFE:
+        if est_level == EstablishmentLevel.NATIONAL:
+            # Hôpital national → escalade directe vers DQSS
+            target_role = UserRole.DQSS
+            skip_reason = "Établissement national — bypass DDS et PFZS."
+        elif est_level == EstablishmentLevel.CHD:
+            # CHD → escalade vers DDS (bypass PFZS)
+            target_role = UserRole.DDS
+            skip_reason = "CHD — bypass PFZS, escalade directement vers DDS."
+        else:
+            # Établissement périphérique → PFZS
+            target_role = UserRole.PFZS
+            skip_reason = None
+
+        # Cherche un utilisateur du rôle cible dans le même département/zone
+        candidates = User.objects.filter(role=target_role, is_active=True)
+        if establishment:
+            if target_role == UserRole.PFZS and establishment.zone_sanitaire_id:
+                candidates = candidates.filter(zone_sanitaire=establishment.zone_sanitaire)
+            elif target_role in (UserRole.DDS, UserRole.DQSS) and establishment.region_id:
+                candidates = candidates.filter(
+                    departement__iexact=establishment.region.name
+                ) | candidates.filter(departement__isnull=True)
+        return candidates.first(), target_role, skip_reason
+
+    # ─── PFZS ────────────────────────────────────────────────────────────
+    if user.role == UserRole.PFZS:
+        candidates = User.objects.filter(role=UserRole.DDS, is_active=True)
+        if user.zone_sanitaire_id:
+            region = user.zone_sanitaire.region
+            candidates = candidates.filter(departement__iexact=region.name)
+        return candidates.first(), UserRole.DDS, None
+
+    # ─── DDS ─────────────────────────────────────────────────────────────
+    if user.role == UserRole.DDS:
+        candidates = User.objects.filter(role=UserRole.DQSS, is_active=True)
+        return candidates.first(), UserRole.DQSS, None
+
+    # ─── DQSS ────────────────────────────────────────────────────────────
+    if user.role == UserRole.DQSS:
+        candidates = User.objects.filter(role=UserRole.CABINET, is_active=True)
+        return candidates.first(), UserRole.CABINET, None
+
+    return None, None, None
+
+
 class ComplaintEscalateView(APIView):
-    """Escalader une plainte — raison obligatoire (min. 10 caractères)."""
+    """
+    Escalader une plainte selon la pyramide sanitaire béninoise.
+    Le prochain niveau est résolu automatiquement ; raison obligatoire (≥ 10 car.).
+    """
     permission_classes = [permissions.IsAuthenticated, DenyReadOnlyOnWrite]
+
+    def get(self, request, pk):
+        """Retourne la cible d'escalade suivante pour un pré-affichage UI."""
+        complaint = get_object_or_404(Complaint, pk=pk)
+        target_user, target_role, skip_reason = _resolve_escalation_target(complaint, request.user)
+        return Response({
+            'next_level_role': target_role,
+            'next_level_role_display': UserRole(target_role).label if target_role else None,
+            'next_level_user': str(target_user) if target_user else None,
+            'skip_reason': skip_reason,
+            'can_escalate': target_role is not None,
+        })
 
     def post(self, request, pk):
         complaint = get_object_or_404(Complaint, pk=pk)
@@ -1210,12 +1289,17 @@ class ComplaintEscalateView(APIView):
         reason = (request.data.get('reason') or request.data.get('notes') or '').strip()
         notes = (request.data.get('notes') or reason).strip()
         if not reason:
-            return Response({'error': 'La raison de l\'escalade est obligatoire (min. 10 caractères).'}, status=400)
+            return Response({'error': "La raison de l'escalade est obligatoire (min. 10 caractères)."}, status=400)
         if len(reason) < 10:
-            return Response({'error': 'La raison de l\'escalade doit contenir au moins 10 caractères.'}, status=400)
+            return Response({'error': "La raison de l'escalade doit contenir au moins 10 caractères."}, status=400)
 
+        # Résolution automatique du prochain niveau de la pyramide
+        # Un `to_user` explicite reste accepté (admin plateforme, cas particulier)
         to_user_id = request.data.get('to_user')
-        to_user = get_object_or_404(User, pk=to_user_id) if to_user_id else None
+        if to_user_id:
+            to_user = get_object_or_404(get_user_model(), pk=to_user_id)
+        else:
+            to_user, target_role, skip_reason = _resolve_escalation_target(complaint, request.user)
 
         old_status = complaint.status
         complaint.status = ComplaintStatus.ESCALADEE
@@ -1254,7 +1338,11 @@ class ComplaintEscalateView(APIView):
             )
         except Exception:
             pass
-        return Response({'message': 'Plainte escaladée avec succès.'})
+        return Response({
+            'message': 'Plainte escaladée avec succès.',
+            'escalated_to': str(to_user) if to_user else 'Non assigné',
+        })
+
 
 
 class ComplaintDocumentsView(generics.ListAPIView):

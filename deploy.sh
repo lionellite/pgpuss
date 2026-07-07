@@ -19,7 +19,8 @@ docker compose up -d
 
 echo "4b. Nettoyage des verrous Chromium (SingletonLock) d'OpenWA..."
 # Parfois, un arrêt brutal laisse un fichier de verrouillage qui empêche Chromium de démarrer
-docker compose exec -T openwa find /app/data -name "SingletonLock" -delete 2>/dev/null || true
+# Utilisation d'un conteneur temporaire car 'exec' échoue si le conteneur est arrêté/planté
+docker run --rm -v pgpuss_openwa_data:/app/data alpine find /app/data -name "SingletonLock" -delete 2>/dev/null || true
 
 echo "5. Exécution des migrations de base de données..."
 docker compose exec -T backend python manage.py migrate

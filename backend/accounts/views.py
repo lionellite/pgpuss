@@ -164,33 +164,53 @@ class IsAdminPlateforme(permissions.BasePermission):
 
 
 class UserCreateView(generics.CreateAPIView):
-    """Création d'utilisateur — PFE (agents internes) ou admin plateforme."""
+    """Création d'utilisateur.
+    - ADMIN_PLATEFORME : peut créer tous types d'utilisateurs.
+    - PNUSS national   : peut créer des agents PNUSS de structures.
+    - PFZS             : peut créer des agents internes pour les établissements de sa zone.
+    - DDS              : peut créer des agents internes pour les établissements de son département.
+    - PFE              : peut créer des agents internes de son établissement.
+    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.request.user.role == UserRole.PFE:
-            return PFEStaffCreateSerializer
-        if self.request.user.role == UserRole.ADMIN_PLATEFORME:
+        role = self.request.user.role
+        if role == UserRole.ADMIN_PLATEFORME:
             return AdminUserUpdateSerializer
+        if role in [UserRole.PFE, UserRole.PFZS, UserRole.DDS]:
+            return PFEStaffCreateSerializer
+        if role == UserRole.PNUSS:
+            return PFEStaffCreateSerializer
         raise PermissionDenied("Création d'utilisateur non autorisée.")
 
     def create(self, request, *args, **kwargs):
-        if request.user.role == UserRole.PFE:
-            serializer = PFEStaffCreateSerializer(data=request.data, context={'request': request})
-        elif request.user.role == UserRole.ADMIN_PLATEFORME:
-            return Response(
-                {'error': 'Utilisez l\'interface admin Django pour créer des comptes non-agents.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        else:
-            return Response({'error': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
+        role = request.user.role
 
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-            'message': 'Agent interne créé avec succès.',
-            'user': UserSerializer(user).data,
-        }, status=status.HTTP_201_CREATED)
+        if role == UserRole.ADMIN_PLATEFORME:
+            serializer = AdminUserUpdateSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()
+            # Définir le mot de passe si fourni
+            password = request.data.get('password')
+            if password:
+                user.set_password(password)
+                user.must_change_password = True
+                user.save(update_fields=['password', 'must_change_password'])
+            return Response({
+                'message': 'Utilisateur créé avec succès.',
+                'user': UserSerializer(user).data,
+            }, status=status.HTTP_201_CREATED)
+
+        if role in [UserRole.PFE, UserRole.PFZS, UserRole.DDS, UserRole.PNUSS]:
+            serializer = PFEStaffCreateSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()
+            return Response({
+                'message': 'Agent créé avec succès.',
+                'user': UserSerializer(user).data,
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({'error': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
 
 
 class UserListView(generics.ListAPIView):

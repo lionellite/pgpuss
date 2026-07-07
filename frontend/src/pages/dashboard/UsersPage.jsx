@@ -27,6 +27,13 @@ export default function UsersPage() {
   const [zones, setZones] = useState([])
   const [regions, setRegions] = useState([])
   const [establishments, setEstablishments] = useState([])
+  const [showCreate, setShowCreate] = useState(false)
+  const [createForm, setCreateForm] = useState({
+    first_name: '', last_name: '', email: '', phone: '',
+    password: '', role: 'AGENT_INTERNE', establishment: '', zone_sanitaire: '', departement: ''
+  })
+  const [creating, setCreating] = useState(false)
+
 
   useEffect(() => {
     establishmentsAPI.zones().then(({ data }) => setZones(data.results || data)).catch(() => {})
@@ -100,16 +107,46 @@ export default function UsersPage() {
     } catch { toast.error('Erreur') }
   }
 
-  if (currentUser?.role !== 'ADMIN_PLATEFORME') {
-    return <div className="loading-center text-muted">Accès réservé à l&apos;administrateur de la plateforme.</div>
+  const createUser = async () => {
+    if (!createForm.first_name.trim()) { toast.error('Le prénom est requis'); return }
+    if (!createForm.email && !createForm.phone) { toast.error('Email ou téléphone requis'); return }
+    if (!createForm.password) { toast.error('Mot de passe requis'); return }
+    setCreating(true)
+    try {
+      const payload = { ...createForm }
+      if (!payload.email) delete payload.email
+      if (!payload.phone) delete payload.phone
+      if (!payload.establishment) delete payload.establishment
+      if (!payload.zone_sanitaire) delete payload.zone_sanitaire
+      if (!payload.departement) delete payload.departement
+      await authAPI.createUser(payload)
+      toast.success('Utilisateur créé avec succès')
+      setShowCreate(false)
+      setCreateForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'AGENT_INTERNE', establishment: '', zone_sanitaire: '', departement: '' })
+      load()
+    } catch (e) {
+      const err = e.response?.data
+      toast.error(err?.error || err?.email?.[0] || err?.phone?.[0] || 'Erreur lors de la création')
+    } finally { setCreating(false) }
   }
+
+  if (!['ADMIN_PLATEFORME', 'PNUSS'].includes(currentUser?.role)) {
+    return <div className="loading-center text-muted">Accès non autorisé.</div>
+  }
+
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 className="page-title">Gestion des utilisateurs</h1>
-        <p className="page-subtitle">{users.length} utilisateur(s)</p>
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="page-title">Gestion des utilisateurs</h1>
+          <p className="page-subtitle">{users.length} utilisateur(s)</p>
+        </div>
+        {currentUser?.role === 'ADMIN_PLATEFORME' && (
+          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ Créer un utilisateur</button>
+        )}
       </div>
+
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
@@ -234,6 +271,58 @@ export default function UsersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <div className="modal-header">
+              <h3 className="modal-title">Créer un utilisateur</h3>
+              <button className="modal-close" onClick={() => setShowCreate(false)}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <input className="form-input" placeholder="Prénom *" style={{ flex: 1 }}
+                  value={createForm.first_name} onChange={e => setCreateForm({ ...createForm, first_name: e.target.value })} />
+                <input className="form-input" placeholder="Nom" style={{ flex: 1 }}
+                  value={createForm.last_name} onChange={e => setCreateForm({ ...createForm, last_name: e.target.value })} />
+              </div>
+              <input className="form-input" placeholder="Email *" type="email"
+                value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
+              <input className="form-input" placeholder="Téléphone (optionnel)"
+                value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} />
+              <input className="form-input" placeholder="Mot de passe *" type="password"
+                value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
+              <select className="form-select" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
+                {ROLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              {ROLES_NEED_ESTABLISHMENT.includes(createForm.role) && (
+                <select className="form-select" value={createForm.establishment} onChange={e => setCreateForm({ ...createForm, establishment: e.target.value })}>
+                  <option value="">Établissement…</option>
+                  {establishments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              )}
+              {ROLES_NEED_ZONE.includes(createForm.role) && (
+                <select className="form-select" value={createForm.zone_sanitaire} onChange={e => setCreateForm({ ...createForm, zone_sanitaire: e.target.value })}>
+                  <option value="">Zone sanitaire…</option>
+                  {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                </select>
+              )}
+              {ROLES_NEED_DEPT.includes(createForm.role) && (
+                <select className="form-select" value={createForm.departement} onChange={e => setCreateForm({ ...createForm, departement: e.target.value })}>
+                  <option value="">Département…</option>
+                  {regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                </select>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button className="btn btn-ghost" onClick={() => setShowCreate(false)}>Annuler</button>
+                <button className="btn btn-primary" onClick={createUser} disabled={creating}>
+                  {creating ? 'Création…' : 'Créer'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

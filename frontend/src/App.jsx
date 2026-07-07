@@ -101,11 +101,42 @@ export default function App() {
           <Route path="/dashboard/plaintes/:id" element={<PlainteDetailPage />} />
           <Route path="/dashboard/analytique" element={<AnalyticsPage />} />
           <Route path="/dashboard/utilisateurs" element={<UsersPage />} />
-          <Route path="/dashboard/agents-internes" element={<PrivateRoute roles={['PFE']}><InternalAgentsPage /></PrivateRoute>} />
-          <Route path="/dashboard/referentiels" element={<AdminPlateformeOnly><ReferentialsAdminPage /></AdminPlateformeOnly>} />
-          <Route path="/dashboard/etablissements" element={<AdminPlateformeOnly><EstablishmentsAdminPage /></AdminPlateformeOnly>} />
-          <Route path="/dashboard/zones-sanitaires" element={<AdminPlateformeOnly><ZonesSanitairesAdminPage /></AdminPlateformeOnly>} />
-          <Route path="/dashboard/social-inbox" element={<PrivateRoute roles={['AGENT_CALL_CENTER', 'ADMIN_PLATEFORME']}><CallCenterSocialInboxPage /></PrivateRoute>} />
+          <Route
+            path="/dashboard/agents-internes"
+            element={
+              <PrivateRoute roles={['PFE', 'PFZS', 'DDS', 'DQSS', 'CABINET', 'DIRECTEUR_EST']}>
+                <InternalAgentsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/referentiels"
+            element={<AdminPlateformeOnly><ReferentialsAdminPage /></AdminPlateformeOnly>}
+          />
+          <Route
+            path="/dashboard/etablissements"
+            element={
+              <PrivateRoute roles={['ADMIN_PLATEFORME', 'CABINET']}>
+                <EstablishmentsAdminPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/zones-sanitaires"
+            element={
+              <PrivateRoute roles={['ADMIN_PLATEFORME', 'CABINET']}>
+                <ZonesSanitairesAdminPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/social-inbox"
+            element={
+              <PrivateRoute roles={['AGENT_CALL_CENTER']}>
+                <CallCenterSocialInboxPage />
+              </PrivateRoute>
+            }
+          />
           <Route path="/dashboard/journal-audit" element={<AuditLogRoute><AuditLogPage /></AuditLogRoute>} />
         </Route>
 

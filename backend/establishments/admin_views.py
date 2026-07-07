@@ -6,13 +6,20 @@ from .models import Establishment, Service, ZoneSanitaire
 from .serializers import EstablishmentSerializer, ServiceSerializer, ZoneSanitaireSerializer
 
 
-class IsAdminPlateforme(permissions.BasePermission):
+class IsAdminOrCabinet(permissions.BasePermission):
+    """Permet l'accès à l'admin plateforme ET au Cabinet du Ministère."""
     def has_permission(self, request, view):
         return (
             request.user
             and request.user.is_authenticated
-            and getattr(request.user, "role", None) == UserRole.ADMIN_PLATEFORME
+            and getattr(request.user, "role", None) in (
+                UserRole.ADMIN_PLATEFORME,
+                UserRole.CABINET,
+            )
         )
+
+# Rétro-compatibilité
+IsAdminPlateforme = IsAdminOrCabinet
 
 
 class AdminEstablishmentListCreateView(generics.ListCreateAPIView):

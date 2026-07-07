@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import never_cache
 from .models import Region, ZoneSanitaire, Establishment, Service, EstablishmentOperationalStatus
 from .serializers import (
     RegionSerializer, ZoneSanitaireSerializer, EstablishmentSerializer,
@@ -8,7 +8,6 @@ from .serializers import (
 )
 
 
-@method_decorator(cache_page(60 * 5), name='dispatch')
 class RegionListView(generics.ListAPIView):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
@@ -29,9 +28,13 @@ class ZoneSanitaireListView(generics.ListAPIView):
         return ZoneSanitaire.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
 
 
-
-@method_decorator(cache_page(60 * 5), name='dispatch')
+@method_decorator(never_cache, name='dispatch')
 class EstablishmentListView(generics.ListAPIView):
+    """
+    Liste des établissements actifs et opérationnels.
+    Le cache serveur est désactivé (never_cache) pour que tout établissement
+    nouvellement créé apparaisse immédiatement dans le formulaire de dépôt web.
+    """
     queryset = Establishment.objects.filter(
         is_active=True,
         operational_status=EstablishmentOperationalStatus.OPERATIONAL,

@@ -392,14 +392,29 @@ export default function DepotPage() {
               marginBottom: '1.5rem', padding: '1rem 1.5rem', borderRadius: '8px',
               background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
               color: 'white', display: 'flex', alignItems: 'center', gap: '1rem',
+              justifyContent: 'space-between',
             }}>
-              <span style={{ fontSize: '2rem' }}>📞</span>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem' }}>Mode Call Center — Ligne Verte 136</div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  Saisie de plainte au nom de l'usager. Le canal sera automatiquement enregistré comme « Call Center 136 ».
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '2rem' }}>📞</span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>Mode Call Center — Ligne Verte 136</div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Saisie de plainte au nom de l'usager. Le canal sera automatiquement enregistré comme « Call Center 136 ».
+                  </div>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.5)',
+                  color: 'white', padding: '0.5rem 1rem', borderRadius: '6px',
+                  cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                ← Tableau de bord
+              </button>
             </div>
           )}
 

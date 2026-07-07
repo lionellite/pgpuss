@@ -10,40 +10,55 @@ import GovFlagBar from '../components/GovFlagBar'
 import { ROLE_LABELS } from '../constants/roles'
 import { complaintsAPI } from '../api'
 
+const AGENT_INTERNE_ROLES = ['PFE', 'PFZS', 'DDS', 'DQSS', 'CABINET', 'DIRECTEUR_EST']
+
 const getNavItems = (role) => {
   const items = [
     { to: '/dashboard', icon: <FiHome aria-hidden />, label: 'Tableau de bord', exact: true },
-    { to: '/dashboard/plaintes', icon: <FiFileText aria-hidden />, label: 'Plaintes' },
   ]
 
+  // Plaintes : tous les rôles
+  // AGENT_CALL_CENTER : fusionne "Plaintes" et "Boîte sociale"
   if (role === 'AGENT_CALL_CENTER') {
     items.push(
-      { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Boîte sociale', socialInbox: true },
-      { to: '/deposer', icon: <FiPhone aria-hidden />, label: 'Saisie plainte 136' },
+      { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Plaintes & Boîte sociale', socialInbox: true },
+      { to: '/deposer', icon: <FiPhone aria-hidden />, label: 'Saisir une plainte' },
     )
+  } else {
+    items.push({ to: '/dashboard/plaintes', icon: <FiFileText aria-hidden />, label: 'Plaintes' })
   }
 
   items.push({ to: '/dashboard/analytique', icon: <FiTrendingUp aria-hidden />, label: 'Analytique' })
 
-  if (role === 'PFE') {
+  // Onglet « Agents internes » — tous rôles sauf Admin et Call Center
+  if (AGENT_INTERNE_ROLES.includes(role)) {
     items.push({ to: '/dashboard/agents-internes', icon: <FiUser aria-hidden />, label: 'Agents internes' })
   }
 
-  if (role === 'ADMIN_PLATEFORME') {
+  // Gestion utilisateurs — Admin + PNUSS national
+  if (role === 'ADMIN_PLATEFORME' || role === 'PNUSS') {
+    items.push({ to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' })
+  }
+
+  // Gestion établissements & zones — Admin + Cabinet du Ministère
+  if (role === 'ADMIN_PLATEFORME' || role === 'CABINET') {
     items.push(
-      { to: '/dashboard/social-inbox', icon: <FiInbox aria-hidden />, label: 'Boîte sociale', socialInbox: true },
-      { to: '/dashboard/utilisateurs', icon: <FiUsers aria-hidden />, label: 'Utilisateurs' },
       { to: '/dashboard/etablissements', icon: <FiMapPin aria-hidden />, label: 'Établissements' },
       { to: '/dashboard/zones-sanitaires', icon: <FiMapPin aria-hidden />, label: 'Zones Sanitaires' },
-      { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
-      { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: 'Journal d\'audit' },
     )
   }
 
-  if (role === 'CABINET') {
+  // Référentiels et journal d'audit — Admin uniquement
+  if (role === 'ADMIN_PLATEFORME') {
     items.push(
-      { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: 'Journal d\'audit' },
+      { to: '/dashboard/referentiels', icon: <FiLayers aria-hidden />, label: 'Référentiels' },
+      { to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: "Journal d'audit" },
     )
+  }
+
+  // Journal d'audit — Cabinet du Ministère (lecture)
+  if (role === 'CABINET') {
+    items.push({ to: '/dashboard/journal-audit', icon: <FiShield aria-hidden />, label: "Journal d'audit" })
   }
 
   return items
@@ -176,6 +191,15 @@ export default function DashboardLayout() {
               <div className="dashboard-user-card__role">{ROLE_LABELS[user.role] || user.role}</div>
             </div>
           )}
+          <Link
+            to="/espace/profil"
+            className="dashboard-nav__link"
+            title={collapsed ? 'Mon profil' : undefined}
+            style={{ marginBottom: '0.25rem' }}
+          >
+            <FiUser aria-hidden />
+            {!collapsed && 'Mon profil'}
+          </Link>
           <button
             type="button"
             className="dashboard-nav__link user-menu__item--danger"
