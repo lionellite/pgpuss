@@ -122,7 +122,7 @@ export default function PlainteDetailPage() {
   const isPNUSS = user?.role === 'PNUSS'
   const isCallCenter = user?.role === 'AGENT_CALL_CENTER'
   const isReadOnly = READ_ONLY_ROLES.includes(user?.role)
-  const isEscalatedPastMe = complaint?.escalations?.length > 0 && complaint.escalations[0].from_user_role === user?.role
+  const isEscalatedPastMe = complaint?.escalations?.some(e => e.from_user_role === user?.role)
   const pfeAssignTargets = agents.filter(a =>
     a.role === 'AGENT_INTERNE' ||
     (a.role === 'PNUSS' && (!user?.establishment || a.establishment === user?.establishment))
