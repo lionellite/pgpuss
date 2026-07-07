@@ -23,9 +23,9 @@ COPY . /app/
 
 # Création des répertoires nécessaires et collectstatic
 # DJANGO_SECRET_KEY factice pour la phase de build uniquement
-RUN DJANGO_SECRET_KEY=build-only-secret \
-    python manage.py collectstatic --noinput --clear 2>/dev/null || \
-    mkdir -p /app/staticfiles
+RUN mkdir -p /app/staticfiles && \
+    DJANGO_SECRET_KEY=build-only-secret \
+    python manage.py collectstatic --noinput --clear 2>/dev/null || true
 
 # Port exposé
 EXPOSE 8000
