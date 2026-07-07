@@ -81,20 +81,12 @@ class SocialComplaintInboxSerializer(serializers.ModelSerializer):
         ]
 
     def get_voice_file_url(self, obj):
-        stored = (getattr(obj, 'voice_media_url', None) or '').strip()
-        if stored:
-            return stored
         if not obj.voice_file:
             return None
         url = obj.voice_file.url
-        try:
-            if 'res.cloudinary.com' in url and '/upload/' in url and not url.lower().endswith('.mp3'):
-                url = url.replace('/upload/', '/upload/f_mp3/', 1)
-        except Exception:
-            pass
-        request = self.context.get('request')
         if url.startswith(('http://', 'https://')):
             return url
+        request = self.context.get('request')
         if request:
             return request.build_absolute_uri(url)
         return url

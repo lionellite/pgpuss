@@ -255,33 +255,4 @@ OPENWA_SESSION_ID = os.environ.get("OPENWA_SESSION_ID", "")
 OPENWA_WEBHOOK_SECRET = os.environ.get("OPENWA_WEBHOOK_SECRET", "")
 WA_VERIFY_TOKEN = os.environ.get("WA_VERIFY_TOKEN", "pgpuss_wa_verify_token_change_me")
 
-# Stockage des fichiers médias
-# Production / Vercel : définir CLOUDINARY_URL (voir docs/CLOUDINARY.md)
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
-if CLOUDINARY_URL:
-    # cloudinary_storage doit être avant django.contrib.staticfiles
-    INSTALLED_APPS = [
-        'cloudinary_storage',
-        *[
-            app for app in INSTALLED_APPS
-            if app not in ('cloudinary_storage', 'cloudinary')
-        ],
-        'cloudinary',
-    ]
-    CLOUDINARY_STORAGE = {
-        'CLOUDINARY_URL': CLOUDINARY_URL,
-        'CLOUDINARY_STORAGE_EXTERNAL_PATHS': True,
-    }
-    # Make Cloudinary uploads public by default
-    import cloudinary
-    cloudinary.config(
-        secure=True,
-        upload_preset="public_upload" if os.environ.get('CLOUDINARY_UPLOAD_PRESET') else None
-    )
-    # Médias sur Cloudinary ; fichiers statiques (admin) restent locaux pour collectstatic
-    STORAGES['default'] = {
-        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
-    }
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    # Les FileField renvoient des URLs https://res.cloudinary.com/...
+# Stockage des fichiers médias (local uniquement)

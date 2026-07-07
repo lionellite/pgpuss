@@ -63,26 +63,9 @@ class AttachmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'uploaded_at', 'file_name', 'file_type', 'file_size', 'file_url']
 
     def get_file_url(self, obj):
-        stored = (getattr(obj, 'media_url', None) or '').strip()
-        if stored:
-            return stored
         if not obj.file:
             return None
         url = obj.file.url
-        # Cloudinary: si un audio est stocké en webm/ogg, fournir une URL mp3 transformée
-        # pour garantir la lecture dans <audio> (certains navigateurs refusent video/webm).
-        try:
-            ct = (getattr(obj, 'file_type', '') or '').lower()
-            name = (getattr(obj, 'file_name', '') or '').lower()
-            is_audio = ct.startswith('audio/') or any(name.endswith(ext) for ext in ('.webm', '.ogg', '.m4a', '.wav'))
-            if 'res.cloudinary.com' in url and '/upload/' in url:
-                # Ensure no signed/token parts, make it public
-                parts = url.split('?')
-                url = parts[0]
-                if is_audio and not url.lower().endswith('.mp3'):
-                    url = url.replace('/upload/', '/upload/f_mp3/', 1)
-        except Exception:
-            pass
         if url.startswith('http://') or url.startswith('https://'):
             return url
         request = self.context.get('request')
@@ -346,22 +329,9 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
         return _is_unlisted_establishment(obj)
 
     def get_voice_file_url(self, obj):
-        stored = (getattr(obj, 'voice_media_url', None) or '').strip()
-        if stored:
-            return stored
         if not obj.voice_file:
             return None
         url = obj.voice_file.url
-        # Cloudinary: forcer une URL mp3 lisible dans <audio>
-        try:
-            if 'res.cloudinary.com' in url and '/upload/' in url:
-                # Ensure no signed/token parts, make it public
-                parts = url.split('?')
-                url = parts[0]
-                if not url.lower().endswith('.mp3'):
-                    url = url.replace('/upload/', '/upload/f_mp3/', 1)
-        except Exception:
-            pass
         if url.startswith('http://') or url.startswith('https://'):
             return url
         request = self.context.get('request')
