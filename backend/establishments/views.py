@@ -43,6 +43,7 @@ class EstablishmentListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     filterset_fields = ['type', 'region']
     search_fields = ['name', 'address']
+    pagination_class = None
 
 
 class EstablishmentDetailView(generics.RetrieveAPIView):

@@ -283,11 +283,12 @@ for code, est in hz_ests.items():
 print('\n--- Création des Catégories ---')
 CATEGORIES = [
     'Qualité des soins',
-    'Accueil et orientation',
-    'Corruption et racket',
-    'Hygiène et assainissement',
-    'Disponibilité des médicaments',
-    'Vétusté des infrastructures',
+    'Médicaments',
+    'Facturation & frais',
+    'Accueil & comportement',
+    'Infrastructure & hygiène',
+    'Confidentialité',
+    'Autre',
 ]
 categories_objs = []
 for idx, cat_name in enumerate(CATEGORIES, start=1):
@@ -321,6 +322,7 @@ for code, zone in zones.items():
         status=status,
         channel='WEB',
         establishment=est,
+        referred_zone_sanitaire=zone if not est else None,
         complainant=usager,
         is_anonymous=False,
     )
