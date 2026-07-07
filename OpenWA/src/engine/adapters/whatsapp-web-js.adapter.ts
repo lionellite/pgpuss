@@ -79,6 +79,8 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
+        '--disable-features=DialMediaRouteProvider',
+        '--remote-debugging-port=9222'
       ];
 
       // Add proxy configuration if provided
@@ -95,6 +97,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           dataPath: path.resolve(this.config.sessionDataPath),
         }),
         puppeteer: {
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
           headless: this.config.puppeteer?.headless ?? true,
           args: puppeteerArgs,
         },
