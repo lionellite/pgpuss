@@ -28,9 +28,8 @@ RUN npm run build
 # ===== Stage 2: Production =====
 FROM node:22-slim AS production
 
-# Install Chrome/Chromium and required dependencies
+# Install required dependencies for Puppeteer's Chromium
 RUN apt-get update && apt-get install -y \
-    chromium \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -50,10 +49,6 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     dumb-init \
     && rm -rf /var/lib/apt/lists/*
-
-# Set Chrome executable path for Puppeteer
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Create app user for security
 RUN groupadd -r openwa && useradd -r -g openwa openwa
