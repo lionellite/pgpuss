@@ -49,8 +49,11 @@ services:
     volumes:
       - openwa_data:/app/data
     restart: unless-stopped
+    shm_size: '1gb'
     cap_add:
       - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
