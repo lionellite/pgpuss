@@ -29,8 +29,8 @@ urlpatterns = [
     path('api/audit/', include('audit.urls')),
 ]
 
-if settings.DEBUG:
-    media_url = getattr(settings, 'MEDIA_URL', '/media/')
-    media_root = getattr(settings, 'MEDIA_ROOT', None)
-    if media_root:
-        urlpatterns += static(media_url, document_root=media_root)
+# Serve media files even in non-DEBUG mode (for local/staging deployment)
+media_url = getattr(settings, 'MEDIA_URL', '/media/')
+media_root = getattr(settings, 'MEDIA_ROOT', None)
+if media_root:
+    urlpatterns += static(media_url, document_root=media_root)

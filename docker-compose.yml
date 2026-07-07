@@ -9,7 +9,8 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
-    # Pas besoin de volumes bind-mount en production
+    volumes:
+      - backend_media:/app/media  # Volume for media files
     # La commande CMD est définie dans le Dockerfile (gunicorn)
 
   frontend:
@@ -91,3 +92,4 @@ services:
 volumes:
   openwa_data:
   redis_data:
+  backend_media:  # Volume to persist backend media files
