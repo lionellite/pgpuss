@@ -136,7 +136,12 @@ class DashboardView(APIView):
         )
 
         # Recent complaints (plus récentes en premier)
-        recent = ComplaintListSerializer(qs.order_by('-created_at')[:5], many=True).data
+        recent_qs = qs.select_related(
+            'category', 'establishment', 'assigned_to'
+        ).annotate(
+            attachments_count_annotated=Count('attachments')
+        ).order_by('-created_at')[:5]
+        recent = ComplaintListSerializer(recent_qs, many=True).data
 
         return Response({
             'total_complaints': total,
