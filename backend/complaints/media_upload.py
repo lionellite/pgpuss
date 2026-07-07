@@ -70,6 +70,8 @@ def _cloudinary_upload(uploaded_file, *, folder: str, resource_type: str = 'auto
     kwargs = {
         'public_id': public_id,
         'resource_type': resource_type,
+        'type': 'upload',
+        'access_mode': 'public',
         'use_filename': False,
         'unique_filename': False,
         'overwrite': False,
