@@ -65,6 +65,8 @@ class ComplaintCreateView(generics.CreateAPIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
         # Bloquer les agents/staff connectés — SAUF les agents call center
         if request.user.is_authenticated and request.user.role not in [
             UserRole.USAGER, UserRole.AGENT_CALL_CENTER
@@ -90,21 +92,40 @@ class ComplaintCreateView(generics.CreateAPIView):
         if not is_json and not getattr(settings, 'FAST_COMPLAINT_CREATE', False):
             vf = request.FILES.get('voice_file')
             if vf:
-                err = save_voice_file(complaint, vf)
-                if err:
-                    return err
+                try:
+                    err = save_voice_file(complaint, vf)
+                    if err:
+                        logger.warning("Failed to save voice file: %s", err)
+                except Exception as e:
+                    logger.warning("Exception saving voice file: %s", e)
             for f in request.FILES.getlist('attachments'):
-                err = save_attachment(complaint, f)
-                if err:
-                    return err
+                try:
+                    err = save_attachment(complaint, f)
+                    if err:
+                        logger.warning("Failed to save attachment: %s", err)
+                except Exception as e:
+                    logger.warning("Exception saving attachment: %s", e)
 
         if not getattr(settings, 'FAST_COMPLAINT_CREATE', False):
-            ensure_singleton_document(
-                complaint=complaint,
-                doc_type=ComplaintDocumentType.FICHE_PLAINTE,
-                actor=request.user if request.user.is_authenticated else None,
-                extra={"document": {"title": "Fiche de plainte"}},
+            try:
+                ensure_singleton_document(
+                    complaint=complaint,
+                    doc_type=ComplaintDocumentType.FICHE_PLAINTE,
+                    actor=request.user if request.user.is_authenticated else None,
+                    extra={"document": {"title": "Fiche de plainte"}},
+                )
+            except Exception as e:
+                logger.warning("Exception ensuring singleton document: %s", e)
+
+        # Apply complaint routing (fail silently)
+        try:
+            from .routing import apply_complaint_routing
+            apply_complaint_routing(
+                complaint,
+                actor=request.user if request.user.is_authenticated else None
             )
+        except Exception as e:
+            logger.warning("Exception applying complaint routing: %s", e)
 
         return Response({
             'message': 'Votre plainte a été enregistrée avec succès.',

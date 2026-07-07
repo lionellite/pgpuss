@@ -240,58 +240,63 @@ class Complaint(models.Model):
         """
         Simulate NLP analysis to categorize and prioritize the complaint.
         """
-        if self.category_id:
-            if not self.deadline:
-                self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
-            return
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            if self.category_id:
+                if not self.deadline:
+                    self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
+                return
 
-        text = (self.title + " " + self.description).lower()
-        if self.description.strip() == self.VOICE_DESCRIPTION_PLACEHOLDER:
-            text = self.title.lower()
+            text = (self.title + " " + self.description).lower()
+            if self.description.strip() == self.VOICE_DESCRIPTION_PLACEHOLDER:
+                text = self.title.lower()
 
-        # 1. Category Detection (Simulated)
-        categories = Category.objects.filter(parent=None).only('id', 'name')
-        keywords = {
-            'soin': 'Qualité des soins',
-            'erreur': 'Qualité des soins',
-            'médicament': 'Médicaments',
-            'pharmacie': 'Médicaments',
-            'argent': 'Facturation & frais',
-            'payé': 'Facturation & frais',
-            'facture': 'Facturation & frais',
-            'attente': 'Accès aux soins',
-            'retard': 'Accès aux soins',
-            'accueil': "Accueil & comportement",
-            'propre': "Infrastructure & hygiène",
-            'insulte': 'Accueil & comportement',
-            'respect': 'Accueil & comportement',
-            'secret': 'Confidentialité',
-            'dossier': 'Confidentialité',
-            'refus': 'Accès aux soins',
-            'décès': 'Urgence / cas critique',
-        }
+            # 1. Category Detection (Simulated)
+            categories = Category.objects.filter(parent=None).only('id', 'name')
+            keywords = {
+                'soin': 'Qualité des soins',
+                'erreur': 'Qualité des soins',
+                'médicament': 'Médicaments',
+                'pharmacie': 'Médicaments',
+                'argent': 'Facturation & frais',
+                'payé': 'Facturation & frais',
+                'facture': 'Facturation & frais',
+                'attente': 'Accès aux soins',
+                'retard': 'Accès aux soins',
+                'accueil': "Accueil & comportement",
+                'propre': "Infrastructure & hygiène",
+                'insulte': 'Accueil & comportement',
+                'respect': 'Accueil & comportement',
+                'secret': 'Confidentialité',
+                'dossier': 'Confidentialité',
+                'refus': 'Accès aux soins',
+                'décès': 'Urgence / cas critique',
+            }
 
-        found_category = None
-        for key, cat_name in keywords.items():
-            if key in text:
-                found_category = categories.filter(name__icontains=cat_name).first()
-                if found_category:
-                    break
+            found_category = None
+            for key, cat_name in keywords.items():
+                if key in text:
+                    found_category = categories.filter(name__icontains=cat_name).first()
+                    if found_category:
+                        break
 
-        if found_category:
-            self.category = found_category
+            if found_category:
+                self.category = found_category
 
-        # 2. Priority Detection (Simulated)
-        critical_keywords = ['mort', 'décès', 'urgence', 'sang', 'grave', 'critique', 'vie']
-        urgent_keywords = ['douleur', 'immédiat', 'rapidement', 'urgent']
+            # 2. Priority Detection (Simulated)
+            critical_keywords = ['mort', 'décès', 'urgence', 'sang', 'grave', 'critique', 'vie']
+            urgent_keywords = ['douleur', 'immédiat', 'rapidement', 'urgent']
 
-        if any(word in text for word in critical_keywords):
-            self.priority = ComplaintPriority.P1_CRITIQUE
-        elif any(word in text for word in urgent_keywords):
-            self.priority = ComplaintPriority.P2_URGENT
+            if any(word in text for word in critical_keywords):
+                self.priority = ComplaintPriority.P1_CRITIQUE
+            elif any(word in text for word in urgent_keywords):
+                self.priority = ComplaintPriority.P2_URGENT
 
-        # 3. Set Deadline
-        self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
+            # 3. Set Deadline
+            self.deadline = timezone.now() + timedelta(hours=self.priority_hours)
+        except Exception as e:
+            logger.warning("Exception in perform_nlp_analysis: %s", e)
 
 
 class Attachment(models.Model):

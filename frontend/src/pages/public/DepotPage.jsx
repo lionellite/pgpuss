@@ -330,6 +330,8 @@ export default function DepotPage() {
         )
       }
     } catch (e) {
+      console.error('Error submitting complaint:', e)
+      console.error('Error details:', e.response)
       const d = e.response?.data
       let msg = d?.error
       if (!msg && d && typeof d === 'object') {

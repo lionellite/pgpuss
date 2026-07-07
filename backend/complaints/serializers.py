@@ -233,7 +233,12 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         )
 
         from .routing import apply_complaint_routing
-        apply_complaint_routing(complaint, actor=complaint.complainant)
+        try:
+            apply_complaint_routing(complaint, actor=complaint.complainant)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("Exception in ComplaintCreateSerializer.create (apply_complaint_routing): %s", e)
 
         return complaint
 
