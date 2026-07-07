@@ -30,8 +30,10 @@ RUN mkdir -p /app/staticfiles && \
 # Port exposé
 EXPOSE 8000
 
-# Commande par défaut
-# --timeout 120s pour les gros payloads base64 (images WhatsApp)
-# --workers 2 pour traiter plusieurs requêtes en parallèle
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--max-requests", "500", "--max-requests-jitter", "50"]
+# Make entrypoint executable and use it
+COPY entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
+# Entrypoint command
+ENTRYPOINT ["/app/entrypoint.sh"]
 
