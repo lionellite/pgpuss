@@ -1310,6 +1310,9 @@ class ComplaintEscalateView(APIView):
         else:
             to_user, target_role, skip_reason = _resolve_escalation_target(complaint, request.user)
 
+        if to_user and to_user.role == UserRole.PNUSS:
+            return Response({'error': "Une plainte ne peut pas être escaladée vers un agent PNUSS."}, status=400)
+
         old_status = complaint.status
         complaint.status = ComplaintStatus.ESCALADEE
         complaint.save()

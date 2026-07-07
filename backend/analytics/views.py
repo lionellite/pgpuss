@@ -122,7 +122,7 @@ class DashboardView(APIView):
             .order_by('month')
         )
         # Serialize months
-        by_month = [{'month': m['month'].strftime('%Y-%m'), 'count': m['count']} for m in by_month]
+        by_month = [{'month': m['month'].strftime('%Y-%m') if m['month'] else 'Inconnu', 'count': m['count']} for m in by_month]
 
         # By channel
         by_channel = dict(qs.values_list('channel').annotate(count=Count('id')).values_list('channel', 'count'))

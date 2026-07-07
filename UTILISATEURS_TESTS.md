@@ -100,6 +100,9 @@
 | `pfe.cnhuhkm@sante.bj` | PFE | Périphérique | CNHU-HKM |
 | `pfe.hzsul@sante.bj` | PFE | Périphérique | HZ Suru-Léré |
 | `pfe.chdli@sante.bj` | PFE | CHD | CHD Littoral |
+| `pnuss.littoral@sante.bj` | PNUSS | Départemental | DDS Littoral |
+| `pnuss.zscot1@sante.bj` | PNUSS | Zone Sanitaire | Cotonou 1 (Akpakpa) |
+| `pnuss.cnhuhkm@sante.bj` | PNUSS | Périphérique | CNHU-HKM |
 
 ---
 
@@ -211,9 +214,10 @@
 - Cible d'escalade ultime avant le Cabinet
 
 ### 4. PNUSS (`PNUSS`)
-- Transversal — scope défini par le rattachement
-- National → visibilité totale
-- Gestion des utilisateurs dans son périmètre
+- Représentant présent à **chaque niveau** de la pyramide (National, Département, Zone, Établissement).
+- Participe aux enquêtes et intervient activement dans la résolution des plaintes.
+- Le PNUSS National a une visibilité totale mais **ne crée/gère que des agents PNUSS** (et agents internes).
+- Les DDS, PFZS et PFE peuvent affecter des plaintes à leur représentant PNUSS respectif.
 
 ### 5. DDS (`DDS`)
 - Niveau départemental

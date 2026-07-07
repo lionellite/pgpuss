@@ -19,6 +19,7 @@ from establishments.models import (
     EstablishmentType, EstablishmentLevel, EstablishmentOperationalStatus
 )
 from accounts.models import User, UserRole
+from complaints.models import Category, Complaint, ComplaintStatus
 
 PASSWORD = 'Pgpuss2026!'
 
@@ -278,6 +279,58 @@ for code, est in hz_ests.items():
     get_or_create_user(email, 'PFE', f'{code}', UserRole.PFE, establishment=est)
     pnuss_email = f'pnuss.{slug}@sante.bj'
     get_or_create_user(pnuss_email, 'PNUSS', f'{code}', UserRole.PNUSS, establishment=est)
+
+print('\n--- Création des Catégories ---')
+CATEGORIES = [
+    'Qualité des soins',
+    'Accueil et orientation',
+    'Corruption et racket',
+    'Hygiène et assainissement',
+    'Disponibilité des médicaments',
+    'Vétusté des infrastructures',
+]
+categories_objs = []
+for idx, cat_name in enumerate(CATEGORIES, start=1):
+    cat, _ = Category.objects.get_or_create(
+        name=cat_name,
+        defaults={'description': f'Description pour {cat_name}', 'order': idx}
+    )
+    categories_objs.append(cat)
+    print(f'  [+] Catégorie : {cat.name}')
+
+print('\n--- Création de plaintes fictives pour les tableaux de bord ---')
+usager = get_or_create_user('usager.test@sante.bj', 'Usager', 'Test', UserRole.USAGER)
+import random
+from django.utils import timezone
+from datetime import timedelta
+
+complaint_count = 0
+for code, zone in zones.items():
+    # Prendre le premier HZ de la zone, ou le premier CS
+    est = Establishment.objects.filter(zone_sanitaire=zone).first()
+    cat = random.choice(categories_objs)
+    priority = random.choice(['P1', 'P2', 'P3', 'P4', 'P5'])
+    status = random.choice([ComplaintStatus.SOUMISE, ComplaintStatus.EN_TRAITEMENT, ComplaintStatus.RESOLUE])
+    created = timezone.now() - timedelta(days=random.randint(1, 30))
+    
+    c = Complaint.objects.create(
+        title=f"Plainte de test - {zone.name}",
+        description="Ceci est une plainte générée automatiquement pour les tests.",
+        category=cat,
+        priority=priority,
+        status=status,
+        channel='WEB',
+        establishment=est,
+        complainant=usager,
+        is_anonymous=False,
+    )
+    # Bypass l'auto_now_add
+    Complaint.objects.filter(pk=c.pk).update(created_at=created)
+    if status == ComplaintStatus.RESOLUE:
+        Complaint.objects.filter(pk=c.pk).update(resolved_at=created + timedelta(days=2))
+    complaint_count += 1
+
+print(f'  {complaint_count} plaintes de test générées.')
 
 print(f'\n=== Peuplement terminé ===')
 print(f'  Régions   : {Region.objects.count()}')

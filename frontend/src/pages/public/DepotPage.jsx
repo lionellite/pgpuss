@@ -516,7 +516,7 @@ export default function DepotPage() {
                         <select className="form-select" {...register('establishment')}>
                           <option value="">Sélectionnez un établissement</option>
                           {establishments
-                            .filter(e => !selectedRegion || e.region === selectedRegion)
+                            .filter(e => !selectedRegion || String(e.region) === String(selectedRegion))
                             .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
                           }
                         </select>

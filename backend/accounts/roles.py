@@ -141,13 +141,12 @@ def assignable_roles_for_pfe():
 
 
 def escalation_target_roles_for(actor_role: str):
-    """Rôles cibles d'escalade selon l'acteur (hiérarchie)."""
+    """Rôles cibles d'escalade selon l'acteur (hiérarchie stricte)."""
     mapping = {
-        UserRole.PFE: (UserRole.PFZS, UserRole.PNUSS),
-        UserRole.DIRECTEUR_EST: (UserRole.PFZS, UserRole.DDS, UserRole.PNUSS),
-        UserRole.PFZS: (UserRole.DDS, UserRole.PNUSS),
-        UserRole.PNUSS: (UserRole.PFZS, UserRole.DDS, UserRole.DQSS),
-        UserRole.DDS: (UserRole.DQSS, UserRole.CABINET),
+        UserRole.PFE: (UserRole.PFZS, UserRole.DDS, UserRole.DQSS),
+        UserRole.DIRECTEUR_EST: (UserRole.PFZS, UserRole.DDS),
+        UserRole.PFZS: (UserRole.DDS,),
+        UserRole.DDS: (UserRole.DQSS,),
         UserRole.DQSS: (UserRole.CABINET,),
         UserRole.CABINET: (UserRole.DQSS,),
     }
