@@ -168,10 +168,15 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
     });
   }
 
-  async findOne(id: string): Promise<Session> {
-    const session = await this.sessionRepository.findOne({ where: { id } });
+  async findOne(idOrName: string): Promise<Session> {
+    // Try to find by UUID first
+    let session = await this.sessionRepository.findOne({ where: { id: idOrName } });
     if (!session) {
-      throw new NotFoundException(`Session with id '${id}' not found`);
+      // If not found, try to find by name
+      session = await this.sessionRepository.findOne({ where: { name: idOrName } });
+    }
+    if (!session) {
+      throw new NotFoundException(`Session with id or name '${idOrName}' not found`);
     }
     return session;
   }
@@ -221,19 +226,20 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
     });
   }
 
-  async start(id: string): Promise<Session> {
-    const session = await this.findOne(id);
+  async start(idOrName: string): Promise<Session> {
+    const session = await this.findOne(idOrName);
+    const sessionId = session.id;
 
-    if (this.engines.has(id)) {
+    if (this.engines.has(sessionId)) {
       throw new BadRequestException('Session is already started');
     }
 
     // Execute hook before starting
     await this.hookManager.execute(
       'session:starting',
-      { sessionId: id },
+      { sessionId },
       {
-        sessionId: id,
+        sessionId,
         source: 'SessionService',
       },
     );
@@ -243,15 +249,15 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
       maxReconnectAttempts?: number;
       reconnectBaseDelay?: number;
     } | null;
-    this.reconnectStates.set(id, {
+    this.reconnectStates.set(sessionId, {
       attempts: 0,
       timer: null,
       maxAttempts: config?.maxReconnectAttempts ?? 5,
       baseDelay: config?.reconnectBaseDelay ?? 5000,
     });
 
-    await this.initializeEngine(id, session);
-    return this.findOne(id);
+    await this.initializeEngine(sessionId, session);
+    return this.findOne(sessionId);
   }
 
   private async initializeEngine(id: string, session: Session): Promise<void> {
@@ -497,8 +503,24 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
     };
   }
 
-  getEngine(id: string): IWhatsAppEngine | undefined {
-    return this.engines.get(id);
+  getEngine(idOrName: string): IWhatsAppEngine | undefined {
+    // First try direct lookup (for UUID)
+    let engine = this.engines.get(idOrName);
+    if (engine) {
+      return engine;
+    }
+    // If not found, try to find session by name and then get engine by session.id
+    // But since this is sync, we can't query the database. So let's keep a map of session name to session id
+    // Wait, we don't have that map. Alternatively, let's modify the method to be async? But that would require changes elsewhere
+    // Wait, let's see how getEngine is used: in message.service.ts, it's called after saveOutgoingMessage, which calls sessionService.findOne (async)
+    // So maybe we should modify getEngine to be async? Or better, let's first find the session (async) and then get the engine by session.id
+    // Wait let's check message.service.ts:
+    // In message.service.ts, sendText calls:
+    // const engine = this.getEngine(sessionId);
+    // But getEngine is sync. So let's first modify message.service.ts to resolve the session first!
+    // Let's proceed step by step
+    // For now, let's just return undefined if not found, and modify message.service.ts to find the session first
+    return undefined;
   }
 
   async getGroups(id: string): Promise<{ id: string; name: string }[]> {

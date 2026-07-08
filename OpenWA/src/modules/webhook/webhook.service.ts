@@ -11,6 +11,7 @@ import { createLogger } from '../../common/services/logger.service';
 import { QUEUE_NAMES } from '../queue/queue-names';
 import { generateIdempotencyKey, generateDeliveryId } from './utils/idempotency.util';
 import { HookManager } from '../../core/hooks';
+import { SessionService } from '../session/session.service';
 
 export interface WebhookPayload {
   event: string;
@@ -42,6 +43,7 @@ export class WebhookService {
     private readonly webhookRepository: Repository<Webhook>,
     private readonly configService: ConfigService,
     private readonly hookManager: HookManager,
+    private readonly sessionService: SessionService,
     @Optional()
     @InjectQueue(QUEUE_NAMES.WEBHOOK)
     private readonly webhookQueue?: Queue<WebhookJobData>,
@@ -49,9 +51,10 @@ export class WebhookService {
     this.queueEnabled = configService.get<boolean>('queue.enabled', false);
   }
 
-  async create(sessionId: string, dto: CreateWebhookDto): Promise<Webhook> {
+  async create(sessionIdOrName: string, dto: CreateWebhookDto): Promise<Webhook> {
+    const session = await this.sessionService.findOne(sessionIdOrName);
     const webhook = this.webhookRepository.create({
-      sessionId,
+      sessionId: session.id,
       url: dto.url,
       events: dto.events || ['message.received'],
       secret: dto.secret || null,
@@ -62,9 +65,10 @@ export class WebhookService {
     return this.webhookRepository.save(webhook);
   }
 
-  async findBySession(sessionId: string): Promise<Webhook[]> {
+  async findBySession(sessionIdOrName: string): Promise<Webhook[]> {
+    const session = await this.sessionService.findOne(sessionIdOrName);
     return this.webhookRepository.find({
-      where: { sessionId },
+      where: { sessionId: session.id },
       order: { createdAt: 'DESC' },
     });
   }
@@ -101,13 +105,14 @@ export class WebhookService {
     await this.webhookRepository.remove(webhook);
   }
 
-  async test(sessionId: string, webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> {
+  async test(sessionIdOrName: string, webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> {
+    const session = await this.sessionService.findOne(sessionIdOrName);
     const webhook = await this.findOne(webhookId);
 
     const testPayload: WebhookPayload = {
       event: 'test',
       timestamp: new Date().toISOString(),
-      sessionId,
+      sessionId: session.id,
       idempotencyKey: generateIdempotencyKey('test', { webhookId: webhook.id }),
       deliveryId: generateDeliveryId(),
       data: {

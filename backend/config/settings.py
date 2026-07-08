@@ -251,7 +251,7 @@ FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
 # WhatsApp via OpenWA (gateway open source — alternative à l'API Meta)
 OPENWA_API_URL = os.environ.get("OPENWA_API_URL", "http://localhost:2785/api")
 OPENWA_API_KEY = os.environ.get("OPENWA_API_KEY", "")
-OPENWA_SESSION_ID = os.environ.get("OPENWA_SESSION_ID", "")
+OPENWA_SESSION_ID = os.environ.get("OPENWA_SESSION_ID", "pgpuss-whatsapp")
 OPENWA_WEBHOOK_SECRET = os.environ.get("OPENWA_WEBHOOK_SECRET", "")
 WA_VERIFY_TOKEN = os.environ.get("WA_VERIFY_TOKEN", "pgpuss_wa_verify_token_change_me")
 

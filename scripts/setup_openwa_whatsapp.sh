@@ -46,10 +46,10 @@ if [[ -z "$SESSION_ID" ]]; then
   exit 1
 fi
 
-echo "Session ID : $SESSION_ID"
+echo "Session Name : ${SESSION_NAME}"
 
 echo "==> Enregistrement du webhook vers PGP-USS..."
-webhook_response="$(curl -sS -X POST "${OPENWA_API_URL}/sessions/${SESSION_ID}/webhooks" "${auth_header[@]}" \
+webhook_response="$(curl -sS -X POST "${OPENWA_API_URL}/sessions/${SESSION_NAME}/webhooks" "${auth_header[@]}" \
   -d "{
     \"url\": \"${PGPUSS_WEBHOOK_URL}\",
     \"events\": [\"message.received\"],
@@ -60,17 +60,17 @@ echo "$webhook_response"
 echo ""
 echo "==> QR Code WhatsApp (scannez avec votre téléphone) :"
 echo "   Dashboard : http://localhost:2886"
-echo "   API QR    : ${OPENWA_API_URL}/sessions/${SESSION_ID}/qr"
+echo "   API QR    : ${OPENWA_API_URL}/sessions/${SESSION_NAME}/qr"
 echo ""
 
 ENV_FILE=".env"
 if [[ -f "$ENV_FILE" ]]; then
-  echo "==> Mise à jour automatique de $ENV_FILE avec le nouveau SESSION_ID..."
+  echo "==> Mise à jour automatique de $ENV_FILE avec le SESSION_NAME (fixe)..."
   # Remplacer la ligne OPENWA_SESSION_ID si elle existe, sinon l'ajouter
   if grep -q "^OPENWA_SESSION_ID=" "$ENV_FILE"; then
-    sed -i "s/^OPENWA_SESSION_ID=.*/OPENWA_SESSION_ID=${SESSION_ID}/" "$ENV_FILE"
+    sed -i "s/^OPENWA_SESSION_ID=.*/OPENWA_SESSION_ID=${SESSION_NAME}/" "$ENV_FILE"
   else
-    echo "OPENWA_SESSION_ID=${SESSION_ID}" >> "$ENV_FILE"
+    echo "OPENWA_SESSION_ID=${SESSION_NAME}" >> "$ENV_FILE"
   fi
   echo "✓ $ENV_FILE mis à jour."
   
