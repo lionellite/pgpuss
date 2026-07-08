@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -43,6 +43,7 @@ export class WebhookService {
     private readonly webhookRepository: Repository<Webhook>,
     private readonly configService: ConfigService,
     private readonly hookManager: HookManager,
+    @Inject(forwardRef(() => SessionService))
     private readonly sessionService: SessionService,
     @Optional()
     @InjectQueue(QUEUE_NAMES.WEBHOOK)
