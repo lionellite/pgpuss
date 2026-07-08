@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -6,6 +7,8 @@ from .models import Complaint, ComplaintStatus, ComplaintChannel
 from .openwa_client import OpenWAClient
 from .whatsapp_parser import parse_incoming_message, verify_openwa_signature
 import os
+
+logger = logging.getLogger(__name__)
 
 
 def _get_verify_token(env_key: str, fallback: str) -> str:

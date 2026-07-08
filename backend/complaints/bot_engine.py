@@ -43,9 +43,9 @@ MAX_ATTACHMENTS = 5
 CATEGORIES_MAP = {
     "1": "Qualité des soins",
     "2": "Médicaments",
-    "3": "Facturation & frais",
-    "4": "Accueil & comportement",
-    "5": "Infrastructure & hygiène",
+    "3": "Facturation et frais",
+    "4": "Accueil et comportement",
+    "5": "Infrastructure et hygiène",
     "6": "Confidentialité",
     "7": "Autre",
 }
@@ -554,16 +554,34 @@ def build_tracking_response(ticket_number: str) -> str:
 
 
 def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str], str]:
+    import logging
+    logger = logging.getLogger(__name__)
+    
     cat_name = data.get("category", "")
-    cat_obj = Category.objects.filter(name__icontains=cat_name).first()
-
+    cat_obj = None
+    if cat_name:
+        # Try exact match first, then icontains
+        cat_obj = Category.objects.filter(name__iexact=cat_name).first()
+        if not cat_obj:
+            cat_obj = Category.objects.filter(name__icontains=cat_name).first()
+    # If still no category, get the first one or None
+    if not cat_obj:
+        cat_obj = Category.objects.filter(parent=None).first()
+    
     establishment = None
     service = None
-    if data.get("establishment_id"):
-        establishment = Establishment.objects.filter(pk=data["establishment_id"]).first()
-    if data.get("service_id"):
-        service = Service.objects.filter(pk=data["service_id"]).first()
-
+    try:
+        if data.get("establishment_id"):
+            establishment = Establishment.objects.filter(pk=data["establishment_id"]).first()
+    except Exception as e:
+        logger.warning("Could not find establishment: %s", e)
+        
+    try:
+        if data.get("service_id"):
+            service = Service.objects.filter(pk=data["service_id"]).first()
+    except Exception as e:
+        logger.warning("Could not find service: %s", e)
+    
     complaint = Complaint.objects.create(
         title=data.get("title", "Plainte WhatsApp"),
         description=data.get("description", ""),
@@ -581,18 +599,34 @@ def create_complaint_from_data(data: dict, phone: str) -> tuple[str, list[str], 
         social_source="whatsapp",
         social_sender_id=phone,
     )
-    complaint.perform_nlp_analysis()
+    try:
+        complaint.perform_nlp_analysis()
+    except Exception as e:
+        logger.warning("NLP analysis failed: %s", e)
     complaint.save()
 
-    ComplaintHistory.objects.create(
-        complaint=complaint,
-        action="Plainte soumise via WhatsApp",
-        new_status=ComplaintStatus.SOUMISE,
-        notes="Dépôt via chatbot WhatsApp",
-    )
+    try:
+        ComplaintHistory.objects.create(
+            complaint=complaint,
+            action="Plainte soumise via WhatsApp",
+            new_status=ComplaintStatus.SOUMISE,
+            notes="Dépôt via chatbot WhatsApp",
+        )
+    except Exception as e:
+        logger.warning("Could not create complaint history: %s", e)
 
-    warnings = apply_draft_media_to_complaint(complaint, data)
-    route = apply_complaint_routing(complaint, skip_history=True)
+    warnings = []
+    try:
+        warnings = apply_draft_media_to_complaint(complaint, data)
+    except Exception as e:
+        logger.warning("Could not apply draft media: %s", e)
+    
+    route = "pfe"
+    try:
+        route = apply_complaint_routing(complaint, skip_history=True)
+    except Exception as e:
+        logger.warning("Could not apply routing: %s", e)
+        
     return complaint.ticket_number, warnings, route
 
 

@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     volumes:
       - backend_media:/app/media  # Volume for media files
+      - shared_media:/shared/media  # Shared volume with OpenWA for WhatsApp media
     # La commande CMD est définie dans le Dockerfile (gunicorn)
 
   frontend:
@@ -44,19 +45,20 @@ services:
       - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-software-rasterizer,--no-zygote,--disable-features=DialMediaRouteProvider,--remote-debugging-port=9222
       
       - STORAGE_TYPE=local
-      - STORAGE_LOCAL_PATH=/app/data/media
+      - STORAGE_LOCAL_PATH=/shared/media
       - WEBHOOK_TIMEOUT=10000
       - WEBHOOK_MAX_RETRIES=3
       - QUEUE_ENABLED=false
       - API_MASTER_KEY=${OPENWA_API_KEY}
     volumes:
       - openwa_data:/app/data
+      - shared_media:/shared/media
     restart: unless-stopped
     shm_size: '1gb'
     cap_add:
       - SYS_ADMIN
     security_opt:
-      - seccomp=unconfined
+      - seccomp:unconfined
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -95,3 +97,4 @@ volumes:
   openwa_data:
   redis_data:
   backend_media:  # Volume to persist backend media files
+  shared_media:  # Shared volume for WhatsApp media between OpenWA and backend
