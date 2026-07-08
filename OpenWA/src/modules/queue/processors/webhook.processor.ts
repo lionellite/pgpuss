@@ -33,7 +33,7 @@ export class WebhookProcessor extends WorkerHost {
     const sessionId = payload.sessionId;
 
     // Sanitize the URL
-    const sanitizedUrl = url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+    const sanitizedUrl = url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
 
     this.logger.log(`⚙️ Processing webhook job ${job.id} for event ${event}`, {
       webhookId,

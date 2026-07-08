@@ -258,7 +258,7 @@ export class WebhookService {
             { sessionId, source: 'WebhookService' },
           );
 
-          const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+          const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
           this.logger.log(`📤 Webhook queued for ${webhook.id} (event: ${event})`, {
             webhookId: webhook.id,
             event,
@@ -283,7 +283,7 @@ export class WebhookService {
         }
       } else {
         // Direct delivery when queue is disabled
-        const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+        const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
         this.logger.log(`📤 Sending webhook directly to ${webhook.id} (event: ${event})`, {
           webhookId: webhook.id,
           event,
@@ -336,7 +336,7 @@ export class WebhookService {
     attempt = 1,
   ): Promise<void> {
     // Sanitize the URL to remove extra characters
-    const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+    const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
     
     this.logger.log(`📤 Delivering webhook to ${sanitizedUrl} (attempt ${attempt}/${webhook.retryCount})`, {
       webhookId: webhook.id,
