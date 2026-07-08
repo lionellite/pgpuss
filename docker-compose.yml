@@ -22,6 +22,8 @@ services:
       - backend
       - openwa
     restart: unless-stopped
+    volumes:
+      - backend_media:/usr/share/nginx/media  # Mount media volume to nginx
 
   openwa:
     build:
