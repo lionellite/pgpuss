@@ -32,9 +32,13 @@ export class WebhookProcessor extends WorkerHost {
     const startTime = Date.now();
     const sessionId = payload.sessionId;
 
+    // Sanitize the URL
+    const sanitizedUrl = url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+
     this.logger.log(`⚙️ Processing webhook job ${job.id} for event ${event}`, {
       webhookId,
-      url,
+      originalUrl: url,
+      sanitizedUrl,
       event,
       deliveryId: payload.deliveryId,
       idempotencyKey: payload.idempotencyKey,
@@ -50,7 +54,7 @@ export class WebhookProcessor extends WorkerHost {
     };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(sanitizedUrl, {
         method: 'POST',
         headers: requestHeaders,
         body: JSON.stringify(payload),
@@ -84,7 +88,7 @@ export class WebhookProcessor extends WorkerHost {
         { sessionId, source: 'WebhookProcessor' },
       );
 
-      this.logger.log(`Webhook delivered successfully`, {
+      this.logger.log(`✅ Webhook delivered successfully to ${sanitizedUrl}`, {
         webhookId,
         event,
         deliveryId: payload.deliveryId,

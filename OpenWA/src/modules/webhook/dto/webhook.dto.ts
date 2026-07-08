@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsUrl, IsArray, IsOptional, IsBoolean, IsInt, Min, Max, ArrayMinSize } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export const WEBHOOK_EVENTS = [
   'message.received',
@@ -23,6 +24,7 @@ export class CreateWebhookDto {
     example: 'https://your-server.com/webhook',
   })
   @IsUrl()
+  @Transform(({ value }) => value ? value.trim().replace(/^[`'"]+|[`'"]+$/g, '') : value)
   url: string;
 
   @ApiPropertyOptional({
@@ -67,6 +69,7 @@ export class UpdateWebhookDto {
   @ApiPropertyOptional({ description: 'Webhook URL' })
   @IsOptional()
   @IsUrl()
+  @Transform(({ value }) => value ? value.trim().replace(/^[`'"]+|[`'"]+$/g, '') : value)
   url?: string;
 
   @ApiPropertyOptional({ description: 'Event types to subscribe to' })

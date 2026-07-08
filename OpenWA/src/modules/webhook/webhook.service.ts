@@ -258,14 +258,16 @@ export class WebhookService {
             { sessionId, source: 'WebhookService' },
           );
 
+          const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
           this.logger.log(`📤 Webhook queued for ${webhook.id} (event: ${event})`, {
-          webhookId: webhook.id,
-          event,
-          idempotencyKey,
-          deliveryId,
-          webhookUrl: webhook.url,
-          action: 'webhook_queued',
-        });
+            webhookId: webhook.id,
+            event,
+            idempotencyKey,
+            deliveryId,
+            webhookUrl: sanitizedUrl,
+            originalUrl: webhook.url,
+            action: 'webhook_queued',
+          });
         } catch (error) {
           // Execute hook on queue error (not delivery error - that happens in processor)
           await this.hookManager.execute(
@@ -281,12 +283,14 @@ export class WebhookService {
         }
       } else {
         // Direct delivery when queue is disabled
+        const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
         this.logger.log(`📤 Sending webhook directly to ${webhook.id} (event: ${event})`, {
           webhookId: webhook.id,
           event,
           idempotencyKey,
           deliveryId,
-          webhookUrl: webhook.url,
+          webhookUrl: sanitizedUrl,
+          originalUrl: webhook.url,
           action: 'webhook_sending_direct',
         });
         try {
@@ -331,9 +335,13 @@ export class WebhookService {
     headers: Record<string, string>,
     attempt = 1,
   ): Promise<void> {
-    this.logger.log(`📤 Delivering webhook to ${webhook.url} (attempt ${attempt}/${webhook.retryCount})`, {
+    // Sanitize the URL to remove extra characters
+    const sanitizedUrl = webhook.url.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+    
+    this.logger.log(`📤 Delivering webhook to ${sanitizedUrl} (attempt ${attempt}/${webhook.retryCount})`, {
       webhookId: webhook.id,
-      url: webhook.url,
+      originalUrl: webhook.url,
+      sanitizedUrl,
       event: payload.event,
       attempt,
     });
@@ -348,7 +356,7 @@ export class WebhookService {
     }
 
     try {
-      const response = await fetch(webhook.url, {
+      const response = await fetch(sanitizedUrl, {
         method: 'POST',
         headers,
         body,
