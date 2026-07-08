@@ -18,6 +18,8 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const CHROME_EXECUTABLE_PATH = '/usr/bin/google-chrome';
+
 // Configuration loading order (later sources do NOT override earlier ones):
 //   1. Process env (Docker, shell, systemd) — highest priority
 //   2. .env (project-level overrides committed/managed by the user)
@@ -75,6 +77,14 @@ STORAGE_PATH=./data/media
 }
 
 async function bootstrap() {
+  // Check for Chrome existence at startup
+  if (!fs.existsSync(CHROME_EXECUTABLE_PATH)) {
+    console.error(`❌ FATAL ERROR: Google Chrome not found at ${CHROME_EXECUTABLE_PATH}`);
+    console.error('Please install Google Chrome Stable to continue.');
+    process.exit(1);
+  }
+  console.log(`✅ Found Google Chrome at: ${CHROME_EXECUTABLE_PATH}`);
+
   const app = await NestFactory.create(AppModule);
 
   // Enable shutdown hooks for graceful shutdown

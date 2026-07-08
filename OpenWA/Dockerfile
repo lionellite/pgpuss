@@ -11,7 +11,12 @@ RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
+    wget \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
+
+# Disable Puppeteer's browser download for all stages
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 # Copy package files
 COPY package*.json ./
@@ -28,8 +33,13 @@ RUN npm run build
 # ===== Stage 2: Production =====
 FROM node:22-slim AS production
 
-# Install required dependencies for Puppeteer's Chromium
+# Disable Puppeteer's browser download
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+# Install required dependencies and Google Chrome Stable
 RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -48,6 +58,14 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     dumb-init \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Google Chrome repository and install Chrome Stable
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user for security

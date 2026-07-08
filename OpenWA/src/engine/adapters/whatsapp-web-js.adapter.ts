@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Client, LocalAuth, MessageMedia, MessageTypes } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   IWhatsAppEngine,
   EngineStatus,
@@ -37,6 +38,8 @@ import {
 } from '../types/whatsapp-web-js.types';
 import { buildIncomingMessageBase } from './message-mapper';
 
+const CHROME_EXECUTABLE_PATH = '/usr/bin/google-chrome';
+
 export interface WhatsAppWebJsConfig {
   sessionId: string;
   sessionDataPath: string;
@@ -70,19 +73,22 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     this.setStatus(EngineStatus.INITIALIZING);
 
     try {
+      // Check if Chrome exists
+      if (!fs.existsSync(CHROME_EXECUTABLE_PATH)) {
+        const errorMsg = `Google Chrome not found at ${CHROME_EXECUTABLE_PATH}. Please install Google Chrome Stable.`;
+        this.logger.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+      this.logger.log(`Using Chrome executable at: ${CHROME_EXECUTABLE_PATH}`);
+
       // Build puppeteer args, including proxy if configured
       const puppeteerArgs = this.config.puppeteer?.args || [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
         '--disable-gpu',
-        '--disable-features=DialMediaRouteProvider,IsolateOrigins,site-per-process',
-        '--remote-debugging-port=9222',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
+        '--no-first-run',
+        '--no-zygote'
       ];
 
       // Add proxy configuration if provided
@@ -99,7 +105,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           dataPath: path.resolve(this.config.sessionDataPath),
         }),
         puppeteer: {
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+          executablePath: CHROME_EXECUTABLE_PATH,
           headless: (this.config.puppeteer?.headless === false) ? false : 'new',
           args: puppeteerArgs,
         },
