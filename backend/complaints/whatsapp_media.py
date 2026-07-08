@@ -30,24 +30,26 @@ class InMemoryUpload:
 
 
 def _decode_media_payload(media: dict) -> InMemoryUpload | None:
-    """Décode un payload média WhatsApp.
+    """Décode un payload média WhatsApp et copie le fichier vers /app/media (stockage Django).
 
-    Supporte trois modes :
-    - Volume partagé : fichier dans /shared/media (recommandé pour Docker)
+    Supporte deux modes :
+    - Volume partagé : fichier dans /shared/media (OpenWA) → copié vers /app/media (Django)
     - Ancien : base64 dans le champ ``data``
-    - URL locale : URL locale OpenWA dans le champ ``url`` (fallback)
     """
+    import os
+    import shutil
+    from django.conf import settings
+    
     # --- Mode volume partagé Docker (recommandé) ---
     url = media.get("url")
     if url:
-        import os
         import re
         
         # Essaie d'extraire un identifiant de fichier depuis l'URL
         file_id_match = re.search(r'[?&]id=([^&]+)', url)
         filename_from_url = media.get("filename") or ""
         
-        # Cherche le fichier dans le volume partagé
+        # Cherche le fichier dans le volume partagé OpenWA
         shared_media_path = "/shared/media"
         if os.path.exists(shared_media_path):
             # Cherche le fichier le plus récent correspondant au type MIME
@@ -81,35 +83,41 @@ def _decode_media_payload(media: dict) -> InMemoryUpload | None:
                     match = True
                 
                 # Si pas de correspondance précise, prend le fichier le plus récent
-                # du bon type MIME (basé sur l'extension)
                 if not match and all_files.index((file_path, mtime, size)) == 0:
                     match = True
                 
                 if match:
                     try:
-                        with open(file_path, 'rb') as f:
+                        # Copie le fichier vers le stockage Django (/app/media)
+                        django_media_root = getattr(settings, 'MEDIA_ROOT', '/app/media')
+                        
+                        # Crée les sous-dossiers nécessaires (complaints/voice/ ou attachments/)
+                        if mimetype.startswith("audio/"):
+                            target_dir = os.path.join(django_media_root, 'complaints', 'voice')
+                        else:
+                            target_dir = os.path.join(django_media_root, 'attachments')
+                        
+                        os.makedirs(target_dir, exist_ok=True)
+                        
+                        # Génère un nom de fichier unique
+                        target_filename = filename_from_url.strip() or file
+                        if not target_filename:
+                            target_filename = _default_filename(mimetype)
+                        
+                        target_path = os.path.join(target_dir, target_filename)
+                        
+                        # Copie le fichier
+                        shutil.copy2(file_path, target_path)
+                        
+                        # Lit le fichier copié pour le retourner
+                        with open(target_path, 'rb') as f:
                             raw_bytes = f.read()
-                        filename = (filename_from_url or "").strip() or file
-                        logger.info("Fichier lu depuis volume partagé: %s (taille: %d octets)", file_path, len(raw_bytes))
-                        return InMemoryUpload(raw_bytes, filename, mimetype)
+                        
+                        logger.info("Fichier copié de %s vers %s (taille: %d octets)", file_path, target_path, len(raw_bytes))
+                        return InMemoryUpload(raw_bytes, target_filename, mimetype)
                     except Exception as exc:
-                        logger.warning("Impossible de lire le fichier %s: %s", file_path, exc)
+                        logger.warning("Impossible de copier le fichier %s vers %s: %s", file_path, target_path if 'target_path' in locals() else 'target', exc)
                         continue
-        
-        # --- Mode URL locale (fallback - téléchargement HTTP) ---
-        try:
-            import urllib.request as _req
-            with _req.urlopen(url, timeout=30) as resp:
-                raw_bytes = resp.read()
-            if raw_bytes:
-                mimetype = (media.get("mimetype") or "application/octet-stream").strip()
-                filename = (media.get("filename") or "").strip() or _default_filename(mimetype)
-                logger.info("Fichier téléchargé depuis URL: %s", url)
-                return InMemoryUpload(raw_bytes, filename, mimetype)
-        except Exception as exc:
-            logger.warning("Impossible de télécharger le média depuis %s: %s", url, exc)
-            # Essaie le fallback base64 si présent
-            raw_bytes = None
 
     # --- Mode base64 (rétrocompatibilité / audio court) ---
     raw = media.get("data")
