@@ -154,6 +154,14 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this.client.on('message', async msg => {
+      this.logger.log(`📩 Message event received from ${msg.from}`, {
+        sessionId: this.config.sessionId,
+        messageId: msg.id._serialized,
+        from: msg.from,
+        body: msg.body,
+        type: msg.type,
+        fromMe: msg.fromMe,
+      });
       try {
         const incomingMessage: IncomingMessage = buildIncomingMessageBase(msg);
 
@@ -245,6 +253,10 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         }
 
         this.callbacks.onMessage?.(incomingMessage);
+        this.logger.log(`✅ Callback onMessage invoked for message ${incomingMessage.id}`, {
+          sessionId: this.config.sessionId,
+          messageId: incomingMessage.id,
+        });
       } catch (error) {
         this.logger.error('Error processing incoming message', String(error));
       }

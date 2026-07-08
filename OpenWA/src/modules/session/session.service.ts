@@ -326,10 +326,11 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
         });
       },
       onMessage: (message): void => {
-        this.logger.debug(`Message received from ${message.from}`, {
+        this.logger.log(`📨 Message received from ${message.from}`, {
           sessionId: id,
           messageId: message.id,
           from: message.from,
+          body: message.body,
           action: 'message_received',
         });
         // Update last active timestamp

@@ -32,12 +32,14 @@ export class WebhookProcessor extends WorkerHost {
     const startTime = Date.now();
     const sessionId = payload.sessionId;
 
-    this.logger.log(`Processing webhook job ${job.id}`, {
+    this.logger.log(`⚙️ Processing webhook job ${job.id} for event ${event}`, {
       webhookId,
+      url,
       event,
       deliveryId: payload.deliveryId,
       idempotencyKey: payload.idempotencyKey,
       attempt: job.attemptsMade + 1,
+      maxRetries,
       action: 'webhook_process_start',
     });
 

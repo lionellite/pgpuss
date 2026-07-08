@@ -163,7 +163,19 @@ export class WebhookService {
       where: { sessionId, active: true },
     });
 
+    this.logger.log(`🔍 Found ${webhooks.length} active webhooks for session ${sessionId}, checking which match event ${event}...`, {
+      sessionId,
+      event,
+      allWebhooks: webhooks.map(w => ({ id: w.id, events: w.events, active: w.active })),
+    });
+
     const matchingWebhooks = webhooks.filter(w => w.events.includes(event) || w.events.includes('*'));
+    
+    this.logger.log(`✅ Found ${matchingWebhooks.length} matching webhooks for event ${event}`, {
+      sessionId,
+      event,
+      matchingWebhooks: matchingWebhooks.map(w => ({ id: w.id, url: w.url, events: w.events })),
+    });
 
     // Generate idempotency key (same for all webhooks receiving this event)
     const idempotencyKey = generateIdempotencyKey(event, { ...data, sessionId });
@@ -246,13 +258,14 @@ export class WebhookService {
             { sessionId, source: 'WebhookService' },
           );
 
-          this.logger.debug(`Webhook job queued for ${webhook.id}`, {
-            webhookId: webhook.id,
-            event,
-            idempotencyKey,
-            deliveryId,
-            action: 'webhook_queued',
-          });
+          this.logger.log(`📤 Webhook queued for ${webhook.id} (event: ${event})`, {
+          webhookId: webhook.id,
+          event,
+          idempotencyKey,
+          deliveryId,
+          webhookUrl: webhook.url,
+          action: 'webhook_queued',
+        });
         } catch (error) {
           // Execute hook on queue error (not delivery error - that happens in processor)
           await this.hookManager.execute(
@@ -268,6 +281,14 @@ export class WebhookService {
         }
       } else {
         // Direct delivery when queue is disabled
+        this.logger.log(`📤 Sending webhook directly to ${webhook.id} (event: ${event})`, {
+          webhookId: webhook.id,
+          event,
+          idempotencyKey,
+          deliveryId,
+          webhookUrl: webhook.url,
+          action: 'webhook_sending_direct',
+        });
         try {
           await this.deliverWebhook(webhook, finalPayload, headers);
 
@@ -310,6 +331,12 @@ export class WebhookService {
     headers: Record<string, string>,
     attempt = 1,
   ): Promise<void> {
+    this.logger.log(`📤 Delivering webhook to ${webhook.url} (attempt ${attempt}/${webhook.retryCount})`, {
+      webhookId: webhook.id,
+      url: webhook.url,
+      event: payload.event,
+      attempt,
+    });
     const body = JSON.stringify(payload);
 
     // Update retry count header
@@ -337,9 +364,10 @@ export class WebhookService {
         lastTriggeredAt: new Date(),
       });
 
-      this.logger.debug(`Webhook delivered to ${webhook.id}`, {
+      this.logger.log(`✅ Webhook delivered successfully to ${webhook.url}`, {
         webhookId: webhook.id,
         deliveryId: payload.deliveryId,
+        url: webhook.url,
         action: 'webhook_delivered',
       });
     } catch (error) {
