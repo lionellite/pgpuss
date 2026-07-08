@@ -24,7 +24,14 @@ export class CreateWebhookDto {
     example: 'https://your-server.com/webhook',
   })
   @IsUrl()
-  @Transform(({ value }) => value ? value.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '') : value)
+  @Transform(({ value }) => {
+    if (!value) return value;
+    let sanitized = value;
+    sanitized = sanitized.trim();
+    sanitized = sanitized.replace(/^(`|'|")+/, '');
+    sanitized = sanitized.replace(/(`|'|")+$/, '');
+    return sanitized;
+  })
   url: string;
 
   @ApiPropertyOptional({
@@ -69,7 +76,14 @@ export class UpdateWebhookDto {
   @ApiPropertyOptional({ description: 'Webhook URL' })
   @IsOptional()
   @IsUrl()
-  @Transform(({ value }) => value ? value.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '') : value)
+  @Transform(({ value }) => {
+    if (!value) return value;
+    let sanitized = value;
+    sanitized = sanitized.trim();
+    sanitized = sanitized.replace(/^(`|'|")+/, '');
+    sanitized = sanitized.replace(/(`|'|")+$/, '');
+    return sanitized;
+  })
   url?: string;
 
   @ApiPropertyOptional({ description: 'Event types to subscribe to' })

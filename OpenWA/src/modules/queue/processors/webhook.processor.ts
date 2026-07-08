@@ -33,7 +33,10 @@ export class WebhookProcessor extends WorkerHost {
     const sessionId = payload.sessionId;
 
     // Sanitize the URL
-    const sanitizedUrl = url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
+    let sanitizedUrl = url;
+    sanitizedUrl = sanitizedUrl.trim();
+    sanitizedUrl = sanitizedUrl.replace(/^(`|'|")+/, '');
+    sanitizedUrl = sanitizedUrl.replace(/(`|'|")+$/, '');
 
     this.logger.log(`⚙️ Processing webhook job ${job.id} for event ${event}`, {
       webhookId,
@@ -61,11 +64,22 @@ export class WebhookProcessor extends WorkerHost {
         signal: AbortSignal.timeout(10000),
       });
 
+      // Log full response details to see what's happening
+      const responseText = await response.text();
+      this.logger.log(`📋 Webhook response received`, {
+        webhookId,
+        url: sanitizedUrl,
+        status: response.status,
+        statusText: response.statusText,
+        responseBody: responseText.substring(0, 500), // Log first 500 chars to avoid huge logs
+        action: 'webhook_response',
+      });
+
       const responseTime = Date.now() - startTime;
       const success = response.ok;
 
       if (!success) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText}`);
       }
 
       // Update lastTriggeredAt on successful delivery

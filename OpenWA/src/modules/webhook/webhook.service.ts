@@ -258,7 +258,10 @@ export class WebhookService {
             { sessionId, source: 'WebhookService' },
           );
 
-          const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
+          let sanitizedUrl = webhook.url;
+          sanitizedUrl = sanitizedUrl.trim();
+          sanitizedUrl = sanitizedUrl.replace(/^(`|'|")+/, '');
+          sanitizedUrl = sanitizedUrl.replace(/(`|'|")+$/, '');
           this.logger.log(`📤 Webhook queued for ${webhook.id} (event: ${event})`, {
             webhookId: webhook.id,
             event,
@@ -283,7 +286,10 @@ export class WebhookService {
         }
       } else {
         // Direct delivery when queue is disabled
-        const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
+        let sanitizedUrl = webhook.url;
+        sanitizedUrl = sanitizedUrl.trim();
+        sanitizedUrl = sanitizedUrl.replace(/^(`|'|")+/, '');
+        sanitizedUrl = sanitizedUrl.replace(/(`|'|")+$/, '');
         this.logger.log(`📤 Sending webhook directly to ${webhook.id} (event: ${event})`, {
           webhookId: webhook.id,
           event,
@@ -336,7 +342,10 @@ export class WebhookService {
     attempt = 1,
   ): Promise<void> {
     // Sanitize the URL to remove extra characters
-    const sanitizedUrl = webhook.url.trim().replace(/^[\s`'"]+|[\s`'"]+$/g, '');
+    let sanitizedUrl = webhook.url;
+    sanitizedUrl = sanitizedUrl.trim();
+    sanitizedUrl = sanitizedUrl.replace(/^(`|'|")+/, '');
+    sanitizedUrl = sanitizedUrl.replace(/(`|'|")+$/, '');
     
     this.logger.log(`📤 Delivering webhook to ${sanitizedUrl} (attempt ${attempt}/${webhook.retryCount})`, {
       webhookId: webhook.id,
@@ -363,8 +372,19 @@ export class WebhookService {
         signal: AbortSignal.timeout(this.configService.get<number>('webhook.timeout', 10000)),
       });
 
+      // Log full response details to see what's happening
+      const responseText = await response.text();
+      this.logger.log(`📋 Webhook response received`, {
+        webhookId: webhook.id,
+        url: sanitizedUrl,
+        status: response.status,
+        statusText: response.statusText,
+        responseBody: responseText.substring(0, 500), // Log first 500 chars to avoid huge logs
+        action: 'webhook_response',
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText}`);
       }
 
       // Update last triggered timestamp
@@ -372,10 +392,10 @@ export class WebhookService {
         lastTriggeredAt: new Date(),
       });
 
-      this.logger.log(`✅ Webhook delivered successfully to ${webhook.url}`, {
+      this.logger.log(`✅ Webhook delivered successfully to ${sanitizedUrl}`, {
         webhookId: webhook.id,
         deliveryId: payload.deliveryId,
-        url: webhook.url,
+        url: sanitizedUrl,
         action: 'webhook_delivered',
       });
     } catch (error) {
