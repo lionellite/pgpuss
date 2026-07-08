@@ -83,6 +83,9 @@ services:
       - redis
       - backend
     restart: unless-stopped
+    volumes:
+      - backend_media:/app/media
+      - shared_media:/shared/media
 
   redis:
     image: redis:7-alpine

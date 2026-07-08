@@ -73,6 +73,53 @@ def _parse_media_block(raw: dict | None) -> WhatsAppMedia | None:
     )
 
 
+def _parse_openwa_media_v2(msg_data: dict) -> WhatsAppMedia | None:
+    """Parse les médias OpenWA format v2 (champs imbriqués dans msg_data)."""
+    # OpenWA peut envoyer les médias dans différents formats
+    # Format 1: media direct dans msg_data
+    if "media" in msg_data and msg_data["media"]:
+        return _parse_media_block(msg_data["media"])
+    
+    # Format 2: champs spécifiques par type (audio, image, document, video)
+    msg_type = msg_data.get("type", "").lower()
+    
+    if msg_type in ("ptt", "audio", "voice"):
+        # Message vocal
+        audio_data = msg_data.get("audio") or {}
+        return WhatsAppMedia(
+            mimetype=audio_data.get("mimetype") or "audio/ogg",
+            filename=audio_data.get("filename"),
+            url=audio_data.get("url"),
+            data=audio_data.get("data"),
+        )
+    elif msg_type == "image":
+        image_data = msg_data.get("image") or {}
+        return WhatsAppMedia(
+            mimetype=image_data.get("mimetype") or "image/jpeg",
+            filename=image_data.get("filename"),
+            url=image_data.get("url"),
+            data=image_data.get("data"),
+        )
+    elif msg_type == "document":
+        doc_data = msg_data.get("document") or {}
+        return WhatsAppMedia(
+            mimetype=doc_data.get("mimetype") or "application/octet-stream",
+            filename=doc_data.get("filename"),
+            url=doc_data.get("url"),
+            data=doc_data.get("data"),
+        )
+    elif msg_type == "video":
+        video_data = msg_data.get("video") or {}
+        return WhatsAppMedia(
+            mimetype=video_data.get("mimetype") or "video/mp4",
+            filename=video_data.get("filename"),
+            url=video_data.get("url"),
+            data=video_data.get("data"),
+        )
+    
+    return None
+
+
 
 def parse_openwa_payload(data: dict) -> WhatsAppIncomingMessage | None:
     if data.get("event") != "message.received":
@@ -86,7 +133,7 @@ def parse_openwa_payload(data: dict) -> WhatsAppIncomingMessage | None:
     if not sender:
         return None
 
-    media = _parse_media_block(msg_data.get("media"))
+    media = _parse_openwa_media_v2(msg_data)
     has_media = bool(msg_data.get("hasMedia") or media)
 
     return WhatsAppIncomingMessage(
