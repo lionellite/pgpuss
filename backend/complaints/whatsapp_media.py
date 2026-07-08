@@ -4,7 +4,11 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import os
+import tempfile
+import shutil
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.response import Response
 
 from .media_upload import save_attachment, save_voice_file
@@ -13,35 +17,13 @@ from .models import Complaint
 logger = logging.getLogger(__name__)
 
 
-class InMemoryUpload:
-    """Adaptateur fichier en mémoire compatible avec media_upload."""
-
-    def __init__(self, data: bytes, name: str, content_type: str):
-        self._io = io.BytesIO(data)
-        self.name = name
-        self.content_type = content_type
-        self.size = len(data)
-
-    def seek(self, pos: int, whence: int = 0) -> int:
-        return self._io.seek(pos, whence)
-
-    def read(self, n: int = -1) -> bytes:
-        return self._io.read(n)
-
-
-def _decode_media_payload(media: dict) -> InMemoryUpload | None:
-    """Décode un payload média WhatsApp et copie le fichier vers /app/media (stockage Django).
+def _decode_media_payload(media: dict) -> SimpleUploadedFile | None:
+    """Décode un payload média WhatsApp et retourne un SimpleUploadedFile compatible Django.
 
     Supporte deux modes :
-    - Volume partagé : fichier dans /shared/media (OpenWA) → copié vers /app/media (Django)
-    - Ancien : base64 dans le champ ``data``
+    - Volume partagé : fichier dans /shared/media (OpenWA) → SimpleUploadedFile
+    - Ancien : base64 dans le champ ``data`` → SimpleUploadedFile
     """
-    import os
-    import shutil
-    from django.conf import settings
-    
-    logger.info("Début décodage média: %s", media)
-    
     # --- Mode volume partagé Docker (recommandé) ---
     url = media.get("url")
     if url:
@@ -51,11 +33,8 @@ def _decode_media_payload(media: dict) -> InMemoryUpload | None:
         file_id_match = re.search(r'[?&]id=([^&]+)', url)
         filename_from_url = media.get("filename") or ""
         
-        logger.info("URL média: %s, filename: %s, file_id: %s", url, filename_from_url, file_id_match.group(1) if file_id_match else None)
-        
         # Cherche le fichier dans le volume partagé OpenWA
         shared_media_path = "/shared/media"
-        logger.info("Chemin volume partagé: %s, existe: %s", shared_media_path, os.path.exists(shared_media_path))
         
         if os.path.exists(shared_media_path):
             # Cherche le fichier le plus récent correspondant au type MIME
@@ -72,8 +51,6 @@ def _decode_media_payload(media: dict) -> InMemoryUpload | None:
                     except OSError:
                         continue
             
-            logger.info("Fichiers trouvés dans volume partagé: %d", len(all_files))
-            
             # Trie par date de modification (plus récent en premier)
             all_files.sort(key=lambda x: x[1], reverse=True)
             
@@ -87,70 +64,54 @@ def _decode_media_payload(media: dict) -> InMemoryUpload | None:
                     file_id = file_id_match.group(1)
                     if file_id in file or file.startswith(file_id):
                         match = True
-                        logger.info("Match par ID: %s dans %s", file_id, file)
                 if filename_from_url and filename_from_url in file:
                     match = True
-                    logger.info("Match par filename: %s dans %s", filename_from_url, file)
                 
                 # Si pas de correspondance précise, prend le fichier le plus récent
                 if not match and all_files.index((file_path, mtime, size)) == 0:
                     match = True
-                    logger.info("Match par défaut (fichier le plus récent): %s", file)
                 
                 if match:
                     try:
-                        # Copie le fichier vers le stockage Django (/app/media)
-                        django_media_root = getattr(settings, 'MEDIA_ROOT', '/app/media')
-                        logger.info("MEDIA_ROOT Django: %s", django_media_root)
-                        
-                        # Crée les sous-dossiers nécessaires (complaints/voice/ ou attachments/)
-                        if mimetype.startswith("audio/"):
-                            target_dir = os.path.join(django_media_root, 'complaints', 'voice')
-                        else:
-                            target_dir = os.path.join(django_media_root, 'attachments')
-                        
-                        logger.info("Dossier cible: %s", target_dir)
-                        os.makedirs(target_dir, exist_ok=True)
+                        # Lit le fichier depuis le volume partagé
+                        with open(file_path, 'rb') as f:
+                            file_content = f.read()
                         
                         # Génère un nom de fichier unique
                         target_filename = filename_from_url.strip() or file
                         if not target_filename:
                             target_filename = _default_filename(mimetype)
                         
-                        target_path = os.path.join(target_dir, target_filename)
-                        logger.info("Chemin cible: %s", target_path)
+                        # Crée un SimpleUploadedFile compatible Django
+                        uploaded_file = SimpleUploadedFile(
+                            name=target_filename,
+                            content=file_content,
+                            content_type=mimetype
+                        )
                         
-                        # Copie le fichier
-                        shutil.copy2(file_path, target_path)
-                        
-                        # Lit le fichier copié pour le retourner
-                        with open(target_path, 'rb') as f:
-                            raw_bytes = f.read()
-                        
-                        logger.info("✅ Fichier copié avec succès de %s vers %s (taille: %d octets)", file_path, target_path, len(raw_bytes))
-                        return InMemoryUpload(raw_bytes, target_filename, mimetype)
+                        logger.info("Fichier chargé depuis %s (taille: %d octets)", file_path, len(file_content))
+                        return uploaded_file
                     except Exception as exc:
-                        logger.error("❌ Impossible de copier le fichier %s vers %s: %s", file_path, target_path if 'target_path' in locals() else 'target', exc)
+                        logger.warning("Impossible de lire le fichier %s: %s", file_path, exc)
                         continue
-        else:
-            logger.warning("Volume partagé %s n'existe pas", shared_media_path)
 
     # --- Mode base64 (rétrocompatibilité / audio court) ---
     raw = media.get("data")
     if raw:
-        logger.info("Mode base64 détecté, taille: %d", len(raw))
         try:
             data = base64.b64decode(raw)
             mimetype = (media.get("mimetype") or "application/octet-stream").strip()
             filename = (media.get("filename") or "").strip() or _default_filename(mimetype)
-            logger.info("✅ Base64 décodé avec succès, taille: %d", len(data))
-            return InMemoryUpload(data, filename, mimetype)
-        except (ValueError, TypeError) as exc:
-            logger.warning("Impossible de décoder le média WhatsApp (base64 invalide): %s", exc)
-    else:
-        logger.warning("Aucune donnée URL ou base64 trouvée dans le média")
+            
+            uploaded_file = SimpleUploadedFile(
+                name=filename,
+                content=data,
+                content_type=mimetype
+            )
+            return uploaded_file
+        except (ValueError, TypeError):
+            logger.warning("Impossible de décoder le média WhatsApp (base64 invalide)")
     
-    logger.error("❌ Échec du décodage du média WhatsApp")
     return None
 
 
