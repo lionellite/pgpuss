@@ -355,6 +355,12 @@ export class WebhookService {
       attempt,
     });
     const body = JSON.stringify(payload);
+    this.logger.log(`📦 Webhook payload`, {
+      webhookId: webhook.id,
+      payload,
+      payloadLength: body.length,
+      action: 'webhook_payload',
+    });
 
     // Update retry count header
     headers['X-OpenWA-Retry-Count'] = String(attempt - 1);
