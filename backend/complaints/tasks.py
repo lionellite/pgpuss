@@ -4,7 +4,7 @@ Tâches Celery pour le traitement asynchrone des webhooks WhatsApp (bot_engine).
 Principe :
   1. Le webhook entrant est reçu en < 100ms par Django.
   2. Django place la tâche dans Redis (broker).
-  3. Le worker Celery traite la tâche en arrière-plan (parsing, upload Cloudinary, etc.)
+  3. Le worker Celery traite la tâche en arrière-plan (parsing et enregistrement des médias, etc.)
   4. Le résultat (message de réponse WhatsApp) est envoyé à l'utilisateur depuis le worker.
 """
 import logging

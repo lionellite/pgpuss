@@ -175,7 +175,7 @@ class Complaint(models.Model):
 
     # Plainte vocale (analphabétisme / accessibilité) — fichier audio déposé par l’usager
     voice_file = models.FileField(upload_to='complaints/voice/%Y/%m/', blank=True, null=True, max_length=255)
-    voice_media_url = models.URLField(max_length=500, blank=True, help_text='URL Cloudinary du message vocal')
+    voice_media_url = models.URLField(max_length=500, blank=True, help_text='URL publique éventuelle du message vocal')
     media_upload_token = models.CharField(max_length=64, blank=True, editable=False)
     info_request_open = models.BooleanField(default=False)
     info_request_notes = models.TextField(blank=True)
@@ -303,7 +303,7 @@ class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='attachments')
     file = models.FileField(upload_to='attachments/%Y/%m/', max_length=255)
-    media_url = models.URLField(max_length=500, blank=True, help_text='URL Cloudinary directe')
+    media_url = models.URLField(max_length=500, blank=True, help_text='URL publique éventuelle du média')
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50, blank=True)
     file_size = models.IntegerField(default=0)

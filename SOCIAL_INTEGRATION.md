@@ -4,7 +4,7 @@ Ce document détaille comment connecter les canaux externes (WhatsApp, Facebook,
 
 ## 1. WhatsApp (via OpenWA — recommandé)
 
-[OpenWA](https://github.com/rmyndharis/OpenWA) est une passerelle WhatsApp open source incluse dans ce dépôt (`OpenWA/`). Elle remplace l'API Meta Cloud directe : vous scannez un QR code avec votre téléphone, sans compte Meta Business.
+[OpenWA](https://github.com/rmyndharis/OpenWA) est une passerelle WhatsApp open source incluse dans ce dépôt (`OpenWA/`). Dans PGP-USS, OpenWA a été retenu comme **alternative à l’API Meta Cloud directe** pour mettre en place le chatbot WhatsApp : l’opérateur scanne un QR code avec son téléphone et OpenWA relaie les messages vers le backend par webhook. Cette approche évite de dépendre d’un compte Meta Business pour le parcours de démonstration, mais elle nécessite un processus persistant, Chromium et un volume de session conservé.
 
 ### Architecture
 
@@ -47,7 +47,20 @@ PGPUSS_WEBHOOK_URL=http://host.docker.internal:8000/api/complaints/webhooks/what
   ./scripts/setup_openwa_whatsapp.sh
 ```
 
-**Terminal 3 — Configuration session + webhook**
+**Terminal 3 — Redis et worker Celery**
+
+Le webhook est traité en arrière-plan par Celery via Redis. En local, démarrer Redis puis le worker :
+
+```bash
+redis-server
+cd backend
+source .venv/bin/activate
+celery -A config worker --loglevel=info --concurrency=2
+```
+
+Dans `backend/.env`, utiliser `REDIS_URL=redis://localhost:6379/0`. En Docker Compose, utiliser `REDIS_URL=redis://redis:6379/0` et le nom de service `backend` pour l’URL du webhook.
+
+**Terminal 4 — Configuration session + webhook**
 
 ```bash
 # Clé API (fichier généré au 1er démarrage d'OpenWA)
@@ -123,7 +136,7 @@ OpenWA envoie les événements `message.received` au format :
 | `OPENWA_SESSION_ID` | ID de la session WhatsApp connectée |
 | `OPENWA_WEBHOOK_SECRET` | Secret HMAC pour vérifier les webhooks entrants |
 | `WA_VERIFY_TOKEN` | Token Meta (conservé pour compatibilité GET webhook) |
-| `CLOUDINARY_URL` | Stockage des médias WhatsApp en production (obligatoire sur Vercel) |
+| `REDIS_URL` | Cache Django et broker/backend Celery (`redis://localhost:6379/0` en local, `redis://redis:6379/0` en Docker) |
 
 ### Logique métier — Chatbot conversationnel
 
@@ -173,16 +186,18 @@ La réponse inclut : statut, priorité, date de dépôt, dernières étapes du w
 | Établissement **saisi manuellement** | **Call Center 136** (`pending_call_center_completion=True`) |
 
 Le call center peut :
-- **Finaliser** la plainte en rattachent un établissement du référentiel → routage PFE
+- **Finaliser** la plainte en rattachant un établissement du référentiel → routage PFE
 - **Orienter vers une zone sanitaire** → notification du **PFZS** concerné
 
 Ce routage s'applique à **tous les canaux** (web, mobile, WhatsApp).
 
 À la confirmation :
 - Création d'une plainte (canal `CHATBOT`, statut `SOUMISE`)
-- Upload des médias sur la plateforme (Cloudinary / stockage local)
+- Enregistrement des médias dans le stockage local Django (`MEDIA_ROOT`), avec persistance par `backend_media` et transfert OpenWA via `shared_media` en Docker
 - Envoi du numéro de ticket via OpenWA
 - Entrée dans le journal d'audit immuable
+
+Le dépôt ne fournit pas de `vercel.json` ni d’adaptateur serverless spécifique. La procédure Vercel et ses prérequis sont documentés dans [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
 
 Commandes globales : `stop`, `annuler`, `quitter`, `menu` → annulation de la session.
 
@@ -208,6 +223,10 @@ curl -X POST http://localhost:2785/api/sessions/<SESSION_ID>/webhooks \
     "secret": "pgpuss_openwa_secret_change_me"
   }'
 ```
+
+### Déploiement hybride et alternative Meta
+
+OpenWA et le worker Celery ne doivent pas être déployés comme des fonctions serverless éphémères : ils ont besoin d’une session WhatsApp et de processus persistants. Sur Vercel, déployer l’API et le frontend séparément, puis maintenir OpenWA, Redis et le worker sur un VPS ou un service persistant. Si aucun worker n’est disponible, le webhook Django dispose d’un fallback synchrone, mais cette solution est moins robuste.
 
 ### Alternative : API Meta Cloud / Twilio
 

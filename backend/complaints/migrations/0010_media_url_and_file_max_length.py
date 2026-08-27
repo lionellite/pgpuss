@@ -11,12 +11,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='attachment',
             name='media_url',
-            field=models.URLField(blank=True, max_length=500, help_text='URL Cloudinary directe'),
+            field=models.URLField(blank=True, max_length=500, help_text='URL publique éventuelle du média'),
         ),
         migrations.AddField(
             model_name='complaint',
             name='voice_media_url',
-            field=models.URLField(blank=True, max_length=500, help_text='URL Cloudinary du message vocal'),
+            field=models.URLField(blank=True, max_length=500, help_text='URL publique éventuelle du message vocal'),
         ),
         migrations.AlterField(
             model_name='attachment',

@@ -1,6 +1,6 @@
 # PGP-USS Mobile (Flutter)
 
-App mobile Flutter qui consomme les endpoints du backend Django (DRF + JWT).
+App mobile Flutter qui consomme les endpoints du backend Django (DRF + JWT). Le backend, les variables d’environnement et les comptes de test sont documentés dans le [README principal](../README.md), [docs/DEPLOIEMENT.md](../docs/DEPLOIEMENT.md) et [UTILISATEURS_TESTS.md](../UTILISATEURS_TESTS.md).
 
 ## Prérequis
 
@@ -26,3 +26,5 @@ Notes:
 - Connexion JWT via `/api/auth/login/`
 - Liste des plaintes via `/api/complaints/`
 - Détail d’une plainte via `/api/complaints/<id>/`
+
+Pour tester l’application mobile, utiliser les comptes de référence du dépôt et leur mot de passe commun indiqué dans [UTILISATEURS_TESTS.md](../UTILISATEURS_TESTS.md), après avoir lancé le backend et appliqué les migrations.
