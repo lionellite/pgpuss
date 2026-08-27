@@ -6,9 +6,7 @@ django-filter
 psycopg2-binary
 python-dotenv
 dj-database-url
-# Stockage fichiers médias en production (Cloudinary)
-cloudinary
-django-cloudinary-storage
+# Les fichiers médias sont stockés localement via Django FileSystemStorage.
 Pillow>=10.0
 # OTP SMS Firebase (optionnel — pip install firebase-admin)
 firebase-admin>=6.0

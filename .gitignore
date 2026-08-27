@@ -1,7 +1,11 @@
 # Common
 .DS_Store
 
+# Secrets d’environnement — les fichiers *.example restent versionnés
+.env
 .env.local
+OpenWA/.env
+backend/.env
 *.log
 
 # Backend (Django)

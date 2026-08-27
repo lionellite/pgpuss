@@ -126,7 +126,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
+# Stockage média local persistant sur disque ou dans le volume Docker `backend_media`.
 # Django 4.2+ / 6.x : STORAGES remplace DEFAULT_FILE_STORAGE et STATICFILES_STORAGE
 STORAGES = {
     'default': {
@@ -138,9 +138,8 @@ STORAGES = {
     },
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
-    },
+        },
 }
-# Compatibilité django-cloudinary-storage (collectstatic lit encore STATICFILES_STORAGE)
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -192,7 +191,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Porto-Novo'
-# Délai max d'une tâche = 10 min (ex: upload Cloudinary de grosses vidéos)
+# Délai max d'une tâche = 10 min (ex: traitement d’un média WhatsApp)
 CELERY_TASK_SOFT_TIME_LIMIT = 540
 CELERY_TASK_TIME_LIMIT = 600
 # Réessayer 3 fois en cas d'échec, avec 60s de délai
@@ -246,8 +245,7 @@ SMS_WEBHOOK_URL = os.environ.get("SMS_WEBHOOK_URL", "")
 SMS_SENDER = os.environ.get("SMS_SENDER", "PGPUSS")
 
 # Firebase Authentication (OTP SMS — vérification côté serveur du id_token)
-FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
-
+# Les credentials sont lues directement par accounts.firebase_auth lorsque l’OTP est utilisé.
 # WhatsApp via OpenWA (gateway open source — alternative à l'API Meta)
 OPENWA_API_URL = os.environ.get("OPENWA_API_URL", "http://localhost:2785/api")
 OPENWA_API_KEY = os.environ.get("OPENWA_API_KEY", "")

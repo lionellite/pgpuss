@@ -1,8 +1,8 @@
 # PGP-USS — Utilisateurs de Production & Types d'Utilisateurs
 
-> **Version** : Production v2 — Pyramide Sanitaire du Bénin  
-> **Mot de passe commun** : `Pgpuss2026!` (à changer à la première connexion)  
-> **Réinitialisation** : `bash backend/scripts/reset_and_populate.sh`
+> **Version** : Production v2 — Pyramide Sanitaire du Bénin
+> **Mot de passe commun** : `Pgpuss2026!` (à changer à la première connexion)
+> **Réinitialisation** : `bash backend/scripts/reset_and_populate.sh` (commande destructive, réservée aux bases de test ou de démonstration)
 
 ---
 
@@ -25,7 +25,7 @@
 │  dds.mono@sante.bj          dds.oueme@sante.bj                   │
 │  dds.plateau@sante.bj       dds.zou@sante.bj                     │
 ├──────────────────────────────────────────────────────────────────┤
-│          Niveau 2 — ZONE SANITAIRE (37 PFZS)                     │
+│          Niveau 2 — ZONE SANITAIRE (38 PFZS)                     │
 │  pfzs.zsban@sante.bj        pfzs.zsgog@sante.bj                  │
 │  pfzs.zskan@sante.bj        pfzs.zsmal@sante.bj                  │
 │  pfzs.zsbou@sante.bj        pfzs.zscob@sante.bj                  │
@@ -104,9 +104,13 @@
 | `pnuss.zscot1@sante.bj` | PNUSS | Zone Sanitaire | Cotonou 1 (Akpakpa) |
 | `pnuss.cnhuhkm@sante.bj` | PNUSS | Périphérique | CNHU-HKM |
 
+Le script `backend/scripts/populate_benin_db.py` crée également le compte technique `usager.test@sante.bj` pour associer les plaintes fictives aux scénarios de démonstration. Il utilise le même mot de passe commun et est soumis au changement obligatoire à la première connexion.
+
 ---
 
 ### 🏥 PFE par niveau d'établissement
+
+Les adresses de cette section sont les identifiants de référence à utiliser pour les tests. Le script de peuplement peut créer un sous-ensemble lié aux établissements présents dans son référentiel ; vérifier les rattachements dans l’interface d’administration après initialisation.
 
 #### Établissements Nationaux
 | Email | Établissement |
@@ -138,7 +142,7 @@
 | Email | Hôpital de Zone |
 |-------|----------------|
 | `pfe.hzban@sante.bj` | HZ Banikoara |
-| `pfe.hzkан@sante.bj` | HZ Kandi |
+| `pfe.hzkan@sante.bj` | HZ Kandi |
 | `pfe.hznat@sante.bj` | HZ Natitingou |
 | `pfe.hztan@sante.bj` | HZ Tanguiéta |
 | `pfe.hzaca@sante.bj` | HZ Abomey-Calavi |
@@ -291,5 +295,5 @@ docker logs pgpuss-backend -f
 docker logs pgpuss-frontend -f
 ```
 
-> **Mot de passe de tous les comptes** : `Pgpuss2026!`  
+> **Mot de passe de tous les comptes** : `Pgpuss2026!`
 > Tous les comptes ont `must_change_password = True` → changement forcé à la première connexion.

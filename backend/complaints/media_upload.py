@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 def _max_bytes():
-    """Limite upload pour le mode serverless (Vercel) - 4 Mo par défaut."""
-    return getattr(settings, 'VERCEL_MAX_UPLOAD_BYTES', 4 * 1024 * 1024)
+    """Limite configurable des requêtes média ordinaires : 50 MiB par défaut."""
+    return getattr(settings, 'VERCEL_MAX_UPLOAD_BYTES', 50 * 1024 * 1024)
 
 
 def _max_bytes_whatsapp():
-    """Limite upload pour les pièces jointes WhatsApp - 50 Mo par défaut sur VPS."""
-    return getattr(settings, 'WHATSAPP_MAX_UPLOAD_BYTES', 50 * 1024 * 1024)
+    """Limite fixe des pièces jointes WhatsApp sur le serveur : 50 MiB."""
+    return 50 * 1024 * 1024
 
 
 def _is_serverless():

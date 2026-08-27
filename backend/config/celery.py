@@ -2,7 +2,7 @@
 Configuration Celery pour PGP-USS.
 
 Redis est utilisé comme Message Broker (file d'attente des tâches).
-Toutes les tâches lentes (webhooks WhatsApp, envoi de médias vers Cloudinary,
+Toutes les tâches lentes (webhooks WhatsApp, enregistrement de médias,
 notifications) sont déléguées à un worker Celery en arrière-plan.
 """
 import os

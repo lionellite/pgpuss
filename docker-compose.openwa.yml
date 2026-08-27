@@ -1,5 +1,6 @@
 # OpenWA seul — sans lancer le reste de PGP-USS
-# Usage : docker compose -f docker-compose.openwa.yml up -d
+# Usage : cp .env.example .env && docker compose -f docker-compose.openwa.yml up -d
+# OPENWA_API_KEY est injectée dans OpenWA comme API_MASTER_KEY lorsqu’elle est définie.
 
 services:
   openwa:
@@ -25,6 +26,7 @@ services:
       - WEBHOOK_TIMEOUT=10000
       - WEBHOOK_MAX_RETRIES=3
       - QUEUE_ENABLED=false
+      - API_MASTER_KEY=${OPENWA_API_KEY:-}
     volumes:
       - openwa_data:/app/data
     restart: unless-stopped
